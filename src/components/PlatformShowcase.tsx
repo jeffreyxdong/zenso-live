@@ -5,10 +5,10 @@ import aiPlatformsBanner from "@/assets/ai-platforms-banner.jpg";
 
 const PlatformShowcase = () => {
   const features = [
-    "See exactly what AI tools say about your brand",
-    "Discover which websites AI uses as sources",
-    "Compare your LLMrefs Score with competitors",
-    "Start for free, no credit card required"
+    "Track product recommendations in AI responses",
+    "Monitor competitor mentions across platforms",
+    "Discover which sources AI cites for your niche",
+    "Get alerts when your brand gets mentioned"
   ];
 
   return (
@@ -27,24 +27,24 @@ const PlatformShowcase = () => {
         <div className="flex items-center gap-2 mb-4">
           <Lock className="text-primary w-5 h-5" />
           <h2 className="text-xl font-bold text-foreground">
-            Track your visibility in AI search
+            eCommerce AI Visibility Tracking
           </h2>
         </div>
 
         <p className="text-muted-foreground mb-6 leading-relaxed">
-          LLMrefs is the leading SEO platform for AI search engines. 
-          Monitor how your brand appears in ChatGPT, Claude, Gemini, and other AI tools.
+          BrandRefs helps eCommerce stores track how AI platforms recommend their products. 
+          Monitor brand mentions across ChatGPT, Perplexity, Gemini when customers ask for shopping advice.
         </p>
 
         {/* Trust Indicators */}
         <div className="mb-6">
           <p className="text-sm text-muted-foreground mb-3">
-            Trusted by SEO's, Founders & Industry Leaders:
+            Trusted by eCommerce Brands & Digital Marketers:
           </p>
           <div className="flex items-center gap-4 text-muted-foreground/60 text-xs font-medium">
-            <span>VEED</span>
-            <span>AdBlockify</span>
-            <span>getinbox</span>
+            <span>TechStore</span>
+            <span>FashionPlus</span>
+            <span>HomeGoods</span>
           </div>
         </div>
 

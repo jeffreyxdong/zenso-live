@@ -28,10 +28,10 @@ const SignupForm = () => {
       <CardContent className="p-8">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-foreground mb-2">
-            Create a free account
+            Track Your Brand in AI
           </h1>
           <p className="text-muted-foreground">
-            Get started with no credit card required.
+            Monitor product recommendations across ChatGPT, Perplexity & Gemini.
           </p>
         </div>
 
@@ -39,7 +39,7 @@ const SignupForm = () => {
           <div className="relative">
             <Input
               type="email"
-              placeholder="Enter your work email"
+              placeholder="Enter your store email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="h-11 pl-4 pr-12"

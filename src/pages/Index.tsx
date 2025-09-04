@@ -11,7 +11,7 @@ const Index = () => {
       <header className="border-b border-border bg-card/50 backdrop-blur-sm">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-foreground">LLMrefs</h1>
+            <h1 className="text-2xl font-bold text-foreground">BrandRefs</h1>
             <div className="flex items-center gap-4">
               <Link to="/dashboard">
                 <Button variant="outline" size="sm">
@@ -46,8 +46,8 @@ const Index = () => {
         <footer className="text-center py-12">
           <div className="max-w-4xl mx-auto">
             <p className="text-muted-foreground text-sm leading-relaxed mb-6">
-              Join thousands of businesses tracking their visibility across AI search engines. 
-              Get insights into how your brand appears in ChatGPT, Claude, Gemini, and more.
+              Join thousands of eCommerce stores tracking their brand visibility across AI platforms. 
+              Monitor how AI recommends your products when customers ask for shopping advice.
             </p>
             <div className="flex flex-wrap justify-center gap-8 text-xs text-muted-foreground/80">
               <span>Terms of Service</span>
