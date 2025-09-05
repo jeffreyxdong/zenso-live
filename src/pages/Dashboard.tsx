@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,9 +6,40 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, TrendingUp, Globe, BarChart3, Plus, Settings, Store, Target } from "lucide-react";
 import KeywordSearch from "@/components/KeywordSearch";
 import BrandMentions from "@/components/BrandMentions";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/use-toast";
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
+  const navigate = useNavigate();
+
+  // Protect route: redirect unauthenticated users
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        navigate("/auth", { replace: true });
+      }
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        navigate("/auth", { replace: true });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({ title: "Logout failed", description: error.message });
+    } else {
+      toast({ title: "Signed out" });
+      navigate("/", { replace: true });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -30,6 +61,9 @@ const Dashboard = () => {
               <Button size="sm">
                 <Plus className="w-4 h-4" />
                 Add Store
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleLogout}>
+                Logout
               </Button>
             </div>
           </div>

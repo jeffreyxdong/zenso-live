@@ -18,9 +18,11 @@ const Index = () => {
                   View Dashboard
                 </Button>
               </Link>
-              <Button size="sm">
-                Login
-              </Button>
+              <Link to="/auth">
+                <Button size="sm">
+                  Login
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
