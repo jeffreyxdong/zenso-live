@@ -15,17 +15,38 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const navigate = useNavigate();
 
-  // Protect route: redirect unauthenticated users
+  // Protect route: redirect unauthenticated users and ensure onboarding complete
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) {
         navigate("/auth", { replace: true });
+        return;
       }
+      // Defer profile check to avoid deadlocks
+      setTimeout(async () => {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+        if (error || !data) {
+          navigate("/onboarding", { replace: true });
+        }
+      }, 0);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) {
         navigate("/auth", { replace: true });
+        return;
+      }
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+      if (error || !data) {
+        navigate("/onboarding", { replace: true });
       }
     });
 

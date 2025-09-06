@@ -38,17 +38,39 @@ const Auth: React.FC = () => {
     canonical.href = window.location.href;
   }, [isLogin]);
 
-  // Keep session in sync and redirect authenticated users
+  // Keep session in sync and redirect: if new user without profile -> onboarding, else -> dashboard
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        navigate("/dashboard", { replace: true });
+      if (session?.user) {
+        // Defer Supabase calls per best practices
+        setTimeout(async () => {
+          const { data, error } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("user_id", session.user.id)
+            .maybeSingle();
+
+          if (error || !data) {
+            navigate("/onboarding", { replace: true });
+          } else {
+            navigate("/dashboard", { replace: true });
+          }
+        }, 0);
       }
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate("/dashboard", { replace: true });
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+        if (error || !data) {
+          navigate("/onboarding", { replace: true });
+        } else {
+          navigate("/dashboard", { replace: true });
+        }
       }
     });
 
