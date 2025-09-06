@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, MessageCircle, Sparkles, Bot, BookmarkPlus } from "lucide-react";
+import { Loader2, MessageCircle, Sparkles, Bot, BookmarkPlus, Target } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -13,10 +13,13 @@ interface AIResponse {
   result: string;
   loading: boolean;
   error?: string;
+  score?: number;
+  scoreLoading?: boolean;
 }
 
 export const PromptsTab = () => {
   const [prompt, setPrompt] = useState("");
+  const [brandName, setBrandName] = useState("");
   const [responses, setResponses] = useState<AIResponse[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -35,10 +38,19 @@ export const PromptsTab = () => {
       return;
     }
 
+    if (!brandName.trim()) {
+      toast({
+        title: "Error", 
+        description: "Please enter a brand name for visibility scoring",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     setResponses([
-      { platform: "ChatGPT", result: "", loading: true },
-      { platform: "Gemini", result: "", loading: true },
+      { platform: "ChatGPT", result: "", loading: true, scoreLoading: false },
+      { platform: "Gemini", result: "", loading: true, scoreLoading: false },
     ]);
 
     try {
@@ -89,9 +101,42 @@ export const PromptsTab = () => {
 
       setResponses(newResponses);
 
+      // Score brand visibility for successful responses
+      const scoringPromises = newResponses.map(async (response, index) => {
+        if (response.result && !response.error) {
+          // Mark as loading score
+          setResponses(prev => prev.map((r, i) => 
+            i === index ? { ...r, scoreLoading: true } : r
+          ));
+
+          try {
+            const { data: scoreData } = await supabase.functions.invoke('score-brand-visibility', {
+              body: { content: response.result, brandName: brandName.trim() }
+            });
+
+            if (scoreData?.score !== undefined) {
+              setResponses(prev => prev.map((r, i) => 
+                i === index ? { ...r, score: scoreData.score, scoreLoading: false } : r
+              ));
+            } else {
+              setResponses(prev => prev.map((r, i) => 
+                i === index ? { ...r, scoreLoading: false } : r
+              ));
+            }
+          } catch (error) {
+            console.error('Error scoring response:', error);
+            setResponses(prev => prev.map((r, i) => 
+              i === index ? { ...r, scoreLoading: false } : r
+            ));
+          }
+        }
+      });
+
+      await Promise.allSettled(scoringPromises);
+
       toast({
         title: "Success",
-        description: "Responses received from AI platforms",
+        description: "Responses received and scored for brand visibility",
       });
     } catch (error) {
       console.error('Error submitting prompt:', error);
@@ -203,6 +248,13 @@ const getPlatformIcon = (platform: string) => {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
+            <Label htmlFor="brandName" className="block">Brand name (for visibility scoring)</Label>
+            <Input
+              id="brandName"
+              placeholder="e.g., Tesla, Apple, Microsoft"
+              value={brandName}
+              onChange={(e) => setBrandName(e.target.value)}
+            />
             <Label htmlFor="prompt" className="block">Enter your prompt</Label>
             <Textarea
               id="prompt"
@@ -234,7 +286,7 @@ const getPlatformIcon = (platform: string) => {
             </Button>
             <Button 
               onClick={handleSubmit} 
-              disabled={isSubmitting || !prompt.trim()}
+              disabled={isSubmitting || !prompt.trim() || !brandName.trim()}
               className="w-full"
             >
               {isSubmitting ? (
@@ -289,9 +341,23 @@ const getPlatformIcon = (platform: string) => {
           {responses.map((response, index) => (
             <Card key={index}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  {getPlatformIcon(response.platform)}
-                  {response.platform}
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {getPlatformIcon(response.platform)}
+                    {response.platform}
+                  </div>
+                  {response.score !== undefined && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Target className="w-4 h-4" />
+                      <span className="font-medium">Score: {response.score}/100</span>
+                    </div>
+                  )}
+                  {response.scoreLoading && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Scoring...</span>
+                    </div>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>

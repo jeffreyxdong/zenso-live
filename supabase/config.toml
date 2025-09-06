@@ -135,6 +135,9 @@ verify_jwt = false
 [functions.chat-with-gemini]
 verify_jwt = false
 
+[functions.score-brand-visibility]
+verify_jwt = false
+
 [storage]
 enabled = true
 port = 54322
