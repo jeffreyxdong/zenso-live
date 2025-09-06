@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, TrendingUp, Globe, BarChart3, Plus, Settings, Store, Target } from "lucide-react";
+import { Search, TrendingUp, Globe, BarChart3, Plus, Settings, Store, Target, MessageCircle } from "lucide-react";
 import KeywordSearch from "@/components/KeywordSearch";
 import BrandMentions from "@/components/BrandMentions";
+import { PromptsTab } from "@/components/PromptsTab";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
@@ -73,7 +74,7 @@ const Dashboard = () => {
       {/* Main Content */}
       <main className="container mx-auto px-6 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
               Overview
@@ -85,6 +86,10 @@ const Dashboard = () => {
             <TabsTrigger value="brand-mentions" className="flex items-center gap-2">
               <Target className="w-4 h-4" />
               Brand Mentions
+            </TabsTrigger>
+            <TabsTrigger value="prompts" className="flex items-center gap-2">
+              <MessageCircle className="w-4 h-4" />
+              Prompts
             </TabsTrigger>
           </TabsList>
 
@@ -247,6 +252,10 @@ const Dashboard = () => {
 
           <TabsContent value="brand-mentions">
             <BrandMentions />
+          </TabsContent>
+
+          <TabsContent value="prompts">
+            <PromptsTab />
           </TabsContent>
         </Tabs>
       </main>
