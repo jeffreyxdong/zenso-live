@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Bot, BookmarkPlus, Target, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { PromptViewModal } from "./PromptViewModal";
 
 interface SavedPrompt {
   id: string;
@@ -17,6 +18,7 @@ interface SavedPrompt {
   created_at: string;
   visibility_score?: number;
   status: 'active' | 'suggested' | 'inactive';
+  brand_name?: string;
 }
 
 export const PromptsTab = () => {
@@ -27,6 +29,8 @@ export const PromptsTab = () => {
   const [isLoadingSaved, setIsLoadingSaved] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState("active");
+  const [selectedPrompt, setSelectedPrompt] = useState<SavedPrompt | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async () => {
@@ -131,6 +135,7 @@ export const PromptsTab = () => {
         .insert({ 
           user_id: userData.user.id, 
           content: prompt.trim(),
+          brand_name: brandName.trim(),
           visibility_score: visibilityScore,
           status: 'active'
         });
@@ -156,7 +161,7 @@ export const PromptsTab = () => {
 
       const { data, error } = await (supabase as any)
         .from('prompts')
-        .select('id, content, created_at, visibility_score, status')
+        .select('id, content, created_at, visibility_score, status, brand_name')
         .eq('user_id', userData.user.id)
         .order('created_at', { ascending: false });
 
@@ -357,7 +362,8 @@ export const PromptsTab = () => {
                         size="sm" 
                         variant="ghost"
                         onClick={() => {
-                          setPrompt(prompt.content);
+                          setSelectedPrompt(prompt);
+                          setIsViewModalOpen(true);
                         }}
                       >
                         <Eye className="w-4 h-4 mr-1" />
@@ -371,6 +377,18 @@ export const PromptsTab = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* View Modal */}
+      {selectedPrompt && (
+        <PromptViewModal
+          isOpen={isViewModalOpen}
+          onClose={() => {
+            setIsViewModalOpen(false);
+            setSelectedPrompt(null);
+          }}
+          prompt={selectedPrompt}
+        />
+      )}
     </div>
   );
 };
