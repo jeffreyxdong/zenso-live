@@ -41,6 +41,73 @@ export type Database = {
         }
         Relationships: []
       }
+      prompt_daily_scores: {
+        Row: {
+          created_at: string
+          id: string
+          measured_at: string
+          prompt_id: string
+          visibility_score: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          measured_at?: string
+          prompt_id: string
+          visibility_score: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          measured_at?: string
+          prompt_id?: string
+          visibility_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompt_daily_scores_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "prompts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prompt_responses: {
+        Row: {
+          created_at: string
+          id: string
+          model_name: string
+          prompt_id: string
+          response_text: string
+          sources: Json | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          model_name: string
+          prompt_id: string
+          response_text: string
+          sources?: Json | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          model_name?: string
+          prompt_id?: string
+          response_text?: string
+          sources?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompt_responses_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "prompts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prompts: {
         Row: {
           content: string
