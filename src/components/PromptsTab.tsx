@@ -68,22 +68,28 @@ export const PromptsTab = () => {
       let totalScore = 0;
       let validResponses = 0;
 
-      // Process responses for scoring without showing to user
+      // Process and store responses
       const responses = [];
       
       if (openaiPromise.status === 'fulfilled' && openaiPromise.value.data) {
-        responses.push(openaiPromise.value.data.result);
+        responses.push({
+          model: 'openai',
+          content: openaiPromise.value.data.result
+        });
       }
       
       if (geminiPromise.status === 'fulfilled' && geminiPromise.value.data) {
-        responses.push(geminiPromise.value.data.result);
+        responses.push({
+          model: 'gemini', 
+          content: geminiPromise.value.data.result
+        });
       }
 
       // Score brand visibility for responses
       for (const response of responses) {
         try {
           const { data: scoreData } = await supabase.functions.invoke('score-brand-visibility', {
-            body: { content: response, brandName: brandName.trim() }
+            body: { content: response.content, brandName: brandName.trim() }
           });
 
           if (scoreData?.score !== undefined) {
@@ -97,8 +103,8 @@ export const PromptsTab = () => {
 
       const averageScore = validResponses > 0 ? Math.round(totalScore / validResponses) : 0;
 
-      // Save prompt with visibility score
-      await savePromptWithScore(averageScore);
+      // Save prompt with visibility score and responses
+      await savePromptWithScore(averageScore, responses);
 
       toast({
         title: "Success",
@@ -121,7 +127,7 @@ export const PromptsTab = () => {
     }
   };
 
-  const savePromptWithScore = async (visibilityScore: number) => {
+  const savePromptWithScore = async (visibilityScore: number, responses: any[] = []) => {
     try {
       const { data: userData, error: userErr } = await supabase.auth.getUser();
       if (userErr) throw userErr;
@@ -130,7 +136,7 @@ export const PromptsTab = () => {
         return;
       }
 
-      const { error } = await (supabase as any)
+      const { data: promptData, error } = await (supabase as any)
         .from('prompts')
         .insert({ 
           user_id: userData.user.id, 
@@ -138,9 +144,30 @@ export const PromptsTab = () => {
           brand_name: brandName.trim(),
           visibility_score: visibilityScore,
           status: 'active'
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Save AI responses if we have any
+      if (responses.length > 0 && promptData) {
+        const responseInserts = responses.map(response => ({
+          prompt_id: promptData.id,
+          model_name: response.model,
+          response_text: response.content,
+          sources: null // Will be populated by future features
+        }));
+
+        const { error: responseError } = await (supabase as any)
+          .from('prompt_responses')
+          .insert(responseInserts);
+
+        if (responseError) {
+          console.error('Error saving responses:', responseError);
+        }
+      }
+
       fetchSavedPrompts();
     } catch (e: any) {
       console.error('Error saving prompt', e);
