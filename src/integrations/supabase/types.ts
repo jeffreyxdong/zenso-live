@@ -47,7 +47,6 @@ export type Database = {
           created_at: string
           id: string
           status: string | null
-          title: string
           updated_at: string
           user_id: string
           visibility_score: number | null
@@ -57,7 +56,6 @@ export type Database = {
           created_at?: string
           id?: string
           status?: string | null
-          title: string
           updated_at?: string
           user_id: string
           visibility_score?: number | null
@@ -67,7 +65,6 @@ export type Database = {
           created_at?: string
           id?: string
           status?: string | null
-          title?: string
           updated_at?: string
           user_id?: string
           visibility_score?: number | null
