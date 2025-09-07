@@ -110,6 +110,7 @@ export type Database = {
       }
       prompts: {
         Row: {
+          brand_name: string | null
           content: string
           created_at: string
           id: string
@@ -119,6 +120,7 @@ export type Database = {
           visibility_score: number | null
         }
         Insert: {
+          brand_name?: string | null
           content: string
           created_at?: string
           id?: string
@@ -128,6 +130,7 @@ export type Database = {
           visibility_score?: number | null
         }
         Update: {
+          brand_name?: string | null
           content?: string
           created_at?: string
           id?: string
