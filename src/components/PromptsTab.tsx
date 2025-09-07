@@ -13,7 +13,6 @@ import { useToast } from "@/hooks/use-toast";
 
 interface SavedPrompt {
   id: string;
-  title: string;
   content: string;
   created_at: string;
   visibility_score?: number;
@@ -23,7 +22,6 @@ interface SavedPrompt {
 export const PromptsTab = () => {
   const [prompt, setPrompt] = useState("");
   const [brandName, setBrandName] = useState("");
-  const [title, setTitle] = useState("");
   const [savedPrompts, setSavedPrompts] = useState<SavedPrompt[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingSaved, setIsLoadingSaved] = useState(true);
@@ -106,7 +104,6 @@ export const PromptsTab = () => {
       // Clear form
       setPrompt("");
       setBrandName("");
-      setTitle("");
 
     } catch (error) {
       console.error('Error processing prompt:', error);
@@ -129,13 +126,10 @@ export const PromptsTab = () => {
         return;
       }
 
-      const finalTitle = (title || prompt.trim().split('\n')[0]).slice(0, 100);
-
       const { error } = await (supabase as any)
         .from('prompts')
         .insert({ 
           user_id: userData.user.id, 
-          title: finalTitle, 
           content: prompt.trim(),
           visibility_score: visibilityScore,
           status: 'active'
@@ -162,7 +156,7 @@ export const PromptsTab = () => {
 
       const { data, error } = await (supabase as any)
         .from('prompts')
-        .select('id, title, content, created_at, visibility_score, status')
+        .select('id, content, created_at, visibility_score, status')
         .eq('user_id', userData.user.id)
         .order('created_at', { ascending: false });
 
@@ -194,13 +188,10 @@ export const PromptsTab = () => {
         return;
       }
 
-      const finalTitle = (title || prompt.trim().split('\n')[0]).slice(0, 100);
-
       const { error } = await (supabase as any)
         .from('prompts')
         .insert({ 
           user_id: userData.user.id, 
-          title: finalTitle, 
           content: prompt.trim(),
           status: 'suggested'
         });
@@ -208,7 +199,6 @@ export const PromptsTab = () => {
       if (error) throw error;
 
       toast({ title: 'Saved', description: 'Prompt saved to your library' });
-      setTitle("");
       fetchSavedPrompts();
     } catch (e: any) {
       console.error('Error saving prompt', e);
@@ -246,13 +236,6 @@ export const PromptsTab = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-3">
-            <Label htmlFor="title" className="block">Prompt title</Label>
-            <Input
-              id="title"
-              placeholder="e.g., Blog intro about AI safety"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
             <Label htmlFor="brandName" className="block">Brand name (for visibility scoring)</Label>
             <Input
               id="brandName"
@@ -348,7 +331,6 @@ export const PromptsTab = () => {
                   <TableRow key={prompt.id}>
                     <TableCell>
                       <div className="max-w-md">
-                        <p className="font-medium truncate">{prompt.title}</p>
                         <p className="text-sm text-muted-foreground truncate">{prompt.content}</p>
                       </div>
                     </TableCell>
@@ -376,7 +358,6 @@ export const PromptsTab = () => {
                         variant="ghost"
                         onClick={() => {
                           setPrompt(prompt.content);
-                          setTitle(prompt.title);
                         }}
                       >
                         <Eye className="w-4 h-4 mr-1" />
