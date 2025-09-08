@@ -36,9 +36,8 @@ const MyProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [shopifyStoreName, setShopifyStoreName] = useState("");
-  const [shopifyAccessToken, setShopifyAccessToken] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [connectedShop, setConnectedShop] = useState<string | null>(null);
   const [showImportDialog, setShowImportDialog] = useState(false);
 
   useEffect(() => {
@@ -77,11 +76,35 @@ const MyProducts = () => {
     }
   };
 
+  const handleConnectShopify = () => {
+    const shopName = prompt("Enter your shop name (without .myshopify.com):");
+    if (shopName) {
+      // Open integration app for OAuth
+      const integrationHost = "https://your-integration-host.com"; // Replace with actual host
+      const authUrl = `${integrationHost}/auth/login?shop=${shopName}.myshopify.com`;
+      window.open(authUrl, '_blank', 'width=600,height=700');
+      
+      // Listen for connection success
+      const handleMessage = (event: MessageEvent) => {
+        if (event.data.type === 'shopify_connected' && event.data.shop) {
+          setConnectedShop(event.data.shop);
+          toast({
+            title: "Connected!",
+            description: `Successfully connected to ${event.data.shop}`,
+          });
+          window.removeEventListener('message', handleMessage);
+        }
+      };
+      
+      window.addEventListener('message', handleMessage);
+    }
+  };
+
   const handleImportFromShopify = async () => {
-    if (!shopifyStoreName.trim() || !shopifyAccessToken.trim()) {
+    if (!connectedShop) {
       toast({
-        title: "Missing Information",
-        description: "Please provide both store name and access token",
+        title: "Not Connected",
+        description: "Please connect to Shopify first",
         variant: "destructive"
       });
       return;
@@ -89,25 +112,33 @@ const MyProducts = () => {
 
     setImporting(true);
     try {
-      const { data, error } = await supabase.functions.invoke('import-shopify-products', {
-        body: {
-          shopifyStoreName: shopifyStoreName.trim(),
-          accessToken: shopifyAccessToken.trim()
-        }
+      // Call integration app to trigger import
+      const integrationHost = "https://your-integration-host.com"; // Replace with actual host
+      const response = await fetch(`${integrationHost}/api/import`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Internal-Key': 'your-shared-secret' // Replace with actual secret
+        },
+        body: JSON.stringify({
+          shop: connectedShop
+        })
       });
 
-      if (error) throw error;
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Import failed');
+      }
 
       toast({
-        title: "Import Started",
-        description: `Importing ${data.totalProducts} products from Shopify...`
+        title: "Import Complete",
+        description: `Successfully imported ${result.imported} products`
       });
 
       setShowImportDialog(false);
-      setShopifyStoreName("");
-      setShopifyAccessToken("");
       
-      // Refresh products list after a short delay
+      // Refresh products list
       setTimeout(() => {
         fetchProducts();
       }, 2000);
@@ -151,77 +182,74 @@ const MyProducts = () => {
             <p className="text-sm text-muted-foreground">Manage your product catalog</p>
           </div>
           <div className="flex gap-2">
-            <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Store className="w-4 h-4" />
-                  Import From Shopify
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <Store className="w-5 h-5" />
-                    Import Products from Shopify
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <label htmlFor="storeName" className="text-sm font-medium">
-                      Shopify Store Name
-                    </label>
-                    <Input
-                      id="storeName"
-                      placeholder="your-store-name"
-                      value={shopifyStoreName}
-                      onChange={(e) => setShopifyStoreName(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Enter your store name (without .myshopify.com)
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="accessToken" className="text-sm font-medium">
-                      Admin API Access Token
-                    </label>
-                    <Input
-                      id="accessToken"
-                      type="password"
-                      placeholder="shpat_..."
-                      value={shopifyAccessToken}
-                      onChange={(e) => setShopifyAccessToken(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Your Shopify Admin API access token
-                    </p>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowImportDialog(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={handleImportFromShopify}
-                      disabled={importing}
-                    >
-                      {importing ? (
-                        <>
-                          <Download className="w-4 h-4 mr-2 animate-spin" />
-                          Importing...
-                        </>
-                      ) : (
-                        <>
-                          <Download className="w-4 h-4 mr-2" />
-                          Import Products
-                        </>
-                      )}
-                    </Button>
-                  </div>
+            {!connectedShop ? (
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2"
+                onClick={handleConnectShopify}
+              >
+                <Store className="w-4 h-4" />
+                Connect Shopify
+              </Button>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  Connected to {connectedShop}
                 </div>
-              </DialogContent>
-            </Dialog>
+                <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="flex items-center gap-2">
+                      <Download className="w-4 h-4" />
+                      Import Products
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <Store className="w-5 h-5" />
+                        Import Products from Shopify
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="flex items-center gap-2 p-4 bg-muted rounded-lg">
+                        <CheckCircle className="w-5 h-5 text-green-500" />
+                        <div>
+                          <p className="font-medium">Connected to {connectedShop}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Ready to import all active and published products
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowImportDialog(false)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={handleImportFromShopify}
+                          disabled={importing}
+                        >
+                          {importing ? (
+                            <>
+                              <Download className="w-4 h-4 mr-2 animate-spin" />
+                              Importing...
+                            </>
+                          ) : (
+                            <>
+                              <Download className="w-4 h-4 mr-2" />
+                              Start Import
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </>
+            )}
             <Button className="flex items-center gap-2">
               <Plus className="w-4 h-4" />
               Add Product
@@ -236,14 +264,25 @@ const MyProducts = () => {
             <h3 className="text-lg font-medium text-foreground mb-2">No Products Yet</h3>
             <p className="text-muted-foreground mb-6">You don't have any products. Import from Shopify or add manually.</p>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowImportDialog(true)}
-                className="flex items-center gap-2"
-              >
-                <Store className="w-4 h-4" />
-                Import From Shopify
-              </Button>
+              {!connectedShop ? (
+                <Button
+                  variant="outline"
+                  onClick={handleConnectShopify}
+                  className="flex items-center gap-2"
+                >
+                  <Store className="w-4 h-4" />
+                  Connect Shopify
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={() => setShowImportDialog(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Import Products
+                </Button>
+              )}
               <Button className="flex items-center gap-2">
                 <Plus className="w-4 h-4" />
                 Add Product
@@ -264,77 +303,74 @@ const MyProducts = () => {
           <p className="text-sm text-muted-foreground">{products.length} products</p>
         </div>
         <div className="flex gap-2">
-          <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2">
-                <Store className="w-4 h-4" />
-                Import From Shopify
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Store className="w-5 h-5" />
-                  Import Products from Shopify
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <label htmlFor="storeName" className="text-sm font-medium">
-                    Shopify Store Name
-                  </label>
-                  <Input
-                    id="storeName"
-                    placeholder="your-store-name"
-                    value={shopifyStoreName}
-                    onChange={(e) => setShopifyStoreName(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Enter your store name (without .myshopify.com)
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="accessToken" className="text-sm font-medium">
-                    Admin API Access Token
-                  </label>
-                  <Input
-                    id="accessToken"
-                    type="password"
-                    placeholder="shpat_..."
-                    value={shopifyAccessToken}
-                    onChange={(e) => setShopifyAccessToken(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Your Shopify Admin API access token
-                  </p>
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowImportDialog(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleImportFromShopify}
-                    disabled={importing}
-                  >
-                    {importing ? (
-                      <>
-                        <Download className="w-4 h-4 mr-2 animate-spin" />
-                        Importing...
-                      </>
-                    ) : (
-                      <>
-                        <Download className="w-4 h-4 mr-2" />
-                        Import Products
-                      </>
-                    )}
-                  </Button>
-                </div>
+          {!connectedShop ? (
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={handleConnectShopify}
+            >
+              <Store className="w-4 h-4" />
+              Connect Shopify
+            </Button>
+          ) : (
+            <>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <CheckCircle className="w-4 h-4 text-green-500" />
+                Connected to {connectedShop}
               </div>
-            </DialogContent>
-          </Dialog>
+              <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Download className="w-4 h-4" />
+                    Import Products
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Store className="w-5 h-5" />
+                      Import Products from Shopify
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="flex items-center gap-2 p-4 bg-muted rounded-lg">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <div>
+                        <p className="font-medium">Connected to {connectedShop}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Ready to import all active and published products
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowImportDialog(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleImportFromShopify}
+                        disabled={importing}
+                      >
+                        {importing ? (
+                          <>
+                            <Download className="w-4 h-4 mr-2 animate-spin" />
+                            Importing...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-4 h-4 mr-2" />
+                            Start Import
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </>
+          )}
           <Button className="flex items-center gap-2">
             <Plus className="w-4 h-4" />
             Add Product
