@@ -141,6 +141,9 @@ verify_jwt = false
 [functions.run-daily-prompt-runner]
 verify_jwt = false
 
+[functions.shopify-ingest]
+verify_jwt = false
+
 [storage]
 enabled = true
 port = 54322
