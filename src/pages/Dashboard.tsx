@@ -7,6 +7,7 @@ import { Search, TrendingUp, Globe, BarChart3, Plus, Settings, Store, Target, Me
 import KeywordSearch from "@/components/KeywordSearch";
 import BrandMentions from "@/components/BrandMentions";
 import { PromptsTab } from "@/components/PromptsTab";
+import MyProducts from "@/components/MyProducts";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
@@ -272,11 +273,7 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="my-products">
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Store className="w-16 h-16 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">No Products Yet</h3>
-              <p className="text-muted-foreground">You don't have any products.</p>
-            </div>
+            <MyProducts />
           </TabsContent>
 
           <TabsContent value="prompts">

@@ -14,6 +14,110 @@ export type Database = {
   }
   public: {
     Tables: {
+      product_variants: {
+        Row: {
+          compare_at_price: number | null
+          created_at: string
+          id: string
+          inventory_management: string | null
+          inventory_policy: string | null
+          inventory_quantity: number | null
+          price: number
+          product_id: string
+          shopify_variant_id: string
+          sku: string | null
+          title: string
+          updated_at: string
+          weight: number | null
+          weight_unit: string | null
+        }
+        Insert: {
+          compare_at_price?: number | null
+          created_at?: string
+          id?: string
+          inventory_management?: string | null
+          inventory_policy?: string | null
+          inventory_quantity?: number | null
+          price: number
+          product_id: string
+          shopify_variant_id: string
+          sku?: string | null
+          title: string
+          updated_at?: string
+          weight?: number | null
+          weight_unit?: string | null
+        }
+        Update: {
+          compare_at_price?: number | null
+          created_at?: string
+          id?: string
+          inventory_management?: string | null
+          inventory_policy?: string | null
+          inventory_quantity?: number | null
+          price?: number
+          product_id?: string
+          shopify_variant_id?: string
+          sku?: string | null
+          title?: string
+          updated_at?: string
+          weight?: number | null
+          weight_unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variants_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          created_at: string
+          handle: string
+          id: string
+          images: Json | null
+          product_type: string | null
+          shopify_id: string
+          status: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+          vendor: string | null
+        }
+        Insert: {
+          created_at?: string
+          handle: string
+          id?: string
+          images?: Json | null
+          product_type?: string | null
+          shopify_id: string
+          status?: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+          vendor?: string | null
+        }
+        Update: {
+          created_at?: string
+          handle?: string
+          id?: string
+          images?: Json | null
+          product_type?: string | null
+          shopify_id?: string
+          status?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          vendor?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           company_name: string
