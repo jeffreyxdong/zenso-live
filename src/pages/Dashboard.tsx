@@ -104,9 +104,9 @@ const Dashboard = () => {
               <Search className="w-4 h-4" />
               Keyword Search
             </TabsTrigger>
-            <TabsTrigger value="brand-mentions" className="flex items-center gap-2">
-              <Target className="w-4 h-4" />
-              Brand Mentions
+            <TabsTrigger value="my-products" className="flex items-center gap-2">
+              <Store className="w-4 h-4" />
+              My Products
             </TabsTrigger>
             <TabsTrigger value="prompts" className="flex items-center gap-2">
               <MessageCircle className="w-4 h-4" />
@@ -271,8 +271,12 @@ const Dashboard = () => {
             <KeywordSearch />
           </TabsContent>
 
-          <TabsContent value="brand-mentions">
-            <BrandMentions />
+          <TabsContent value="my-products">
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <Store className="w-16 h-16 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No Products Yet</h3>
+              <p className="text-muted-foreground">You don't have any products.</p>
+            </div>
           </TabsContent>
 
           <TabsContent value="prompts">
