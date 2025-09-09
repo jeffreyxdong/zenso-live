@@ -3,6 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Store, ShoppingCart, Package, Download, Plus, Search, AlertCircle, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +42,18 @@ const MyProducts = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [connectedShop, setConnectedShop] = useState<string | null>(null);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showAddProductDialog, setShowAddProductDialog] = useState(false);
+  const [addingProduct, setAddingProduct] = useState(false);
+  const [newProduct, setNewProduct] = useState({
+    title: "",
+    handle: "",
+    product_type: "",
+    vendor: "",
+    tags: "",
+    price: "",
+    sku: "",
+    inventory_quantity: ""
+  });
 
   useEffect(() => {
     fetchProducts();
@@ -146,6 +161,100 @@ const MyProducts = () => {
     }
   };
 
+  const handleAddProduct = async () => {
+    if (!newProduct.title.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Product title is required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setAddingProduct(true);
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
+      // Generate handle from title if not provided
+      const handle = newProduct.handle.trim() || 
+        newProduct.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+      // Create product
+      const productData = {
+        user_id: userData.user.id,
+        shopify_id: `manual-${Date.now()}`, // Use timestamp for manual products
+        title: newProduct.title.trim(),
+        handle: handle,
+        status: 'active',
+        product_type: newProduct.product_type.trim() || null,
+        vendor: newProduct.vendor.trim() || null,
+        tags: newProduct.tags.trim() ? newProduct.tags.split(',').map(tag => tag.trim()) : [],
+        images: []
+      };
+
+      const { data: product, error: productError } = await supabase
+        .from('products')
+        .insert(productData)
+        .select()
+        .single();
+
+      if (productError) throw productError;
+
+      // Create variant if price is provided
+      if (newProduct.price.trim()) {
+        const variantData = {
+          product_id: product.id,
+          shopify_variant_id: `manual-variant-${Date.now()}`,
+          title: 'Default',
+          sku: newProduct.sku.trim() || null,
+          price: parseFloat(newProduct.price) || 0,
+          inventory_quantity: parseInt(newProduct.inventory_quantity) || 0,
+          weight_unit: 'kg'
+        };
+
+        const { error: variantError } = await supabase
+          .from('product_variants')
+          .insert(variantData);
+
+        if (variantError) {
+          console.error('Error creating variant:', variantError);
+        }
+      }
+
+      toast({
+        title: "Product Added",
+        description: `Successfully added "${newProduct.title}"`
+      });
+
+      // Reset form and close dialog
+      setNewProduct({
+        title: "",
+        handle: "",
+        product_type: "",
+        vendor: "",
+        tags: "",
+        price: "",
+        sku: "",
+        inventory_quantity: ""
+      });
+      setShowAddProductDialog(false);
+
+      // Refresh products
+      fetchProducts();
+
+    } catch (error: any) {
+      console.error('Add product error:', error);
+      toast({
+        title: "Failed to Add Product",
+        description: error.message || "An error occurred while adding the product",
+        variant: "destructive"
+      });
+    } finally {
+      setAddingProduct(false);
+    }
+  };
+
   const filteredProducts = products.filter(product =>
     product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     product.vendor?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -241,7 +350,7 @@ const MyProducts = () => {
                 </Dialog>
               </>
             )}
-            <Button className="flex items-center gap-2">
+            <Button className="flex items-center gap-2" onClick={() => setShowAddProductDialog(true)}>
               <Plus className="w-4 h-4" />
               Add Product
             </Button>
@@ -274,7 +383,7 @@ const MyProducts = () => {
                   Import Products
                 </Button>
               )}
-              <Button className="flex items-center gap-2">
+              <Button className="flex items-center gap-2" onClick={() => setShowAddProductDialog(true)}>
                 <Plus className="w-4 h-4" />
                 Add Product
               </Button>
@@ -362,7 +471,7 @@ const MyProducts = () => {
               </Dialog>
             </>
           )}
-          <Button className="flex items-center gap-2">
+          <Button className="flex items-center gap-2" onClick={() => setShowAddProductDialog(true)}>
             <Plus className="w-4 h-4" />
             Add Product
           </Button>
@@ -442,6 +551,122 @@ const MyProducts = () => {
           <p className="text-muted-foreground">No products found matching "{searchQuery}"</p>
         </div>
       )}
+
+      {/* Add Product Dialog */}
+      <Dialog open={showAddProductDialog} onOpenChange={setShowAddProductDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5" />
+              Add New Product
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="title">Product Title *</Label>
+                <Input
+                  id="title"
+                  placeholder="Enter product title"
+                  value={newProduct.title}
+                  onChange={(e) => setNewProduct({ ...newProduct, title: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="handle">Handle (URL slug)</Label>
+                <Input
+                  id="handle"
+                  placeholder="product-handle"
+                  value={newProduct.handle}
+                  onChange={(e) => setNewProduct({ ...newProduct, handle: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="product_type">Product Type</Label>
+                <Input
+                  id="product_type"
+                  placeholder="e.g., Clothing, Electronics"
+                  value={newProduct.product_type}
+                  onChange={(e) => setNewProduct({ ...newProduct, product_type: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="vendor">Vendor</Label>
+                <Input
+                  id="vendor"
+                  placeholder="Brand or manufacturer"
+                  value={newProduct.vendor}
+                  onChange={(e) => setNewProduct({ ...newProduct, vendor: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="price">Price</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={newProduct.price}
+                  onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sku">SKU</Label>
+                <Input
+                  id="sku"
+                  placeholder="Product SKU"
+                  value={newProduct.sku}
+                  onChange={(e) => setNewProduct({ ...newProduct, sku: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="inventory_quantity">Inventory Quantity</Label>
+                <Input
+                  id="inventory_quantity"
+                  type="number"
+                  placeholder="0"
+                  value={newProduct.inventory_quantity}
+                  onChange={(e) => setNewProduct({ ...newProduct, inventory_quantity: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tags">Tags (comma separated)</Label>
+              <Input
+                id="tags"
+                placeholder="tag1, tag2, tag3"
+                value={newProduct.tags}
+                onChange={(e) => setNewProduct({ ...newProduct, tags: e.target.value })}
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowAddProductDialog(false)}
+                disabled={addingProduct}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleAddProduct}
+                disabled={addingProduct}
+              >
+                {addingProduct ? (
+                  <>
+                    <Package className="w-4 h-4 mr-2 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Product
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
