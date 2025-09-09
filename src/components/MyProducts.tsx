@@ -36,6 +36,8 @@ interface ProductVariant {
 }
 
 const MyProducts = () => {
+  console.log("MyProducts component loaded!");
+  
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -371,7 +373,13 @@ const MyProducts = () => {
                 </Dialog>
               </>
             )}
-            <Button className="flex items-center gap-2" onClick={() => setShowAddProductDialog(true)}>
+            <Button 
+              className="flex items-center gap-2" 
+              onClick={() => {
+                console.log("Add Product button clicked!");
+                setShowAddProductDialog(true);
+              }}
+            >
               <Plus className="w-4 h-4" />
               Add Product
             </Button>
@@ -404,7 +412,13 @@ const MyProducts = () => {
                   Import Products
                 </Button>
               )}
-              <Button className="flex items-center gap-2" onClick={() => setShowAddProductDialog(true)}>
+              <Button 
+                className="flex items-center gap-2" 
+                onClick={() => {
+                  console.log("Add Product button clicked (empty state)!");
+                  setShowAddProductDialog(true);
+                }}
+              >
                 <Plus className="w-4 h-4" />
                 Add Product
               </Button>
@@ -492,7 +506,13 @@ const MyProducts = () => {
               </Dialog>
             </>
           )}
-          <Button className="flex items-center gap-2" onClick={() => setShowAddProductDialog(true)}>
+          <Button 
+            className="flex items-center gap-2" 
+            onClick={() => {
+              console.log("Add Product button clicked (with products)!");
+              setShowAddProductDialog(true);
+            }}
+          >
             <Plus className="w-4 h-4" />
             Add Product
           </Button>
