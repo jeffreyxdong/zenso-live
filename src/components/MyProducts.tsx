@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Store, ShoppingCart, Package, Download, Plus, Search, AlertCircle, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 interface Product {
   id: string;
@@ -162,7 +162,10 @@ const MyProducts = () => {
   };
 
   const handleAddProduct = async () => {
+    console.log("Starting handleAddProduct with data:", newProduct);
+    
     if (!newProduct.title.trim()) {
+      console.log("Validation failed: title is empty");
       toast({
         title: "Validation Error",
         description: "Product title is required",
@@ -173,8 +176,14 @@ const MyProducts = () => {
 
     setAddingProduct(true);
     try {
+      console.log("Getting user data...");
       const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
+      if (userError) {
+        console.error("User error:", userError);
+        throw userError;
+      }
+      
+      console.log("User data:", userData.user?.id);
 
       // Generate handle from title if not provided
       const handle = newProduct.handle.trim() || 
@@ -193,13 +202,20 @@ const MyProducts = () => {
         images: []
       };
 
+      console.log("Inserting product data:", productData);
+
       const { data: product, error: productError } = await supabase
         .from('products')
         .insert(productData)
         .select()
         .single();
 
-      if (productError) throw productError;
+      if (productError) {
+        console.error("Product insert error:", productError);
+        throw productError;
+      }
+      
+      console.log("Product created successfully:", product);
 
       // Create variant if price is provided
       if (newProduct.price.trim()) {
@@ -213,12 +229,16 @@ const MyProducts = () => {
           weight_unit: 'kg'
         };
 
+        console.log("Inserting variant data:", variantData);
+
         const { error: variantError } = await supabase
           .from('product_variants')
           .insert(variantData);
 
         if (variantError) {
           console.error('Error creating variant:', variantError);
+        } else {
+          console.log("Variant created successfully");
         }
       }
 
@@ -241,6 +261,7 @@ const MyProducts = () => {
       setShowAddProductDialog(false);
 
       // Refresh products
+      console.log("Refreshing products list...");
       fetchProducts();
 
     } catch (error: any) {
