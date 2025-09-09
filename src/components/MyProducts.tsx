@@ -77,27 +77,23 @@ const MyProducts = () => {
   };
 
   const handleConnectShopify = () => {
-    const shopName = prompt("Enter your shop name (without .myshopify.com):");
-    if (shopName) {
-      // Open integration app for OAuth
-      const integrationHost = "https://your-integration-host.com"; // Replace with actual host
-      const authUrl = `${integrationHost}/auth/login?shop=${shopName}.myshopify.com`;
-      window.open(authUrl, '_blank', 'width=600,height=700');
-      
-      // Listen for connection success
-      const handleMessage = (event: MessageEvent) => {
-        if (event.data.type === 'shopify_connected' && event.data.shop) {
-          setConnectedShop(event.data.shop);
-          toast({
-            title: "Connected!",
-            description: `Successfully connected to ${event.data.shop}`,
-          });
-          window.removeEventListener('message', handleMessage);
-        }
-      };
-      
-      window.addEventListener('message', handleMessage);
-    }
+    // Open Shopify app OAuth flow directly
+    const authUrl = "https://geo-integration.myshopify.com/admin/oauth/redirect_from_cli?client_id=2c4037e6fc66b0b16b720a936e142898";
+    window.open(authUrl, '_blank', 'width=600,height=700');
+    
+    // Listen for connection success
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data.type === 'shopify_connected' && event.data.shop) {
+        setConnectedShop(event.data.shop);
+        toast({
+          title: "Connected!",
+          description: `Successfully connected to ${event.data.shop}`,
+        });
+        window.removeEventListener('message', handleMessage);
+      }
+    };
+    
+    window.addEventListener('message', handleMessage);
   };
 
   const handleImportFromShopify = async () => {
