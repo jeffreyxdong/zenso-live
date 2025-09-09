@@ -28,8 +28,9 @@ interface ShopifyIngestItem {
 }
 
 interface IngestPayload {
-  shop: string;
-  items: ShopifyIngestItem[];
+  shop?: string;
+  items?: ShopifyIngestItem[];
+  products?: any[];
 }
 
 Deno.serve(async (req) => {
@@ -39,74 +40,80 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Validate API key
-    const apiKey = req.headers.get('X-Api-Key');
-    const expectedApiKey = Deno.env.get('SAAS_API_KEY');
-    
-    if (!apiKey || !expectedApiKey || apiKey !== expectedApiKey) {
+    // Validate and extract SaaS user from Supabase JWT
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
       return new Response(
-        JSON.stringify({ error: 'Invalid API key' }),
+        JSON.stringify({ error: 'Missing Authorization header' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Initialize Supabase client
-    const supabase = createClient(
+    // Create auth client to verify JWT and get user
+    const supabaseAuth = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_PUBLISHABLE_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid or missing user session' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Admin client for DB writes
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const payload: IngestPayload = await req.json();
+    const body: IngestPayload = await req.json();
     
-    if (!payload.shop || !Array.isArray(payload.items)) {
+    const items: any[] = Array.isArray(body.items)
+      ? (body.items as any[])
+      : Array.isArray(body.products)
+        ? (body.products as any[])
+        : [];
+
+    if (!items || items.length === 0) {
       return new Response(
-        JSON.stringify({ error: 'Invalid payload format' }),
+        JSON.stringify({ error: 'No products provided' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Processing ${payload.items.length} products for shop: ${payload.shop}`);
+    console.log(`Processing ${items.length} products for user: ${user.id}`);
 
     let importedCount = 0;
     let skippedCount = 0;
 
-    // Find user by shop (you'll need to store shop mapping somewhere)
-    // For now, using a placeholder - you'll need to implement shop-to-user mapping
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('user_id')
-      .eq('company_website', payload.shop)
-      .single();
-
-    if (!profileData) {
-      return new Response(
-        JSON.stringify({ error: 'Shop not found or not connected' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    const userId = user.id;
 
     // Process each product
-    for (const item of payload.items) {
+    for (const item of items) {
       try {
         // Normalize product data
         const productData = {
-          user_id: profileData.user_id,
-          shopify_id: item.productId,
+          user_id: userId,
+          shopify_id: String((item as any).productId ?? (item as any).id),
           title: item.title,
-          handle: item.handle,
+          handle: item.handle || (item.title ? item.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : `product-${(item as any).productId ?? (item as any).id}`),
           status: 'active',
-          product_type: item.productType || null,
+          product_type: (item as any).productType || (item as any).product_type || null,
           vendor: item.vendor || null,
-          tags: [], // Add tags processing if needed
-          images: item.images?.map(img => ({
-            id: img.id,
-            src: img.url,
-            alt: img.alt || null,
-          })) || [],
+          tags: Array.isArray((item as any).tags) ? (item as any).tags : [],
+          images: (Array.isArray((item as any).images) ? (item as any).images : []).map((img: any) => ({
+            id: String(img.id ?? ''),
+            src: img.src ?? img.url,
+            alt: img.alt ?? null,
+          })),
         };
 
         // Upsert product
-        const { data: product, error: productError } = await supabase
+        const { data: product, error: productError } = await supabaseAdmin
           .from('products')
           .upsert(productData, {
             onConflict: 'user_id,shopify_id',
@@ -122,27 +129,28 @@ Deno.serve(async (req) => {
         }
 
         // Process variants
-        if (item.variants && item.variants.length > 0) {
+        const itemVariants = (item as any).variants;
+        if (Array.isArray(itemVariants) && itemVariants.length > 0) {
           // Delete existing variants for this product
-          await supabase
+          await supabaseAdmin
             .from('product_variants')
             .delete()
             .eq('product_id', product.id);
 
           // Insert new variants
-          const variants = item.variants.map(variant => ({
+          const variants = itemVariants.map((variant: any) => ({
             product_id: product.id,
-            shopify_variant_id: variant.id,
-            title: variant.title,
-            sku: variant.sku || null,
-            price: parseFloat(variant.price),
+            shopify_variant_id: String(variant.id),
+            title: variant.title ?? 'Default',
+            sku: variant.sku ?? null,
+            price: parseFloat(String(variant.price ?? 0)),
             compare_at_price: null,
-            inventory_quantity: variant.qty || 0,
-            weight: null,
-            weight_unit: 'kg',
+            inventory_quantity: Number(variant.inventory_quantity ?? variant.qty ?? 0),
+            weight: variant.weight ? Number(variant.weight) : null,
+            weight_unit: (variant.weight_unit ?? 'kg') as string,
           }));
 
-          const { error: variantError } = await supabase
+          const { error: variantError } = await supabaseAdmin
             .from('product_variants')
             .insert(variants);
 
@@ -165,7 +173,7 @@ Deno.serve(async (req) => {
         ok: true,
         imported: importedCount,
         skipped: skippedCount,
-        total: payload.items.length
+        total: items.length
       }),
       {
         status: 200,

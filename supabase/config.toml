@@ -142,7 +142,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.shopify-ingest]
-verify_jwt = false
+verify_jwt = true
 
 [storage]
 enabled = true
