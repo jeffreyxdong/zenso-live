@@ -48,7 +48,12 @@ Deno.serve(async (req) => {
     const SHOPIFY_API_KEY = Deno.env.get('SHOPIFY_API_KEY');
     const SHOPIFY_API_SECRET = Deno.env.get('SHOPIFY_API_SECRET');
 
+    console.log('Checking Shopify credentials...');
+    console.log('API Key available:', !!SHOPIFY_API_KEY);
+    console.log('API Secret available:', !!SHOPIFY_API_SECRET);
+
     if (!SHOPIFY_API_KEY || !SHOPIFY_API_SECRET) {
+      console.error('Missing Shopify credentials - API Key:', !!SHOPIFY_API_KEY, 'API Secret:', !!SHOPIFY_API_SECRET);
       return new Response(
         JSON.stringify({ error: 'Shopify credentials not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
