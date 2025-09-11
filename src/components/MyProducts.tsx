@@ -171,96 +171,41 @@ const MyProducts = () => {
   };
 
   const handleImportProducts = async () => {
-    const shopName = prompt('Enter your Shopify store name (e.g., "mystore" for mystore.myshopify.com):');
-    if (!shopName) return;
-
     setImporting(true);
+    
     try {
-      // Step 1: Get authorization URL
-      const { data: authData, error: authError } = await supabase.functions.invoke('shopify-oauth', {
-        body: {
-          action: 'authorize',
-          shop: shopName,
-        },
-      });
-
-      if (authError) throw authError;
-
-      // Step 2: Open OAuth popup
-      const popup = window.open(
-        authData.authUrl,
-        'shopify-oauth',
-        'width=600,height=700,scrollbars=yes,resizable=yes'
-      );
-
-      if (!popup) {
-        throw new Error('Popup blocked. Please allow popups for this site.');
+      // Get the current user session for the callback
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Please log in to import products');
       }
 
-      // Step 3: Listen for popup completion
-      const checkClosed = setInterval(async () => {
-        if (popup.closed) {
-          clearInterval(checkClosed);
-          
-          // Check if we have an access token in localStorage (set by callback)
-          const shopifyData = localStorage.getItem('shopify-oauth-result');
-          if (shopifyData) {
-            try {
-              const { accessToken, shop } = JSON.parse(shopifyData);
-              localStorage.removeItem('shopify-oauth-result');
+      // Get Shopify configuration from our edge function
+      const { data: config, error: configError } = await supabase.functions.invoke('get-shopify-config');
+      
+      if (configError) {
+        throw new Error('Shopify integration not configured. Please contact support.');
+      }
 
-              // Step 4: Fetch and import products
-              const { data: importResult, error: importError } = await supabase.functions.invoke('shopify-oauth', {
-                body: {
-                  action: 'fetch-products',
-                  shop,
-                  accessToken,
-                },
-              });
+      // Store user session for callback handling
+      sessionStorage.setItem('shopify-import-session', session.access_token);
 
-              if (importError) throw importError;
+      // Generate OAuth parameters
+      const scopes = 'read_products,read_inventory';
+      const state = Math.random().toString(36).substring(7);
+      
+      // Store state for verification
+      sessionStorage.setItem('shopify-oauth-state', state);
 
-              toast({
-                title: "✅ Products imported successfully",
-                description: `Imported ${importResult.imported} products, skipped ${importResult.skipped} duplicates`,
-              });
+      // Redirect to Shopify's app installation URL - this will let Shopify handle shop selection
+      const authUrl = `https://admin.shopify.com/oauth/authorize?` +
+        `client_id=${config.apiKey}&` +
+        `scope=${scopes}&` +
+        `redirect_uri=${encodeURIComponent(config.redirectUri)}&` +
+        `state=${state}`;
 
-              // Refresh products list
-              await fetchProducts();
-              
-            } catch (error: any) {
-              console.error('Import error:', error);
-              toast({
-                title: "Import Error",
-                description: error.message || "Failed to import products",
-                variant: "destructive",
-              });
-            }
-          } else {
-            toast({
-              title: "Import Cancelled",
-              description: "Shopify import was cancelled or failed",
-              variant: "destructive",
-            });
-          }
-          
-          setImporting(false);
-        }
-      }, 1000);
-
-      // Cleanup if popup is not closed after 5 minutes
-      setTimeout(() => {
-        if (!popup.closed) {
-          popup.close();
-          clearInterval(checkClosed);
-          setImporting(false);
-          toast({
-            title: "Import Timeout",
-            description: "Import process timed out",
-            variant: "destructive",
-          });
-        }
-      }, 300000);
+      // Redirect the whole window to Shopify OAuth
+      window.location.href = authUrl;
 
     } catch (error: any) {
       console.error('OAuth error:', error);

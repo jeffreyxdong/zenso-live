@@ -6,11 +6,10 @@ const corsHeaders = {
 };
 
 interface ShopifyOAuthParams {
-  shop: string;
+  shop?: string;
   code?: string;
   state?: string;
-  action?: 'authorize' | 'callback' | 'fetch-products';
-  accessToken?: string;
+  action?: 'exchange-and-import';
 }
 
 Deno.serve(async (req) => {
@@ -44,7 +43,7 @@ Deno.serve(async (req) => {
     }
 
     const body: ShopifyOAuthParams = await req.json();
-    const { shop, code, state, action, accessToken } = body;
+    const { shop, code, state, action } = body;
 
     const SHOPIFY_API_KEY = Deno.env.get('SHOPIFY_API_KEY');
     const SHOPIFY_API_SECRET = Deno.env.get('SHOPIFY_API_SECRET');
@@ -56,26 +55,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (action === 'authorize') {
-      // Generate authorization URL
-      const scopes = 'read_products,read_inventory';
-      const redirectUri = `${Deno.env.get('SUPABASE_URL')}/functions/v1/shopify-callback`;
-      const state = Math.random().toString(36).substring(7);
+    if (action === 'exchange-and-import' && code && shop) {
+      console.log(`Processing OAuth callback for shop: ${shop}`);
       
-      const authUrl = `https://${shop}.myshopify.com/admin/oauth/authorize?` +
-        `client_id=${SHOPIFY_API_KEY}&` +
-        `scope=${scopes}&` +
-        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-        `state=${state}`;
-
-      return new Response(
-        JSON.stringify({ authUrl, state }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (action === 'callback' && code) {
-      // Exchange code for access token
+      // Step 1: Exchange code for access token
       const tokenUrl = `https://${shop}.myshopify.com/admin/oauth/access_token`;
       
       const tokenResponse = await fetch(tokenUrl, {
@@ -96,30 +79,26 @@ Deno.serve(async (req) => {
         throw new Error(`Token exchange failed: ${JSON.stringify(tokenData)}`);
       }
 
-      return new Response(
-        JSON.stringify({ accessToken: tokenData.access_token, shop }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+      console.log(`Successfully obtained access token for shop: ${shop}`);
 
-    if (action === 'fetch-products' && accessToken && shop) {
-      // Fetch products from Shopify
+      // Step 2: Fetch products from Shopify
       const productsUrl = `https://${shop}.myshopify.com/admin/api/2023-10/products.json?limit=250`;
       
       const productsResponse = await fetch(productsUrl, {
         headers: {
-          'X-Shopify-Access-Token': accessToken,
+          'X-Shopify-Access-Token': tokenData.access_token,
           'Content-Type': 'application/json',
         },
       });
 
       if (!productsResponse.ok) {
-        throw new Error(`Failed to fetch products: ${productsResponse.status}`);
+        throw new Error(`Failed to fetch products: ${productsResponse.status} ${await productsResponse.text()}`);
       }
 
       const productsData = await productsResponse.json();
+      console.log(`Fetched ${productsData.products?.length || 0} products from Shopify`);
       
-      // Transform products for the shopify-ingest function
+      // Step 3: Transform products for the shopify-ingest function
       const transformedProducts = productsData.products.map((product: any) => ({
         productId: product.id.toString(),
         title: product.title,
@@ -143,7 +122,7 @@ Deno.serve(async (req) => {
         })),
       }));
 
-      // Call the existing shopify-ingest function
+      // Step 4: Call the existing shopify-ingest function
       const supabaseAdmin = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -166,6 +145,8 @@ Deno.serve(async (req) => {
         console.error('Ingest error:', ingestError);
         throw new Error(`Failed to ingest products: ${ingestError.message}`);
       }
+
+      console.log(`Successfully imported ${ingestResult.imported} products, skipped ${ingestResult.skipped}`);
 
       return new Response(
         JSON.stringify({
