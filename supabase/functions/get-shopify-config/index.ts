@@ -12,8 +12,11 @@ Deno.serve(async (req) => {
   }
 
   try {
+    console.log('Starting Shopify config request...');
+    
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.log('Missing Authorization header');
       return new Response(
         JSON.stringify({ error: 'Missing Authorization header' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -29,6 +32,7 @@ Deno.serve(async (req) => {
 
     const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
     if (authError || !user) {
+      console.log('Auth error:', authError);
       return new Response(
         JSON.stringify({ error: 'Invalid or missing user session' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -36,18 +40,23 @@ Deno.serve(async (req) => {
     }
 
     const SHOPIFY_API_KEY = Deno.env.get('SHOPIFY_API_KEY');
+    console.log('Shopify API Key exists:', !!SHOPIFY_API_KEY);
     
     if (!SHOPIFY_API_KEY) {
+      console.log('Shopify API key not found in environment');
       return new Response(
         JSON.stringify({ error: 'Shopify API key not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    const redirectUri = `${new URL(req.url).origin}/auth/shopify/callback`;
+    console.log('Returning config with redirect URI:', redirectUri);
+
     return new Response(
       JSON.stringify({ 
         apiKey: SHOPIFY_API_KEY,
-        redirectUri: `${req.url.replace('/functions/v1/get-shopify-config', '')}/auth/shopify/callback`
+        redirectUri: redirectUri
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
