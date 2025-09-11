@@ -9,7 +9,7 @@ interface ShopifyOAuthParams {
   shop?: string;
   code?: string;
   state?: string;
-  action?: 'exchange-and-import';
+  action?: 'exchange-and-import' | 'get-api-key';
 }
 
 Deno.serve(async (req) => {
@@ -52,6 +52,14 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'Shopify credentials not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (action === 'get-api-key') {
+      // Simple endpoint to get the API key for the frontend
+      return new Response(
+        JSON.stringify({ apiKey: SHOPIFY_API_KEY }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 

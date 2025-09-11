@@ -180,12 +180,7 @@ const MyProducts = () => {
         throw new Error('Please log in to import products');
       }
 
-      // Get Shopify configuration from our edge function
-      const { data: config, error: configError } = await supabase.functions.invoke('get-shopify-config');
-      
-      if (configError) {
-        throw new Error('Shopify integration not configured. Please contact support.');
-      }
+      console.log('Starting Shopify import process...');
 
       // Store user session for callback handling
       sessionStorage.setItem('shopify-import-session', session.access_token);
@@ -197,14 +192,36 @@ const MyProducts = () => {
       // Store state for verification
       sessionStorage.setItem('shopify-oauth-state', state);
 
-      // Redirect to Shopify's app installation URL - this will let Shopify handle shop selection
-      const authUrl = `https://admin.shopify.com/oauth/authorize?` +
-        `client_id=${config.apiKey}&` +
+      // Use direct Shopify OAuth URL - let users enter their shop domain
+      const shopDomain = prompt('Enter your Shopify shop domain (e.g., "mystore" for mystore.myshopify.com):');
+      if (!shopDomain) {
+        setImporting(false);
+        return;
+      }
+
+      // Get API key from environment via a simple approach
+      const { data: keyData, error: keyError } = await supabase.functions.invoke('shopify-oauth', {
+        body: { action: 'get-api-key' },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (keyError || !keyData?.apiKey) {
+        throw new Error('Shopify API key not configured. Please ensure SHOPIFY_API_KEY secret is set.');
+      }
+
+      const redirectUri = `${window.location.origin}/auth/shopify/callback`;
+      console.log('Using redirect URI:', redirectUri);
+
+      // Redirect to Shopify OAuth
+      const authUrl = `https://${shopDomain}.myshopify.com/admin/oauth/authorize?` +
+        `client_id=${keyData.apiKey}&` +
         `scope=${scopes}&` +
-        `redirect_uri=${encodeURIComponent(config.redirectUri)}&` +
+        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
         `state=${state}`;
 
-      // Redirect the whole window to Shopify OAuth
+      console.log('Redirecting to:', authUrl);
       window.location.href = authUrl;
 
     } catch (error: any) {
