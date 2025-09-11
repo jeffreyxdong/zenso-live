@@ -62,6 +62,7 @@ const MyProducts = () => {
   const [showAddProductDialog, setShowAddProductDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [importing, setImporting] = useState(false);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -169,6 +170,109 @@ const MyProducts = () => {
     }
   };
 
+  const handleImportProducts = async () => {
+    const shopName = prompt('Enter your Shopify store name (e.g., "mystore" for mystore.myshopify.com):');
+    if (!shopName) return;
+
+    setImporting(true);
+    try {
+      // Step 1: Get authorization URL
+      const { data: authData, error: authError } = await supabase.functions.invoke('shopify-oauth', {
+        body: {
+          action: 'authorize',
+          shop: shopName,
+        },
+      });
+
+      if (authError) throw authError;
+
+      // Step 2: Open OAuth popup
+      const popup = window.open(
+        authData.authUrl,
+        'shopify-oauth',
+        'width=600,height=700,scrollbars=yes,resizable=yes'
+      );
+
+      if (!popup) {
+        throw new Error('Popup blocked. Please allow popups for this site.');
+      }
+
+      // Step 3: Listen for popup completion
+      const checkClosed = setInterval(async () => {
+        if (popup.closed) {
+          clearInterval(checkClosed);
+          
+          // Check if we have an access token in localStorage (set by callback)
+          const shopifyData = localStorage.getItem('shopify-oauth-result');
+          if (shopifyData) {
+            try {
+              const { accessToken, shop } = JSON.parse(shopifyData);
+              localStorage.removeItem('shopify-oauth-result');
+
+              // Step 4: Fetch and import products
+              const { data: importResult, error: importError } = await supabase.functions.invoke('shopify-oauth', {
+                body: {
+                  action: 'fetch-products',
+                  shop,
+                  accessToken,
+                },
+              });
+
+              if (importError) throw importError;
+
+              toast({
+                title: "✅ Products imported successfully",
+                description: `Imported ${importResult.imported} products, skipped ${importResult.skipped} duplicates`,
+              });
+
+              // Refresh products list
+              await fetchProducts();
+              
+            } catch (error: any) {
+              console.error('Import error:', error);
+              toast({
+                title: "Import Error",
+                description: error.message || "Failed to import products",
+                variant: "destructive",
+              });
+            }
+          } else {
+            toast({
+              title: "Import Cancelled",
+              description: "Shopify import was cancelled or failed",
+              variant: "destructive",
+            });
+          }
+          
+          setImporting(false);
+        }
+      }, 1000);
+
+      // Cleanup if popup is not closed after 5 minutes
+      setTimeout(() => {
+        if (!popup.closed) {
+          popup.close();
+          clearInterval(checkClosed);
+          setImporting(false);
+          toast({
+            title: "Import Timeout",
+            description: "Import process timed out",
+            variant: "destructive",
+          });
+        }
+      }, 300000);
+
+    } catch (error: any) {
+      console.error('OAuth error:', error);
+      toast({
+        title: "Import Error",
+        description: error.message || "Failed to start Shopify import",
+        variant: "destructive",
+      });
+      setImporting(false);
+    }
+  };
+
   const getInventoryDisplay = (product: Product) => {
     if (!product.variants || product.variants.length === 0) {
       return "Inventory not tracked";
@@ -246,6 +350,15 @@ const MyProducts = () => {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            className="flex items-center gap-2"
+            onClick={handleImportProducts}
+            disabled={loading || importing}
+          >
+            <Store className="w-4 h-4" />
+            {importing ? "Importing..." : "Import Products"}
+          </Button>
           <Button
             className="flex items-center gap-2"
             onClick={() => {

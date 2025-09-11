@@ -1,0 +1,199 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface ShopifyOAuthParams {
+  shop: string;
+  code?: string;
+  state?: string;
+  action?: 'authorize' | 'callback' | 'fetch-products';
+  accessToken?: string;
+}
+
+Deno.serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Missing Authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create auth client to verify JWT and get user
+    const supabaseAuth = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_PUBLISHABLE_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid or missing user session' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const body: ShopifyOAuthParams = await req.json();
+    const { shop, code, state, action, accessToken } = body;
+
+    const SHOPIFY_API_KEY = Deno.env.get('SHOPIFY_API_KEY');
+    const SHOPIFY_API_SECRET = Deno.env.get('SHOPIFY_API_SECRET');
+
+    if (!SHOPIFY_API_KEY || !SHOPIFY_API_SECRET) {
+      return new Response(
+        JSON.stringify({ error: 'Shopify credentials not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (action === 'authorize') {
+      // Generate authorization URL
+      const scopes = 'read_products,read_inventory';
+      const redirectUri = `${Deno.env.get('SUPABASE_URL')}/functions/v1/shopify-callback`;
+      const state = Math.random().toString(36).substring(7);
+      
+      const authUrl = `https://${shop}.myshopify.com/admin/oauth/authorize?` +
+        `client_id=${SHOPIFY_API_KEY}&` +
+        `scope=${scopes}&` +
+        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+        `state=${state}`;
+
+      return new Response(
+        JSON.stringify({ authUrl, state }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (action === 'callback' && code) {
+      // Exchange code for access token
+      const tokenUrl = `https://${shop}.myshopify.com/admin/oauth/access_token`;
+      
+      const tokenResponse = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          client_id: SHOPIFY_API_KEY,
+          client_secret: SHOPIFY_API_SECRET,
+          code: code,
+        }),
+      });
+
+      const tokenData = await tokenResponse.json();
+      
+      if (!tokenResponse.ok) {
+        throw new Error(`Token exchange failed: ${JSON.stringify(tokenData)}`);
+      }
+
+      return new Response(
+        JSON.stringify({ accessToken: tokenData.access_token, shop }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (action === 'fetch-products' && accessToken && shop) {
+      // Fetch products from Shopify
+      const productsUrl = `https://${shop}.myshopify.com/admin/api/2023-10/products.json?limit=250`;
+      
+      const productsResponse = await fetch(productsUrl, {
+        headers: {
+          'X-Shopify-Access-Token': accessToken,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!productsResponse.ok) {
+        throw new Error(`Failed to fetch products: ${productsResponse.status}`);
+      }
+
+      const productsData = await productsResponse.json();
+      
+      // Transform products for the shopify-ingest function
+      const transformedProducts = productsData.products.map((product: any) => ({
+        productId: product.id.toString(),
+        title: product.title,
+        handle: product.handle,
+        status: product.status,
+        productType: product.product_type,
+        vendor: product.vendor,
+        images: product.images.map((img: any) => ({
+          id: img.id.toString(),
+          url: img.src,
+          alt: img.alt,
+        })),
+        variants: product.variants.map((variant: any) => ({
+          id: variant.id.toString(),
+          title: variant.title,
+          sku: variant.sku,
+          price: variant.price,
+          inventory_quantity: variant.inventory_quantity,
+          weight: variant.weight,
+          weight_unit: variant.weight_unit,
+        })),
+      }));
+
+      // Call the existing shopify-ingest function
+      const supabaseAdmin = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+
+      const { data: ingestResult, error: ingestError } = await supabaseAdmin.functions.invoke(
+        'shopify-ingest',
+        {
+          body: {
+            shop,
+            items: transformedProducts,
+          },
+          headers: {
+            Authorization: authHeader,
+          },
+        }
+      );
+
+      if (ingestError) {
+        console.error('Ingest error:', ingestError);
+        throw new Error(`Failed to ingest products: ${ingestError.message}`);
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          imported: ingestResult.imported,
+          skipped: ingestResult.skipped,
+          total: ingestResult.total,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({ error: 'Invalid action or missing parameters' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error: any) {
+    console.error('Shopify OAuth error:', error);
+    return new Response(
+      JSON.stringify({ 
+        error: 'Internal server error', 
+        details: error.message 
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+  }
+});
