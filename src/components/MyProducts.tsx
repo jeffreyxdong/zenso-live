@@ -172,25 +172,14 @@ const MyProducts = () => {
 
   const handleImportProducts = async () => {
     setImporting(true);
-    
     try {
-      // Get the current user session for the callback
       const { data: { session } } = await supabase.auth.getSession();
+      
       if (!session) {
         throw new Error('Please log in to import products');
       }
 
       console.log('Starting Shopify import process...');
-
-      // Store user session for callback handling
-      sessionStorage.setItem('shopify-import-session', session.access_token);
-
-      // Generate OAuth parameters
-      const scopes = 'read_products,read_inventory';
-      const state = Math.random().toString(36).substring(7);
-      
-      // Store state for verification
-      sessionStorage.setItem('shopify-oauth-state', state);
 
       // Use direct Shopify OAuth URL - let users enter their shop domain
       const shopDomain = prompt('Enter your Shopify shop domain (e.g., "mystore" for mystore.myshopify.com):');
@@ -199,7 +188,15 @@ const MyProducts = () => {
         return;
       }
 
-      // Get API key from environment via a simple approach
+      // Generate CSRF state token for security
+      const state = Math.random().toString(36).substring(2, 15) + 
+                   Math.random().toString(36).substring(2, 15);
+      
+      // Store state and session for verification
+      sessionStorage.setItem('shopify-oauth-state', state);
+      sessionStorage.setItem('shopify-import-session', session.access_token);
+
+      // Get API key from backend
       const { data: keyData, error: keyError } = await supabase.functions.invoke('shopify-oauth', {
         body: { action: 'get-api-key' },
         headers: {
@@ -212,23 +209,67 @@ const MyProducts = () => {
       }
 
       const redirectUri = `${window.location.origin}/auth/shopify/callback`;
-      console.log('Using redirect URI:', redirectUri);
+      const scopes = 'read_products,read_inventory';
 
-      // Redirect to Shopify OAuth
+      // Build OAuth URL
       const authUrl = `https://${shopDomain}.myshopify.com/admin/oauth/authorize?` +
         `client_id=${keyData.apiKey}&` +
         `scope=${scopes}&` +
         `redirect_uri=${encodeURIComponent(redirectUri)}&` +
         `state=${state}`;
 
-      console.log('Redirecting to:', authUrl);
-      window.location.href = authUrl;
+      console.log('Opening Shopify OAuth popup...');
+
+      // Open popup window for OAuth
+      const popup = window.open(
+        authUrl,
+        'shopify-oauth',
+        'width=600,height=700,scrollbars=yes,resizable=yes,status=yes'
+      );
+
+      if (!popup) {
+        throw new Error('Popup blocked. Please allow popups for this site and try again.');
+      }
+
+      // Listen for success message from popup
+      const messageHandler = (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return;
+        
+        if (event.data === 'shopify-import-success') {
+          window.removeEventListener('message', messageHandler);
+          setImporting(false);
+          fetchProducts(); // Refresh the products list
+          toast({
+            title: "✅ Products imported successfully",
+            description: "Your Shopify products have been imported",
+          });
+        } else if (event.data === 'shopify-import-error') {
+          window.removeEventListener('message', messageHandler);
+          setImporting(false);
+          toast({
+            title: "Import Error",
+            description: "Failed to import products from Shopify",
+            variant: "destructive",
+          });
+        }
+      };
+
+      window.addEventListener('message', messageHandler);
+
+      // Check if popup was closed manually
+      const checkClosed = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkClosed);
+          window.removeEventListener('message', messageHandler);
+          setImporting(false);
+        }
+      }, 1000);
 
     } catch (error: any) {
-      console.error('OAuth error:', error);
+      console.error('Import error:', error);
       toast({
         title: "Import Error",
-        description: error.message || "Failed to start Shopify import",
+        description: error.message,
         variant: "destructive",
       });
       setImporting(false);

@@ -54,24 +54,34 @@ const ShopifyCallback = () => {
 
         if (error) throw error;
 
-        toast({
-          title: "✅ Products imported successfully",
-          description: `Imported ${result.imported} products, skipped ${result.skipped} duplicates`,
-        });
-
-        // Redirect back to dashboard
-        navigate('/dashboard');
+        // Send success message to parent window and close popup
+        if (window.opener) {
+          window.opener.postMessage('shopify-import-success', window.location.origin);
+          window.close();
+        } else {
+          // Fallback for direct navigation
+          toast({
+            title: "✅ Products imported successfully",
+            description: `Imported ${result.imported} products, skipped ${result.skipped} duplicates`,
+          });
+          navigate('/dashboard');
+        }
 
       } catch (error: any) {
         console.error('Shopify callback error:', error);
-        toast({
-          title: "Import Error",
-          description: error.message || "Failed to complete Shopify import",
-          variant: "destructive",
-        });
-        
-        // Redirect back to dashboard even on error
-        navigate('/dashboard');
+        // Send error message to parent window and close popup
+        if (window.opener) {
+          window.opener.postMessage('shopify-import-error', window.location.origin);
+          window.close();
+        } else {
+          // Fallback for direct navigation
+          toast({
+            title: "Import Error",
+            description: error.message || "Failed to complete Shopify import",
+            variant: "destructive",
+          });
+          navigate('/dashboard');
+        }
       }
     };
 
