@@ -55,8 +55,6 @@ const productSchema = z.object({
 
 type ProductFormData = z.infer<typeof productSchema>;
 
-// ...imports and interfaces stay the same
-
 const MyProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
@@ -89,117 +87,242 @@ const MyProducts = () => {
   const generateHandle = (title: string) => {
     return title
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "");
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
   };
 
   const handleAddProduct = async (data: ProductFormData) => {
-    // ... your existing add product logic unchanged
+    setIsSubmitting(true);
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
+      const handle = data.handle || generateHandle(data.title);
+      const tags = data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [];
+
+      // Create product
+      const { data: productData, error: productError } = await supabase
+        .from("products")
+        .insert({
+          user_id: userData.user.id,
+          shopify_id: `manual-${Date.now()}`,
+          title: data.title,
+          handle: handle,
+          product_type: data.product_type || null,
+          vendor: data.vendor || null,
+          status: data.status,
+          tags: tags.length > 0 ? tags : null,
+        })
+        .select()
+        .single();
+
+      if (productError) throw productError;
+
+      // Create product variant
+      const { error: variantError } = await supabase
+        .from("product_variants")
+        .insert({
+          product_id: productData.id,
+          shopify_variant_id: `manual-variant-${Date.now()}`,
+          title: "Default Title",
+          price: data.price,
+          compare_at_price: data.compare_at_price || null,
+          inventory_quantity: data.inventory_quantity,
+          sku: data.sku || null,
+        });
+
+      if (variantError) throw variantError;
+
+      toast({
+        title: "Success",
+        description: "Product added successfully",
+      });
+
+      form.reset();
+      setShowAddProductDialog(false);
+      await fetchProducts();
+
+    } catch (error: any) {
+      console.error("Error adding product:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add product",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleSelectProduct = (productId: string, checked: boolean) => {
     if (checked) {
       setSelectedProducts([...selectedProducts, productId]);
     } else {
-      setSelectedProducts(selectedProducts.filter((id) => id !== productId));
+      setSelectedProducts(selectedProducts.filter(id => id !== productId));
     }
   };
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedProducts(filteredProducts.map((p) => p.id));
+      setSelectedProducts(filteredProducts.map(p => p.id));
     } else {
       setSelectedProducts([]);
     }
   };
 
-  // ✅ FIXED: put the whole import flow into a proper async function
   const handleImportProducts = async () => {
     setImporting(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Please log in to import products");
-
-      // Get API key from backend
-      const { data: keyData, error: keyError } = await supabase.functions.invoke(
-        "shopify-oauth",
-        {
-          body: { action: "get-api-key" },
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        }
-      );
-
-      if (keyError || !keyData?.apiKey) {
-        throw new Error(
-          "Shopify API key not configured. Please ensure SHOPIFY_API_KEY secret is set."
-        );
+      
+      if (!session) {
+        throw new Error('Please log in to import products');
       }
 
-      const shopDomain = prompt(
-        'Enter your Shopify shop domain (e.g., "mystore" for mystore.myshopify.com):'
-      );
+      console.log('Starting Shopify import process...');
+      
+      // First check if user has existing shop connection
+      const { data: existingShopData, error: shopCheckError } = await supabase.functions.invoke('shopify-oauth', {
+        body: { action: 'check-existing-shop' },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (shopCheckError) {
+        throw new Error(`Failed to check existing shop: ${shopCheckError.message}`);
+      }
+
+      // If user has existing shop, use stored token to import
+      if (existingShopData.hasExistingShop) {
+        console.log('Using existing shop connection...');
+        const { data: importResult, error: importError } = await supabase.functions.invoke('shopify-oauth', {
+          body: { action: 'import-with-existing-token' },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+
+        if (importError) {
+          throw new Error(`Import failed: ${importError.message}`);
+        }
+
+        // Refresh products and show success
+        fetchProducts();
+        setImporting(false);
+        
+        toast({
+          title: "Success",
+          description: `✅ Products imported successfully! Imported: ${importResult.imported}, Skipped: ${importResult.skipped}`,
+        });
+        return;
+      }
+
+      // If no existing shop, start OAuth flow
+      const shopDomain = prompt('Enter your Shopify shop domain (e.g., "mystore" for mystore.myshopify.com):');
+      console.log('Shop domain entered:', shopDomain);
+      
       if (!shopDomain) {
+        console.log('No shop domain provided, cancelling import');
         setImporting(false);
         return;
       }
 
-      const state =
-        Math.random().toString(36).substring(2, 15) +
-        Math.random().toString(36).substring(2, 15);
-      sessionStorage.setItem("shopify_oauth_state", state);
-      sessionStorage.setItem("shopify_session_token", session.access_token);
+      // Get API key from backend
+      const { data: keyData, error: keyError } = await supabase.functions.invoke('shopify-oauth', {
+        body: { action: 'get-api-key' },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
 
-      const redirectUri =
-        "https://id-preview--e8261a88-908d-4b6a-b764-a02dcc966558.lovable.app/auth/shopify/callback";
-      const scopes = "read_products,read_inventory";
+      console.log('API key response:', { keyData, keyError });
 
-      const authUrl = `https://${shopDomain}.myshopify.com/admin/oauth/authorize?client_id=${keyData.apiKey}&scope=${scopes}&redirect_uri=${encodeURIComponent(
-        redirectUri
-      )}&state=${state}`;
-
-      const popup = window.open(
-        authUrl,
-        "shopify-oauth",
-        "width=600,height=700,scrollbars=yes,resizable=yes,status=yes"
-      );
-
-      if (!popup) {
-        throw new Error("Popup blocked. Please allow popups and try again.");
+      if (keyError || !keyData?.apiKey) {
+        throw new Error('Shopify API key not configured. Please ensure SHOPIFY_API_KEY secret is set.');
       }
 
+      // Generate CSRF state token for security
+      const state = Math.random().toString(36).substring(2, 15) + 
+                   Math.random().toString(36).substring(2, 15);
+      
+      console.log('Generated state:', state);
+      
+      // Store state and session for verification
+      sessionStorage.setItem('shopify_oauth_state', state);
+      sessionStorage.setItem('shopify_session_token', session.access_token);
+
+      // Use the correct preview URL format for redirect
+      const redirectUri = `https://id-preview--e8261a88-908d-4b6a-b764-a02dcc966558.lovable.app/auth/shopify/callback`;
+      const scopes = 'read_products,read_inventory';
+
+      // Build OAuth URL
+      const authUrl = `https://${shopDomain}.myshopify.com/admin/oauth/authorize?` +
+        `client_id=${keyData.apiKey}&` +
+        `scope=${scopes}&` +
+        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+        `state=${state}`;
+
+      console.log('OAuth URL:', authUrl);
+      console.log('Redirect URI:', redirectUri);
+
+      console.log('Opening Shopify OAuth popup...');
+
+      // Open popup window for OAuth
+      const popup = window.open(
+        authUrl,
+        'shopify-oauth',
+        'width=600,height=700,scrollbars=yes,resizable=yes,status=yes'
+      );
+
+      console.log('Popup opened:', !!popup);
+
+      if (!popup) {
+        throw new Error('Popup blocked. Please allow popups for this site and try again.');
+      }
+
+      // Listen for success message from popup
       const messageHandler = (event: MessageEvent) => {
-        if (event.data?.type === "shopify-import-complete") {
+        if (event.data?.type === 'shopify-import-complete') {
+          console.log('Received import complete message', event.data);
           popup?.close();
-          window.removeEventListener("message", messageHandler);
+          window.removeEventListener('message', messageHandler);
+          
+          // Refresh the products list
           fetchProducts();
           setImporting(false);
+          
           toast({
             title: "Success",
-            description: `✅ Imported: ${event.data.imported}, Skipped: ${event.data.skipped}`,
+            description: `✅ Products imported successfully! Imported: ${event.data.imported}, Skipped: ${event.data.skipped}`,
           });
-        } else if (event.data?.type === "shopify-import-error") {
+        } else if (event.data?.type === 'shopify-import-error') {
+          console.log('Received import error message', event.data);
           popup?.close();
-          window.removeEventListener("message", messageHandler);
+          window.removeEventListener('message', messageHandler);
           setImporting(false);
+          
           toast({
-            title: "Import Error",
+            title: "Import Error", 
             description: "❌ Import failed.",
             variant: "destructive",
           });
         }
       };
 
-      window.addEventListener("message", messageHandler);
+      window.addEventListener('message', messageHandler);
 
+      // Check if popup was closed manually
       const checkClosed = setInterval(() => {
         if (popup?.closed) {
           clearInterval(checkClosed);
-          window.removeEventListener("message", messageHandler);
+          window.removeEventListener('message', messageHandler);
           setImporting(false);
         }
       }, 1000);
+
     } catch (error: any) {
-      console.error("Import error:", error);
+      console.error('Import error:', error);
       toast({
         title: "Import Error",
         description: error.message,
@@ -210,18 +333,402 @@ const MyProducts = () => {
   };
 
   const getInventoryDisplay = (product: Product) => {
-    // ... unchanged
+    if (!product.variants || product.variants.length === 0) {
+      return "Inventory not tracked";
+    }
+    
+    const totalInventory = product.variants.reduce((sum, variant) => sum + (variant.inventory_quantity || 0), 0);
+    const variantCount = product.variants.length;
+    
+    if (totalInventory === 0) {
+      return "0 in stock";
+    }
+    
+    if (variantCount > 1) {
+      return `${totalInventory} in stock for ${variantCount} variants`;
+    }
+    
+    return `${totalInventory} in stock`;
   };
 
   const fetchProducts = async () => {
-    // ... unchanged
+    setLoading(true);
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
+      const { data: productsData, error } = await supabase
+        .from("products")
+        .select(`
+          *,
+          variants:product_variants(*)
+        `)
+        .eq("user_id", userData.user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setProducts(productsData || []);
+    } catch (error: any) {
+      console.error("Error fetching products:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch products",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const filteredProducts = products.filter((product) => {
-    // ... unchanged
-  });
+  const filteredProducts = products.filter(
+    (product) =>
+      product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.vendor?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.product_type?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  // ... render JSX unchanged, button already calls handleImportProducts
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="text-center">
+          <Package className="w-8 h-8 text-muted-foreground mx-auto mb-2 animate-spin" />
+          <p className="text-muted-foreground">Loading products...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-foreground">My Products</h2>
+          <p className="text-sm text-muted-foreground">
+            {products.length} products
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            className="flex items-center gap-2"
+            onClick={handleImportProducts}
+            disabled={loading || importing}
+          >
+            <Store className="w-4 h-4" />
+            {importing ? "Importing..." : "Import Products"}
+          </Button>
+          <Button
+            className="flex items-center gap-2"
+            onClick={() => {
+              console.log("Add Product button clicked!");
+              setShowAddProductDialog(true);
+            }}
+          >
+            <Plus className="w-4 h-4" />
+            Add Product
+          </Button>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search products..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+      </div>
+
+      {/* Products Table */}
+      <div className="border rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-12">
+                <Checkbox
+                  checked={selectedProducts.length === filteredProducts.length && filteredProducts.length > 0}
+                  onCheckedChange={handleSelectAll}
+                />
+              </TableHead>
+              <TableHead>Product</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Inventory</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Vendor</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredProducts.map((product) => (
+              <TableRow key={product.id}>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedProducts.includes(product.id)}
+                    onCheckedChange={(checked) => handleSelectProduct(product.id, !!checked)}
+                  />
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
+                      {product.images && product.images[0] ? (
+                        <img
+                          src={product.images[0].src}
+                          alt={product.title}
+                          className="w-10 h-10 object-cover rounded"
+                        />
+                      ) : (
+                        <Package className="w-5 h-5 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="font-medium">{product.title}</div>
+                      <div className="text-sm text-muted-foreground">{product.handle}</div>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant={
+                      product.status === "active" 
+                        ? "default" 
+                        : product.status === "draft" 
+                        ? "secondary" 
+                        : "outline"
+                    }
+                  >
+                    {product.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="text-sm">
+                    {getInventoryDisplay(product)}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="text-sm">{product.product_type || "-"}</div>
+                </TableCell>
+                <TableCell>
+                  <div className="text-sm">{product.vendor || "-"}</div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      {filteredProducts.length === 0 && searchQuery && (
+        <div className="text-center py-8">
+          <AlertCircle className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+          <p className="text-muted-foreground">
+            No products found matching "{searchQuery}"
+          </p>
+        </div>
+      )}
+
+      {/* Add Product Dialog */}
+      <Dialog open={showAddProductDialog} onOpenChange={setShowAddProductDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add New Product</DialogTitle>
+          </DialogHeader>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleAddProduct)} className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Product Title</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter product title" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="handle"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Handle (URL)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="auto-generated-if-empty" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="draft">Draft</SelectItem>
+                          <SelectItem value="archived">Archived</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="product_type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Product Type</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., T-Shirt, Snowboard" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="vendor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Vendor</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Your Brand" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Price</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          placeholder="0.00" 
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="compare_at_price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Compare at Price (optional)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          placeholder="0.00" 
+                          {...field}
+                          onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="inventory_quantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Inventory Quantity</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number"
+                          placeholder="0" 
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="sku"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>SKU</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., TSH-001" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="tags"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Tags</FormLabel>
+                      <FormControl>
+                        <Input placeholder="tag1, tag2, tag3" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowAddProductDialog(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="flex-1"
+                >
+                  {isSubmitting ? "Adding..." : "Add Product"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 };
 
 export default MyProducts;
