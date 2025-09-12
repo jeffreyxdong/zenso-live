@@ -171,62 +171,99 @@ const MyProducts = () => {
   };
 
   const handleImportProducts = async () => {
-    setImporting(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        throw new Error('Please log in to import products');
-      }
+  setImporting(true);
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error("Please log in to import products");
+    }
 
-      console.log('Starting Shopify import process...');
-      
-      // First check if user has existing shop connection
-      const { data: existingShopData, error: shopCheckError } = await supabase.functions.invoke('shopify-oauth', {
-        body: { action: 'check-existing-shop' },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
+    // Step 1: Generate state for CSRF
+    const state = Math.random().toString(36).substring(2);
 
-      if (shopCheckError) {
-        throw new Error(`Failed to check existing shop: ${shopCheckError.message}`);
-      }
+    // Step 2: Call backend /start to build the Shopify auth URL
+    const { data: startData, error: startError } = await supabase.functions.invoke("shopify-oauth-start", {
+      body: { shop: "geo-integration", state }, // TODO: replace with dynamic shop if needed
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
 
-      // If user has existing shop, use stored token to import
-      if (existingShopData.hasExistingShop) {
-        console.log('Using existing shop connection...');
-        const { data: importResult, error: importError } = await supabase.functions.invoke('shopify-oauth', {
-          body: { action: 'import-with-existing-token' },
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        });
+    if (startError || !startData?.authUrl) {
+      throw new Error(startError?.message || "Failed to start Shopify OAuth");
+    }
 
-        if (importError) {
-          throw new Error(`Import failed: ${importError.message}`);
+    // Step 3: Open popup for Shopify OAuth
+    const popup = window.open(
+      startData.authUrl,
+      "shopify-oauth",
+      "width=600,height=700,scrollbars=yes,resizable=yes,status=yes"
+    );
+
+    if (!popup) {
+      throw new Error("Popup blocked. Please allow popups for this site.");
+    }
+
+    // Step 4: Listen for callback → import products
+    const messageHandler = async (event: MessageEvent) => {
+      if (event.data?.type === "shopify-oauth-success") {
+        popup?.close();
+        window.removeEventListener("message", messageHandler);
+
+        try {
+          const { data: importData, error: importError } = await supabase.functions.invoke("shopify-oauth-import", {
+            body: { shop: "geo-integration.myshopify.com" },
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          });
+
+          if (importError) throw new Error(importError.message);
+
+          await fetchProducts();
+          toast({
+            title: "Success",
+            description: `✅ Imported ${importData.imported} products (Skipped: ${importData.skipped})`,
+          });
+        } catch (err: any) {
+          toast({
+            title: "Import Error",
+            description: err.message,
+            variant: "destructive",
+          });
+        } finally {
+          setImporting(false);
         }
-
-        // Refresh products and show success
-        fetchProducts();
+      } else if (event.data?.type === "shopify-oauth-error") {
+        popup?.close();
+        window.removeEventListener("message", messageHandler);
         setImporting(false);
-        
+
         toast({
-          title: "Success",
-          description: `✅ Products imported successfully! Imported: ${importResult.imported}, Skipped: ${importResult.skipped}`,
+          title: "Import Error",
+          description: event.data.message || "❌ Shopify OAuth failed",
+          variant: "destructive",
         });
-        return;
       }
+    };
 
-      // If no existing shop, start OAuth flow
-      const shopDomain = prompt('Enter your Shopify shop domain (e.g., "mystore" for mystore.myshopify.com):');
-      console.log('Shop domain entered:', shopDomain);
-      
-      if (!shopDomain) {
-        console.log('No shop domain provided, cancelling import');
+    window.addEventListener("message", messageHandler);
+
+    // Detect manual close
+    const checkClosed = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(checkClosed);
+        window.removeEventListener("message", messageHandler);
         setImporting(false);
-        return;
       }
+    }, 1000);
+  } catch (err: any) {
+    console.error("Import error:", err);
+    toast({
+      title: "Import Error",
+      description: err.message,
+      variant: "destructive",
+    });
+    setImporting(false);
+  }
+};
+
 
       // Get API key from backend
       const { data: keyData, error: keyError } = await supabase.functions.invoke('shopify-oauth', {
