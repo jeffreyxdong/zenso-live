@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Store, Package, Download, Plus, Search, CheckCircle, AlertCircle, Image, Trash2, MoreVertical } from "lucide-react";
+import { Store, Package, Download, Plus, Search, CheckCircle, AlertCircle, Image, Trash2, MoreVertical, Eye, TrendingUp, MapPin, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
@@ -30,6 +30,9 @@ interface Product {
   images?: any;
   created_at: string;
   variants?: ProductVariant[];
+  visibility_score?: number;
+  sentiment_score?: number;
+  position?: number;
 }
 
 interface ProductVariant {
@@ -68,6 +71,8 @@ const MyProducts = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [showProductDetail, setShowProductDetail] = useState(false);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -455,6 +460,25 @@ const MyProducts = () => {
     return `${totalInventory} in stock`;
   };
 
+  const getVisibilityBadge = (score?: number) => {
+    if (!score) return <Badge variant="outline">No Data</Badge>;
+    if (score >= 80) return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">High</Badge>;
+    if (score >= 60) return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Medium</Badge>;
+    return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Low</Badge>;
+  };
+
+  const getSentimentBadge = (score?: number) => {
+    if (!score) return <Badge variant="outline">No Data</Badge>;
+    if (score >= 70) return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Positive</Badge>;
+    if (score >= 30) return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Neutral</Badge>;
+    return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Negative</Badge>;
+  };
+
+  const handleProductClick = (product: Product) => {
+    setSelectedProduct(product);
+    setShowProductDetail(true);
+  };
+
   const fetchProducts = async () => {
     setLoading(true);
     try {
@@ -470,8 +494,16 @@ const MyProducts = () => {
         .eq("user_id", userData.user.id)
         .order("created_at", { ascending: false });
 
+      // Add mock data for visibility, sentiment, and position for demonstration
+      const enhancedProducts = (productsData || []).map(product => ({
+        ...product,
+        visibility_score: Math.floor(Math.random() * 100) + 1,
+        sentiment_score: Math.floor(Math.random() * 100) + 1,
+        position: Math.floor(Math.random() * 20) + 1,
+      }));
+
       if (error) throw error;
-      setProducts(productsData || []);
+      setProducts(enhancedProducts);
     } catch (error: any) {
       console.error("Error fetching products:", error);
       toast({
@@ -572,16 +604,20 @@ const MyProducts = () => {
               </TableHead>
               <TableHead>Product</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Inventory</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Vendor</TableHead>
+              <TableHead>Visibility</TableHead>
+              <TableHead>Sentiment</TableHead>
+              <TableHead>Position</TableHead>
               <TableHead className="w-12">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredProducts.map((product) => (
-              <TableRow key={product.id}>
-                <TableCell>
+              <TableRow 
+                key={product.id} 
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => handleProductClick(product)}
+              >
+                <TableCell onClick={(e) => e.stopPropagation()}>
                   <Checkbox
                     checked={selectedProducts.includes(product.id)}
                     onCheckedChange={(checked) => handleSelectProduct(product.id, !!checked)}
@@ -620,17 +656,18 @@ const MyProducts = () => {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <div className="text-sm">
-                    {getInventoryDisplay(product)}
+                  {getVisibilityBadge(product.visibility_score)}
+                </TableCell>
+                <TableCell>
+                  {getSentimentBadge(product.sentiment_score)}
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1">
+                    <MapPin className="w-3 h-3 text-muted-foreground" />
+                    <span className="text-sm font-medium">#{product.position}</span>
                   </div>
                 </TableCell>
-                <TableCell>
-                  <div className="text-sm">{product.product_type || "-"}</div>
-                </TableCell>
-                <TableCell>
-                  <div className="text-sm">{product.vendor || "-"}</div>
-                </TableCell>
-                <TableCell>
+                <TableCell onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="sm">
@@ -886,6 +923,173 @@ const MyProducts = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Product Detail Dialog */}
+      <Dialog open={showProductDetail} onOpenChange={setShowProductDetail}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="w-5 h-5" />
+              Product Details
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedProduct && (
+            <div className="space-y-6">
+              {/* Product Info */}
+              <div className="flex gap-4">
+                <div className="w-20 h-20 bg-muted rounded-lg flex items-center justify-center">
+                  {selectedProduct.images && selectedProduct.images[0] ? (
+                    <img
+                      src={selectedProduct.images[0].src}
+                      alt={selectedProduct.title}
+                      className="w-20 h-20 object-cover rounded-lg"
+                    />
+                  ) : (
+                    <Package className="w-8 h-8 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-semibold">{selectedProduct.title}</h3>
+                  <p className="text-muted-foreground">{selectedProduct.handle}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge
+                      variant={
+                        selectedProduct.status === "active" 
+                          ? "default" 
+                          : selectedProduct.status === "draft" 
+                          ? "secondary" 
+                          : "outline"
+                      }
+                    >
+                      {selectedProduct.status}
+                    </Badge>
+                    {selectedProduct.product_type && (
+                      <Badge variant="outline">{selectedProduct.product_type}</Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Metrics Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Eye className="w-4 h-4 text-blue-600" />
+                      <span className="font-medium">Visibility</span>
+                    </div>
+                    <div className="text-2xl font-bold mb-1">
+                      {selectedProduct.visibility_score || 'N/A'}%
+                    </div>
+                    {getVisibilityBadge(selectedProduct.visibility_score)}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Heart className="w-4 h-4 text-pink-600" />
+                      <span className="font-medium">Sentiment</span>
+                    </div>
+                    <div className="text-2xl font-bold mb-1">
+                      {selectedProduct.sentiment_score || 'N/A'}%
+                    </div>
+                    {getSentimentBadge(selectedProduct.sentiment_score)}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <MapPin className="w-4 h-4 text-green-600" />
+                      <span className="font-medium">Position</span>
+                    </div>
+                    <div className="text-2xl font-bold mb-1">
+                      #{selectedProduct.position || 'N/A'}
+                    </div>
+                    <Badge variant="outline">Search Ranking</Badge>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Product Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-semibold mb-3">Product Information</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">SKU:</span>
+                      <span>{selectedProduct.variants?.[0]?.sku || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Price:</span>
+                      <span>${selectedProduct.variants?.[0]?.price || '0.00'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Inventory:</span>
+                      <span>{getInventoryDisplay(selectedProduct)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Vendor:</span>
+                      <span>{selectedProduct.vendor || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Created:</span>
+                      <span>{new Date(selectedProduct.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold mb-3">Performance Metrics</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span>Brand Visibility</span>
+                        <span>{selectedProduct.visibility_score}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-blue-600 h-2 rounded-full" 
+                          style={{ width: `${selectedProduct.visibility_score || 0}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span>Sentiment Score</span>
+                        <span>{selectedProduct.sentiment_score}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-pink-600 h-2 rounded-full" 
+                          style={{ width: `${selectedProduct.sentiment_score || 0}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tags */}
+              {selectedProduct.tags && selectedProduct.tags.length > 0 && (
+                <div>
+                  <h4 className="font-semibold mb-3">Tags</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedProduct.tags.map((tag, index) => (
+                      <Badge key={index} variant="secondary">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
