@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Store, Package, Download, Plus, Search, CheckCircle, AlertCircle, Image } from "lucide-react";
+import { Store, Package, Download, Plus, Search, CheckCircle, AlertCircle, Image, Trash2, MoreVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
@@ -63,6 +65,9 @@ const MyProducts = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [importing, setImporting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -332,6 +337,69 @@ const MyProducts = () => {
     }
   };
 
+  const handleDeleteProducts = async (productIds: string[]) => {
+    setIsDeleting(true);
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
+      // Delete variants first (due to foreign key constraint)
+      const { error: variantError } = await supabase
+        .from("product_variants")
+        .delete()
+        .in("product_id", productIds);
+
+      if (variantError) throw variantError;
+
+      // Delete products
+      const { error: productError } = await supabase
+        .from("products")
+        .delete()
+        .in("id", productIds)
+        .eq("user_id", userData.user.id);
+
+      if (productError) throw productError;
+
+      toast({
+        title: "Success",
+        description: `${productIds.length} product(s) deleted successfully`,
+      });
+
+      // Reset selection and refresh
+      setSelectedProducts([]);
+      setProductToDelete(null);
+      setShowDeleteDialog(false);
+      await fetchProducts();
+
+    } catch (error: any) {
+      console.error("Error deleting products:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete products",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteSingle = (productId: string) => {
+    setProductToDelete(productId);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedProducts.length > 0) {
+      setProductToDelete(null);
+      setShowDeleteDialog(true);
+    }
+  };
+
+  const confirmDelete = () => {
+    const idsToDelete = productToDelete ? [productToDelete] : selectedProducts;
+    handleDeleteProducts(idsToDelete);
+  };
+
   const getInventoryDisplay = (product: Product) => {
     if (!product.variants || product.variants.length === 0) {
       return "Inventory not tracked";
@@ -431,7 +499,7 @@ const MyProducts = () => {
         </div>
       </div>
 
-      {/* Search */}
+      {/* Search and Bulk Actions */}
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-md">
           <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
@@ -442,6 +510,17 @@ const MyProducts = () => {
             className="pl-10"
           />
         </div>
+        {selectedProducts.length > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDeleteSelected}
+            className="flex items-center gap-2 text-destructive hover:text-destructive"
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete Selected ({selectedProducts.length})
+          </Button>
+        )}
       </div>
 
       {/* Products Table */}
@@ -460,6 +539,7 @@ const MyProducts = () => {
               <TableHead>Inventory</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Vendor</TableHead>
+              <TableHead className="w-12">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -513,6 +593,24 @@ const MyProducts = () => {
                 </TableCell>
                 <TableCell>
                   <div className="text-sm">{product.vendor || "-"}</div>
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => handleDeleteSingle(product.id)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete Product
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))}
@@ -727,6 +825,31 @@ const MyProducts = () => {
           </Form>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Products</AlertDialogTitle>
+            <AlertDialogDescription>
+              {productToDelete 
+                ? "Are you sure you want to delete this product? This action cannot be undone."
+                : `Are you sure you want to delete ${selectedProducts.length} selected products? This action cannot be undone.`
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
