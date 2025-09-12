@@ -51,40 +51,29 @@ const AddStoreModal = ({ open, onOpenChange }: AddStoreModalProps) => {
         return;
       }
 
-      // Check if profile already exists
-      const { data: existingProfile } = await supabase
-        .from("profiles")
+      // Check if user has any existing stores
+      const { data: existingStores } = await supabase
+        .from("stores")
         .select("id")
-        .eq("user_id", user.id)
-        .maybeSingle();
+        .eq("user_id", user.id);
 
-      if (existingProfile) {
-        // Update existing profile
-        const { error } = await supabase
-          .from("profiles")
-          .update({
-            company_name: formData.storeName.trim(),
-            company_website: formData.website.trim(),
-          })
-          .eq("user_id", user.id);
+      const isFirstStore = !existingStores || existingStores.length === 0;
 
-        if (error) throw error;
-      } else {
-        // Create new profile
-        const { error } = await supabase
-          .from("profiles")
-          .insert({
-            user_id: user.id,
-            company_name: formData.storeName.trim(),
-            company_website: formData.website.trim(),
-          });
+      // Create new store
+      const { error } = await supabase
+        .from("stores")
+        .insert({
+          user_id: user.id,
+          name: formData.storeName.trim(),
+          website: formData.website.trim(),
+          is_active: isFirstStore, // First store is automatically active
+        });
 
-        if (error) throw error;
-      }
+      if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Store information saved successfully",
+        description: "Store added successfully",
       });
 
       // Reset form and close modal

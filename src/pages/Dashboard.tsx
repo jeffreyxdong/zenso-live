@@ -9,6 +9,7 @@ import BrandMentions from "@/components/BrandMentions";
 import { PromptsTab } from "@/components/PromptsTab";
 import MyProducts from "@/components/MyProducts";
 import AddStoreModal from "@/components/AddStoreModal";
+import StoreSelector from "@/components/StoreSelector";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
@@ -79,6 +80,7 @@ const Dashboard = () => {
               </Badge>
             </div>
             <div className="flex items-center gap-3">
+              <StoreSelector />
               <Button variant="outline" size="sm">
                 <Settings className="w-4 h-4" />
                 Settings
