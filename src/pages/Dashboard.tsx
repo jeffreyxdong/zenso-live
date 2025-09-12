@@ -12,11 +12,12 @@ import AddStoreModal from "@/components/AddStoreModal";
 import StoreSelector from "@/components/StoreSelector";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [showAddStoreModal, setShowAddStoreModal] = useState(false);
+  const [refreshStores, setRefreshStores] = useState(0);
   const navigate = useNavigate();
 
   // Protect route: redirect unauthenticated users and ensure onboarding complete
@@ -291,7 +292,8 @@ const Dashboard = () => {
 
       <AddStoreModal 
         open={showAddStoreModal} 
-        onOpenChange={setShowAddStoreModal} 
+        onOpenChange={setShowAddStoreModal}
+        onStoreAdded={() => setRefreshStores(prev => prev + 1)}
       />
     </div>
   );

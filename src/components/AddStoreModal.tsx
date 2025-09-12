@@ -16,9 +16,10 @@ import { toast } from "@/hooks/use-toast";
 interface AddStoreModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onStoreAdded?: () => void;
 }
 
-const AddStoreModal = ({ open, onOpenChange }: AddStoreModalProps) => {
+const AddStoreModal = ({ open, onOpenChange, onStoreAdded }: AddStoreModalProps) => {
   const [formData, setFormData] = useState({
     storeName: "",
     website: "",
@@ -51,7 +52,7 @@ const AddStoreModal = ({ open, onOpenChange }: AddStoreModalProps) => {
         return;
       }
 
-      // Check if user has any existing stores
+      // Check if this is the user's first store
       const { data: existingStores } = await supabase
         .from("stores")
         .select("id")
@@ -79,12 +80,13 @@ const AddStoreModal = ({ open, onOpenChange }: AddStoreModalProps) => {
       // Reset form and close modal
       setFormData({ storeName: "", website: "" });
       onOpenChange(false);
+      onStoreAdded?.();
 
     } catch (error: any) {
       console.error("Error saving store:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to save store information",
+        description: error.message || "Failed to add store",
         variant: "destructive",
       });
     } finally {
