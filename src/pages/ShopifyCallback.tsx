@@ -22,29 +22,44 @@ const ShopifyCallback = () => {
         
         console.log('URL parameters:', { code, shop, state });
 
-        // Verify state parameter (CSRF protection)
-        const storedState = sessionStorage.getItem('shopify_oauth_state');
+        // Get state and session from parent window (since popup has separate sessionStorage)
+        let storedState: string | null = null;
+        let sessionToken: string | null = null;
+        
+        if (window.opener) {
+          try {
+            storedState = window.opener.sessionStorage.getItem('shopify_oauth_state');
+            sessionToken = window.opener.sessionStorage.getItem('shopify_session_token');
+          } catch (error) {
+            console.warn('Could not access parent sessionStorage:', error);
+          }
+        }
+        
         console.log('State verification:', { received: state, stored: storedState });
         
         if (!state || state !== storedState) {
           throw new Error('Invalid OAuth state parameter');
         }
 
-        // Clean up state
-        sessionStorage.removeItem('shopify_oauth_state');
+        // Clean up state from parent window
+        if (window.opener) {
+          try {
+            window.opener.sessionStorage.removeItem('shopify_oauth_state');
+            window.opener.sessionStorage.removeItem('shopify_session_token');
+          } catch (error) {
+            console.warn('Could not clean up parent sessionStorage:', error);
+          }
+        }
 
         if (!code || !shop) {
           throw new Error('Missing authorization code or shop parameter');
         }
 
-        // Get stored session
-        const sessionToken = sessionStorage.getItem('shopify_session_token');
         console.log('Session token available:', !!sessionToken);
         
         if (!sessionToken) {
           throw new Error('Session expired. Please try again.');
         }
-        sessionStorage.removeItem('shopify_session_token');
 
         // Show loading state
         toast({
@@ -94,9 +109,15 @@ const ShopifyCallback = () => {
       } catch (error: any) {
         console.error('Shopify callback error:', error);
         
-        // Clean up session storage
-        sessionStorage.removeItem('shopify_oauth_state');
-        sessionStorage.removeItem('shopify_session_token');
+        // Clean up session storage from parent window
+        if (window.opener) {
+          try {
+            window.opener.sessionStorage.removeItem('shopify_oauth_state');
+            window.opener.sessionStorage.removeItem('shopify_session_token');
+          } catch (error) {
+            console.warn('Could not clean up parent sessionStorage:', error);
+          }
+        }
 
         // Send error message to parent window and close popup
         if (window.opener) {
