@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, Store, Check } from "lucide-react";
+import { ChevronDown, Store, Check, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -92,6 +92,56 @@ const StoreSwitcher = ({ onStoreChange, triggerRefresh }: StoreSwitcherProps) =>
     }
   };
 
+  const deleteStore = async (storeId: string, storeName: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent dropdown item click
+    
+    if (stores.length <= 1) {
+      toast({
+        title: "Cannot delete store",
+        description: "You must have at least one store",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const storeToDelete = stores.find(s => s.id === storeId);
+    if (storeToDelete?.is_active) {
+      toast({
+        title: "Cannot delete active store",
+        description: "Please switch to another store first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from("stores")
+        .delete()
+        .eq("id", storeId)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      await fetchStores();
+
+      toast({
+        title: "Success",
+        description: `Store "${storeName}" deleted successfully`,
+      });
+    } catch (error: any) {
+      console.error("Error deleting store:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete store",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center gap-2">
@@ -135,13 +185,24 @@ const StoreSwitcher = ({ onStoreChange, triggerRefresh }: StoreSwitcherProps) =>
           <DropdownMenuItem
             key={store.id}
             onClick={() => switchStore(store.id)}
-            className="flex items-center justify-between cursor-pointer"
+            className="group flex items-center justify-between cursor-pointer relative"
           >
             <div className="flex flex-col">
               <span className="font-medium">{store.name}</span>
               <span className="text-xs text-muted-foreground">{store.website}</span>
             </div>
-            {store.is_active && <Check className="w-4 h-4 text-primary" />}
+            <div className="flex items-center gap-2">
+              {store.is_active && <Check className="w-4 h-4 text-primary" />}
+              {stores.length > 1 && !store.is_active && (
+                <button
+                  onClick={(e) => deleteStore(store.id, store.name, e)}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-destructive/10 rounded-sm"
+                  title="Delete store"
+                >
+                  <Trash2 className="w-3 h-3 text-destructive" />
+                </button>
+              )}
+            </div>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
