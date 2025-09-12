@@ -8,12 +8,14 @@ import KeywordSearch from "@/components/KeywordSearch";
 import BrandMentions from "@/components/BrandMentions";
 import { PromptsTab } from "@/components/PromptsTab";
 import MyProducts from "@/components/MyProducts";
+import AddStoreModal from "@/components/AddStoreModal";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
+  const [showAddStoreModal, setShowAddStoreModal] = useState(false);
   const navigate = useNavigate();
 
   // Protect route: redirect unauthenticated users and ensure onboarding complete
@@ -81,7 +83,10 @@ const Dashboard = () => {
                 <Settings className="w-4 h-4" />
                 Settings
               </Button>
-              <Button size="sm">
+              <Button 
+                size="sm" 
+                onClick={() => setShowAddStoreModal(true)}
+              >
                 <Plus className="w-4 h-4" />
                 Add Store
               </Button>
@@ -281,6 +286,11 @@ const Dashboard = () => {
           </TabsContent>
         </Tabs>
       </main>
+
+      <AddStoreModal 
+        open={showAddStoreModal} 
+        onOpenChange={setShowAddStoreModal} 
+      />
     </div>
   );
 };
