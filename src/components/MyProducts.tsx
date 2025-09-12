@@ -252,7 +252,8 @@ const MyProducts = () => {
       sessionStorage.setItem('shopify_oauth_state', state);
       sessionStorage.setItem('shopify_session_token', session.access_token);
 
-      const redirectUri = `${window.location.origin}/auth/shopify/callback`;
+      // Use the correct preview URL format for redirect
+      const redirectUri = `https://id-preview--e8261a88-908d-4b6a-b764-a02dcc966558.lovable.app/auth/shopify/callback`;
       const scopes = 'read_products,read_inventory';
 
       // Build OAuth URL
