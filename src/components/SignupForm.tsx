@@ -3,24 +3,81 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle2, Mail, ArrowRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const SignupForm = () => {
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const handleEmailSignup = (e: React.FormEvent) => {
+  const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle email signup
-    console.log("Email signup:", email);
+    if (!email) return;
+
+    setLoading(true);
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+      const { error } = await supabase.auth.signUp({
+        email,
+        password: "temp123", // Temporary password - user will set their own
+        options: { 
+          emailRedirectTo: redirectUrl,
+          data: {
+            email_signup: true
+          }
+        },
+      });
+
+      if (error) {
+        toast({
+          title: "Sign up failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Check your email!",
+          description: "We sent you a confirmation link to complete signup.",
+        });
+        setEmail("");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleGoogleSignup = () => {
-    // Handle Google signup
-    console.log("Google signup");
-  };
-
-  const handleMicrosoftSignup = () => {
-    // Handle Microsoft signup
-    console.log("Microsoft signup");
+  const handleGoogleSignup = async () => {
+    try {
+      const redirectUrl = `${window.location.origin}/auth`;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl
+        }
+      });
+      
+      if (error) {
+        toast({
+          title: "Sign up failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error", 
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -48,8 +105,13 @@ const SignupForm = () => {
             <Mail className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           </div>
           
-          <Button type="submit" className="w-full h-11 font-medium" size="lg">
-            Sign up with email
+          <Button 
+            type="submit" 
+            className="w-full h-11 font-medium" 
+            size="lg"
+            disabled={loading}
+          >
+            {loading ? "Signing up..." : "Sign up with email"}
             <ArrowRight className="w-4 h-4" />
           </Button>
         </form>
@@ -66,7 +128,7 @@ const SignupForm = () => {
         <div className="space-y-3 mb-6">
           <Button
             type="button"
-            variant="google"
+            variant="outline"
             size="lg"
             className="w-full h-11"
             onClick={handleGoogleSignup}
@@ -91,26 +153,13 @@ const SignupForm = () => {
             </svg>
             Sign up with Google
           </Button>
-
-          <Button
-            type="button"
-            variant="microsoft"
-            size="lg"
-            className="w-full h-11"
-            onClick={handleMicrosoftSignup}
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M11.4 24H0V12.6h11.4V24zM24 24H12.6V12.6H24V24zM11.4 11.4H0V0h11.4v11.4zM24 11.4H12.6V0H24v11.4z" />
-            </svg>
-            Sign up with Microsoft
-          </Button>
         </div>
 
         <div className="text-center text-sm text-muted-foreground">
           Already have an account?{" "}
-          <button className="text-primary hover:underline font-medium">
+          <Link to="/auth" className="text-primary hover:underline font-medium">
             Login instead
-          </button>
+          </Link>
         </div>
       </CardContent>
     </Card>
