@@ -28,14 +28,30 @@ Deno.serve(async (req) => {
     }
 
     // Create auth client to verify JWT and get user
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
+    
+    console.log('Environment check:');
+    console.log('SUPABASE_URL available:', !!SUPABASE_URL);
+    console.log('SUPABASE_ANON_KEY available:', !!SUPABASE_ANON_KEY);
+    
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      console.error('Missing Supabase environment variables');
+      return new Response(
+        JSON.stringify({ error: 'Supabase configuration missing' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
     const supabaseAuth = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_PUBLISHABLE_KEY') ?? '',
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY,
       { global: { headers: { Authorization: authHeader } } }
     );
 
     const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
     if (authError || !user) {
+      console.error('Auth error:', authError);
       return new Response(
         JSON.stringify({ error: 'Invalid or missing user session' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -96,7 +112,7 @@ Deno.serve(async (req) => {
 
       // Step 2: Store shop credentials in database
       const supabaseAdmin = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
+        SUPABASE_URL,
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       );
 
@@ -211,7 +227,7 @@ Deno.serve(async (req) => {
     if (action === 'check-existing-shop') {
       // Check if user has existing shop connection
       const supabaseAdmin = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
+        SUPABASE_URL,
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       );
 
@@ -237,7 +253,7 @@ Deno.serve(async (req) => {
     if (action === 'import-with-existing-token') {
       // Import products using existing stored token
       const supabaseAdmin = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
+        SUPABASE_URL,
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       );
 
