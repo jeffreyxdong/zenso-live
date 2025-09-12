@@ -15,24 +15,24 @@ const ShopifyCallback = () => {
         const state = urlParams.get('state');
 
         // Verify state
-        const storedState = sessionStorage.getItem('shopify-oauth-state');
+        const storedState = sessionStorage.getItem('shopify_oauth_state');
         if (!state || state !== storedState) {
           throw new Error('Invalid OAuth state parameter');
         }
 
         // Clean up state
-        sessionStorage.removeItem('shopify-oauth-state');
+        sessionStorage.removeItem('shopify_oauth_state');
 
         if (!code || !shop) {
           throw new Error('Missing authorization code or shop parameter');
         }
 
         // Get stored session
-        const sessionToken = sessionStorage.getItem('shopify-import-session');
+        const sessionToken = sessionStorage.getItem('shopify_session_token');
         if (!sessionToken) {
           throw new Error('Session expired. Please try again.');
         }
-        sessionStorage.removeItem('shopify-import-session');
+        sessionStorage.removeItem('shopify_session_token');
 
         // Show loading state
         toast({
@@ -43,7 +43,7 @@ const ShopifyCallback = () => {
         // Exchange code for access token and import products
         const { data: result, error } = await supabase.functions.invoke('shopify-oauth', {
           body: {
-            action: 'exchange-and-import',
+            action: 'callback',
             code,
             shop: shop.replace('.myshopify.com', ''), // Normalize shop name
           },
@@ -56,13 +56,19 @@ const ShopifyCallback = () => {
 
         // Send success message to parent window and close popup
         if (window.opener) {
-          window.opener.postMessage('shopify-import-success', window.location.origin);
+          window.opener.postMessage({
+            type: 'shopify-import-complete',
+            success: true,
+            imported: result?.imported || 0,
+            skipped: result?.skipped || 0,
+            total: result?.total || 0
+          }, '*');
           window.close();
         } else {
           // Fallback for direct navigation
           toast({
             title: "✅ Products imported successfully",
-            description: `Imported ${result.imported} products, skipped ${result.skipped} duplicates`,
+            description: `Imported ${result?.imported || 0} products, skipped ${result?.skipped || 0} duplicates`,
           });
           navigate('/dashboard');
         }
@@ -71,7 +77,10 @@ const ShopifyCallback = () => {
         console.error('Shopify callback error:', error);
         // Send error message to parent window and close popup
         if (window.opener) {
-          window.opener.postMessage('shopify-import-error', window.location.origin);
+          window.opener.postMessage({
+            type: 'shopify-import-error',
+            error: error.message || "Failed to complete Shopify import"
+          }, '*');
           window.close();
         } else {
           // Fallback for direct navigation

@@ -9,7 +9,7 @@ interface ShopifyOAuthParams {
   shop?: string;
   code?: string;
   state?: string;
-  action?: 'exchange-and-import' | 'get-api-key';
+  action?: 'exchange-and-import' | 'get-api-key' | 'callback';
 }
 
 Deno.serve(async (req) => {
@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (action === 'exchange-and-import' && code && shop) {
+    if (action === 'callback' && code && shop) {
       console.log(`Processing OAuth callback for shop: ${shop}`);
       
       // Step 1: Exchange code for access token
@@ -94,7 +94,28 @@ Deno.serve(async (req) => {
 
       console.log(`Successfully obtained access token for shop: ${shop}`);
 
-      // Step 2: Fetch products from Shopify
+      // Step 2: Store shop credentials in database
+      const supabaseAdmin = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+
+      const { error: shopError } = await supabaseAdmin
+        .from('shops')
+        .upsert({
+          user_id: user.id,
+          shop_domain: shop,
+          access_token: tokenData.access_token,
+        }, {
+          onConflict: 'user_id,shop_domain'
+        });
+
+      if (shopError) {
+        console.error('Error storing shop credentials:', shopError);
+        throw new Error(`Failed to store shop credentials: ${shopError.message}`);
+      }
+
+      // Step 3: Fetch and import products
       const productsUrl = `https://${shop}.myshopify.com/admin/api/2023-10/products.json?limit=250`;
       
       const productsResponse = await fetch(productsUrl, {
@@ -111,7 +132,7 @@ Deno.serve(async (req) => {
       const productsData = await productsResponse.json();
       console.log(`Fetched ${productsData.products?.length || 0} products from Shopify`);
       
-      // Step 3: Transform products for the shopify-ingest function
+      // Step 4: Transform and ingest products
       const transformedProducts = productsData.products.map((product: any) => ({
         productId: product.id.toString(),
         title: product.title,
@@ -135,17 +156,149 @@ Deno.serve(async (req) => {
         })),
       }));
 
-      // Step 4: Call the existing shopify-ingest function
-      const supabaseAdmin = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      );
-
       const { data: ingestResult, error: ingestError } = await supabaseAdmin.functions.invoke(
         'shopify-ingest',
         {
           body: {
             shop,
+            items: transformedProducts,
+          },
+          headers: {
+            Authorization: authHeader,
+          },
+        }
+      );
+
+      if (ingestError) {
+        console.error('Ingest error:', ingestError);
+        throw new Error(`Failed to ingest products: ${ingestError.message}`);
+      }
+
+      console.log(`Successfully imported ${ingestResult.imported} products, skipped ${ingestResult.skipped}`);
+
+      // Return HTML page that communicates with parent window
+      const htmlResponse = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Shopify Import Complete</title>
+        </head>
+        <body>
+          <script>
+            try {
+              window.opener.postMessage({
+                type: 'shopify-import-complete',
+                success: true,
+                imported: ${ingestResult.imported},
+                skipped: ${ingestResult.skipped},
+                total: ${ingestResult.total}
+              }, '*');
+            } catch (error) {
+              console.error('Error posting message:', error);
+            }
+            window.close();
+          </script>
+          <p>Import complete! This window should close automatically.</p>
+        </body>
+        </html>
+      `;
+
+      return new Response(htmlResponse, {
+        headers: { ...corsHeaders, 'Content-Type': 'text/html' }
+      });
+    }
+
+    if (action === 'check-existing-shop') {
+      // Check if user has existing shop connection
+      const supabaseAdmin = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+
+      const { data: shops, error: shopError } = await supabaseAdmin
+        .from('shops')
+        .select('shop_domain, access_token')
+        .eq('user_id', user.id)
+        .limit(1);
+
+      if (shopError) {
+        throw new Error(`Failed to check existing shops: ${shopError.message}`);
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          hasExistingShop: shops.length > 0,
+          shop: shops[0] || null
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (action === 'import-with-existing-token') {
+      // Import products using existing stored token
+      const supabaseAdmin = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+
+      const { data: shops, error: shopError } = await supabaseAdmin
+        .from('shops')
+        .select('shop_domain, access_token')
+        .eq('user_id', user.id)
+        .limit(1);
+
+      if (shopError || !shops.length) {
+        throw new Error('No existing shop connection found');
+      }
+
+      const { shop_domain, access_token } = shops[0];
+
+      // Fetch products from Shopify
+      const productsUrl = `https://${shop_domain}.myshopify.com/admin/api/2023-10/products.json?limit=250`;
+      
+      const productsResponse = await fetch(productsUrl, {
+        headers: {
+          'X-Shopify-Access-Token': access_token,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!productsResponse.ok) {
+        throw new Error(`Failed to fetch products: ${productsResponse.status} ${await productsResponse.text()}`);
+      }
+
+      const productsData = await productsResponse.json();
+      console.log(`Fetched ${productsData.products?.length || 0} products from existing connection`);
+      
+      // Transform and ingest products
+      const transformedProducts = productsData.products.map((product: any) => ({
+        productId: product.id.toString(),
+        title: product.title,
+        handle: product.handle,
+        status: product.status,
+        productType: product.product_type,
+        vendor: product.vendor,
+        images: product.images.map((img: any) => ({
+          id: img.id.toString(),
+          url: img.src,
+          alt: img.alt,
+        })),
+        variants: product.variants.map((variant: any) => ({
+          id: variant.id.toString(),
+          title: variant.title,
+          sku: variant.sku,
+          price: variant.price,
+          inventory_quantity: variant.inventory_quantity,
+          weight: variant.weight,
+          weight_unit: variant.weight_unit,
+        })),
+      }));
+
+      const { data: ingestResult, error: ingestError } = await supabaseAdmin.functions.invoke(
+        'shopify-ingest',
+        {
+          body: {
+            shop: shop_domain,
             items: transformedProducts,
           },
           headers: {

@@ -180,21 +180,50 @@ const MyProducts = () => {
       }
 
       console.log('Starting Shopify import process...');
+      
+      // First check if user has existing shop connection
+      const { data: existingShopData, error: shopCheckError } = await supabase.functions.invoke('shopify-oauth', {
+        body: { action: 'check-existing-shop' },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
 
-      // Use direct Shopify OAuth URL - let users enter their shop domain
+      if (shopCheckError) {
+        throw new Error(`Failed to check existing shop: ${shopCheckError.message}`);
+      }
+
+      // If user has existing shop, use stored token to import
+      if (existingShopData.hasExistingShop) {
+        console.log('Using existing shop connection...');
+        const { data: importResult, error: importError } = await supabase.functions.invoke('shopify-oauth', {
+          body: { action: 'import-with-existing-token' },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+
+        if (importError) {
+          throw new Error(`Import failed: ${importError.message}`);
+        }
+
+        // Refresh products and show success
+        fetchProducts();
+        setImporting(false);
+        
+        toast({
+          title: "Success",
+          description: `✅ Products imported successfully! Imported: ${importResult.imported}, Skipped: ${importResult.skipped}`,
+        });
+        return;
+      }
+
+      // If no existing shop, start OAuth flow
       const shopDomain = prompt('Enter your Shopify shop domain (e.g., "mystore" for mystore.myshopify.com):');
       if (!shopDomain) {
         setImporting(false);
         return;
       }
-
-      // Generate CSRF state token for security
-      const state = Math.random().toString(36).substring(2, 15) + 
-                   Math.random().toString(36).substring(2, 15);
-      
-      // Store state and session for verification
-      sessionStorage.setItem('shopify-oauth-state', state);
-      sessionStorage.setItem('shopify-import-session', session.access_token);
 
       // Get API key from backend
       const { data: keyData, error: keyError } = await supabase.functions.invoke('shopify-oauth', {
@@ -207,6 +236,14 @@ const MyProducts = () => {
       if (keyError || !keyData?.apiKey) {
         throw new Error('Shopify API key not configured. Please ensure SHOPIFY_API_KEY secret is set.');
       }
+
+      // Generate CSRF state token for security
+      const state = Math.random().toString(36).substring(2, 15) + 
+                   Math.random().toString(36).substring(2, 15);
+      
+      // Store state and session for verification
+      sessionStorage.setItem('shopify_oauth_state', state);
+      sessionStorage.setItem('shopify_session_token', session.access_token);
 
       const redirectUri = `${window.location.origin}/auth/shopify/callback`;
       const scopes = 'read_products,read_inventory';
@@ -233,22 +270,28 @@ const MyProducts = () => {
 
       // Listen for success message from popup
       const messageHandler = (event: MessageEvent) => {
-        if (event.origin !== window.location.origin) return;
-        
-        if (event.data === 'shopify-import-success') {
+        if (event.data?.type === 'shopify-import-complete') {
+          console.log('Received import complete message', event.data);
+          popup?.close();
           window.removeEventListener('message', messageHandler);
+          
+          // Refresh the products list
+          fetchProducts();
           setImporting(false);
-          fetchProducts(); // Refresh the products list
+          
           toast({
-            title: "✅ Products imported successfully",
-            description: "Your Shopify products have been imported",
+            title: "Success",
+            description: `✅ Products imported successfully! Imported: ${event.data.imported}, Skipped: ${event.data.skipped}`,
           });
-        } else if (event.data === 'shopify-import-error') {
+        } else if (event.data?.type === 'shopify-import-error') {
+          console.log('Received import error message', event.data);
+          popup?.close();
           window.removeEventListener('message', messageHandler);
           setImporting(false);
+          
           toast({
-            title: "Import Error",
-            description: "Failed to import products from Shopify",
+            title: "Import Error", 
+            description: "❌ Import failed.",
             variant: "destructive",
           });
         }
@@ -258,7 +301,7 @@ const MyProducts = () => {
 
       // Check if popup was closed manually
       const checkClosed = setInterval(() => {
-        if (popup.closed) {
+        if (popup?.closed) {
           clearInterval(checkClosed);
           window.removeEventListener('message', messageHandler);
           setImporting(false);
