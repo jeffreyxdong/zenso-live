@@ -223,15 +223,51 @@ const MyProducts = () => {
         return;
       }
 
-      // If no existing shop, start OAuth flow
-      const shopDomain = prompt('Enter your Shopify shop domain (e.g., "mystore" for mystore.myshopify.com):');
-      console.log('Shop domain entered:', shopDomain);
-      
-      if (!shopDomain) {
-        console.log('No shop domain provided, cancelling import');
-        setImporting(false);
-        return;
+      // Get active store from Supabase instead of prompting user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
       }
+
+      const { data: activeStore, error: storeError } = await supabase
+        .from('stores')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (storeError) {
+        throw new Error(`Failed to get active store: ${storeError.message}`);
+      }
+
+      if (!activeStore) {
+        throw new Error('No active store found. Please add a store first.');
+      }
+
+      // Extract shop domain from website URL
+      let shopDomain = '';
+      try {
+        const websiteUrl = activeStore.website;
+        if (websiteUrl.includes('myshopify.com')) {
+          // Extract domain from myshopify.com URL
+          const match = websiteUrl.match(/https?:\/\/([^.]+)\.myshopify\.com/);
+          if (match) {
+            shopDomain = match[1];
+          }
+        } else {
+          // For custom domains, use the store name as fallback
+          shopDomain = activeStore.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        }
+      } catch (error) {
+        console.error('Error parsing store website:', error);
+        shopDomain = activeStore.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      }
+
+      if (!shopDomain) {
+        throw new Error(`Could not determine shop domain from store website: ${activeStore.website}. Please ensure your store website is a valid Shopify URL.`);
+      }
+
+      console.log('Using shop domain from active store:', shopDomain);
 
       // Get API key from backend
       const { data: keyData, error: keyError } = await supabase.functions.invoke('shopify-oauth', {
