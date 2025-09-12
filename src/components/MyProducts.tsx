@@ -220,7 +220,10 @@ const MyProducts = () => {
 
       // If no existing shop, start OAuth flow
       const shopDomain = prompt('Enter your Shopify shop domain (e.g., "mystore" for mystore.myshopify.com):');
+      console.log('Shop domain entered:', shopDomain);
+      
       if (!shopDomain) {
+        console.log('No shop domain provided, cancelling import');
         setImporting(false);
         return;
       }
@@ -233,6 +236,8 @@ const MyProducts = () => {
         },
       });
 
+      console.log('API key response:', { keyData, keyError });
+
       if (keyError || !keyData?.apiKey) {
         throw new Error('Shopify API key not configured. Please ensure SHOPIFY_API_KEY secret is set.');
       }
@@ -240,6 +245,8 @@ const MyProducts = () => {
       // Generate CSRF state token for security
       const state = Math.random().toString(36).substring(2, 15) + 
                    Math.random().toString(36).substring(2, 15);
+      
+      console.log('Generated state:', state);
       
       // Store state and session for verification
       sessionStorage.setItem('shopify_oauth_state', state);
@@ -255,6 +262,9 @@ const MyProducts = () => {
         `redirect_uri=${encodeURIComponent(redirectUri)}&` +
         `state=${state}`;
 
+      console.log('OAuth URL:', authUrl);
+      console.log('Redirect URI:', redirectUri);
+
       console.log('Opening Shopify OAuth popup...');
 
       // Open popup window for OAuth
@@ -263,6 +273,8 @@ const MyProducts = () => {
         'shopify-oauth',
         'width=600,height=700,scrollbars=yes,resizable=yes,status=yes'
       );
+
+      console.log('Popup opened:', !!popup);
 
       if (!popup) {
         throw new Error('Popup blocked. Please allow popups for this site and try again.');
