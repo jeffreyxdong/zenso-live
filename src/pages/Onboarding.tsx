@@ -107,9 +107,7 @@ const Onboarding: React.FC = () => {
                 <Input
                   id="companyName"
                   value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  placeholder="Enter your company name"
-                  required
+                  onChange={(e) => setCompanyName(e.target.value)}                 
                 />
               </div>
 
@@ -119,9 +117,7 @@ const Onboarding: React.FC = () => {
                   id="companyWebsite"
                   type="url"
                   value={companyWebsite}
-                  onChange={(e) => setCompanyWebsite(e.target.value)}
-                  placeholder="Enter your company website"
-                  required
+                  onChange={(e) => setCompanyWebsite(e.target.value)}                  
                 />
               </div>
 
