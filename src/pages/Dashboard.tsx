@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, TrendingUp, Globe, BarChart3, Plus, Settings, Store, Target, MessageCircle } from "lucide-react";
-import KeywordSearch from "@/components/KeywordSearch";
 import BrandMentions from "@/components/BrandMentions";
 import { PromptsTab } from "@/components/PromptsTab";
 import MyProducts from "@/components/MyProducts";
@@ -104,14 +103,10 @@ const Dashboard = () => {
       {/* Main Content */}
       <main className="container mx-auto px-6 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
               Overview
-            </TabsTrigger>
-            <TabsTrigger value="keyword-search" className="flex items-center gap-2">
-              <Search className="w-4 h-4" />
-              Keyword Search
             </TabsTrigger>
             <TabsTrigger value="my-products" className="flex items-center gap-2">
               <Store className="w-4 h-4" />
@@ -274,10 +269,6 @@ const Dashboard = () => {
                 </Card>
               </div>
             </div>
-          </TabsContent>
-
-          <TabsContent value="keyword-search">
-            <KeywordSearch />
           </TabsContent>
 
           <TabsContent value="my-products">
