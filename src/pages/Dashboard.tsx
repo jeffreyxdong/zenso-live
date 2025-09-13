@@ -23,7 +23,7 @@ const Dashboard = () => {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) {
-        navigate("/auth", { replace: true });
+        navigate("/", { replace: true });
         return;
       }
       // Defer profile check to avoid deadlocks
@@ -41,7 +41,7 @@ const Dashboard = () => {
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) {
-        navigate("/auth", { replace: true });
+        navigate("/", { replace: true });
         return;
       }
       const { data, error } = await supabase
