@@ -2,26 +2,27 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle2, Mail, ArrowRight } from "lucide-react";
+import { CheckCircle2, Mail, ArrowRight, Lock } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 const SignupForm = () => {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    if (!email || !password) return;
 
     setLoading(true);
     try {
       const redirectUrl = `${window.location.origin}/`;
       const { error } = await supabase.auth.signUp({
         email,
-        password: "temp123", // Temporary password - user will set their own
+        password,
         options: { 
           emailRedirectTo: redirectUrl,
           data: {
@@ -42,6 +43,7 @@ const SignupForm = () => {
           description: "We sent you a confirmation link to complete signup.",
         });
         setEmail("");
+        setPassword("");
       }
     } catch (error: any) {
       toast({
@@ -103,6 +105,19 @@ const SignupForm = () => {
               required
             />
             <Mail className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          </div>
+          
+          <div className="relative">
+            <Input
+              type="password"
+              placeholder="Create a password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="h-11 pl-4 pr-12"
+              required
+              minLength={6}
+            />
+            <Lock className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           </div>
           
           <Button 
