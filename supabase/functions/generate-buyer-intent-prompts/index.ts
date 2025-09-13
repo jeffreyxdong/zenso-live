@@ -183,21 +183,48 @@ Return ONLY a JSON array of 15 strings, no additional formatting or explanation.
     
     console.log(`Generated ${responses.length}/${insertedPrompts.length} responses`);
     
-    // STEP 3: Calculate single visibility score for the product
+    // STEP 3: Calculate comprehensive scores for the product
     if (responses.length > 0) {
       const allResponsesText = responses.map(r => r.response_text).join('\n\n');
     
-      const scoringPrompt = `You are an expert research analyst. Given a collection of AI-generated responses to buyer-intent prompts, provide a single score of 1-100 based on how visible the product "${productTitle}" (or variations of it) is mentioned across ALL the responses. 
-    
-    Consider:
-    - How many responses mention the product by name
-    - The prominence of mentions (title, early in text, etc.)
-    - Overall brand visibility across the response set
-    
-    Respond with ONLY a number between 1-100, nothing else.
-    
-    Responses to analyze:
-    ${allResponsesText}`;
+      const comprehensiveScoringPrompt = `You are an expert research analyst scoring brand mentions in AI-generated responses. 
+Your job has three sequential steps. Return results in order as a JSON object.
+
+Step 1 – Visibility Score:  
+A 0–100 score based on whether and how prominently the brand "${productTitle}" is mentioned overall.
+
+Step 2 – Position Score:  
+Calculate a "Position Score" from 0–100 that measures how prominently the brand is mentioned based on its position in the text.
+
+Instructions for Position Score:
+1. Identify all mentions of the specified brand in the output.
+2. Weight earlier mentions more heavily (mentions in the first 10% of the text contribute most).
+3. Apply diminishing returns for multiple mentions (first mention carries the most weight).
+4. Normalize result to 0–100 (0 = no mention, 100 = mentioned first, prominently, and multiple times).
+
+Step 3 – Sentiment Score:  
+Calculate a "Sentiment Score" from 0–100 that represents the tone of mentions toward the brand.
+
+Instructions for Sentiment Score:
+1. Analyze the sentiment of each mention (positive, neutral, negative).
+2. Heavily weight sentiment that appears near the first mention.
+3. Map sentiment to numeric score:  
+   • Very positive = 80–100  
+   • Slightly positive = 60–79  
+   • Neutral / descriptive = 40–59  
+   • Slightly negative = 20–39  
+   • Very negative = 0–19  
+4. Normalize result to a single 0–100 number.
+
+Return ONLY a JSON object with this format:
+{
+  "visibility_score": 85,
+  "position_score": 72,
+  "sentiment_score": 91
+}
+
+Responses to analyze:
+${allResponsesText}`;
     
       const scoringResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -207,33 +234,55 @@ Return ONLY a JSON array of 15 strings, no additional formatting or explanation.
         },
         body: JSON.stringify({
           model: 'gpt-4o-mini',
-          messages: [{ role: 'user', content: scoringPrompt }],
-          max_tokens: 10,
+          messages: [{ role: 'user', content: comprehensiveScoringPrompt }],
+          max_tokens: 100,
           temperature: 0.1,
         }),
       });
     
       if (scoringResponse.ok) {
         const scoringData = await scoringResponse.json();
-        const scoreText = scoringData.choices[0].message.content.trim();
-        const visibilityScore = parseInt(scoreText) || 0;
+        const scoresText = scoringData.choices[0].message.content.trim();
+        
+        try {
+          // Parse the JSON response
+          let cleanedScores = scoresText;
+          if (cleanedScores.startsWith('```json')) {
+            cleanedScores = cleanedScores.replace(/^```json\s*/i, '').replace(/\s*```$/, '');
+          } else if (cleanedScores.startsWith('```')) {
+            cleanedScores = cleanedScores.replace(/^```\s*/, '').replace(/\s*```$/, '');
+          }
+          
+          const scores = JSON.parse(cleanedScores);
+          const visibilityScore = parseInt(scores.visibility_score) || 0;
+          const positionScore = parseInt(scores.position_score) || 0;
+          const sentimentScore = parseInt(scores.sentiment_score) || 0;
     
-        console.log(`Calculated visibility score: ${visibilityScore} for product: ${productTitle}`);
+          console.log(`Calculated scores for product: ${productTitle}`);
+          console.log(`Visibility: ${visibilityScore}, Position: ${positionScore}, Sentiment: ${sentimentScore}`);
     
-        // Update the product with the visibility score
-        const { data: updatedProduct, error: updateError } = await supabase
-          .from('products')
-          .update({ visibility_score: visibilityScore })
-          .eq('id', productId)
-          .select();
+          // Update the product with all three scores
+          const { data: updatedProduct, error: updateError } = await supabase
+            .from('products')
+            .update({ 
+              visibility_score: visibilityScore,
+              position_score: positionScore,
+              sentiment_score: sentimentScore
+            })
+            .eq('id', productId)
+            .select();
     
-        if (updateError) {
-          console.error('Failed to update product visibility score:', updateError);
-        } else {
-          console.log(`Updated product ${productId} with visibility_score: ${visibilityScore}`);
+          if (updateError) {
+            console.error('Failed to update product scores:', updateError);
+          } else {
+            console.log(`Updated product ${productId} with comprehensive scores`);
+          }
+        } catch (parseError) {
+          console.error('Failed to parse scoring response:', scoresText);
+          console.error('Parse error:', parseError);
         }
       } else {
-        console.error('Failed to calculate visibility score:', scoringResponse.status);
+        console.error('Failed to calculate comprehensive scores:', scoringResponse.status);
       }
     }
     
