@@ -255,7 +255,7 @@ ${allResponsesText}`;
     };
 
     // Start background task
-    EdgeRuntime.waitUntil(backgroundTask());
+    backgroundTask();
 
     // Return immediate response
     return new Response(JSON.stringify({ 
