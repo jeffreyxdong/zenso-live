@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle2, Mail, ArrowRight, Lock } from "lucide-react";
+import { Mail, ArrowRight, Lock, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -13,48 +13,67 @@ const SignupForm = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Listen for successful login after email confirmation
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event) => {
+        if (event === "SIGNED_IN") {
+          toast({
+            title: "Welcome!",
+            description: "Redirecting you to onboarding...",
+          });
+          navigate("/onboarding");
+        }
+      }
+    );
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [navigate]);
+
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
 
     setLoading(true);
     try {
-      const redirectUrl = `${window.location.origin}/`;
-      const { error, data } = await supabase.auth.signUp({
+      const redirectUrl = `${window.location.origin}/auth`; // handle confirmation here
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: { 
           emailRedirectTo: redirectUrl,
-          data: {
-            email_signup: true
-          }
+          data: { email_signup: true },
         },
       });
 
       if (error) {
-        // Check if error indicates user already exists
-        if (error.message.includes("User already registered")) {
-          toast({
-            title: "Account already exists",
-            description: "An account with this email already exists. Please try logging in instead.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Sign up failed",
-            description: error.message,
-            variant: "destructive",
-          });
-        }
-      } else {
-        // Successful signup - redirect to onboarding
         toast({
-          title: "Account created successfully!",
-          description: "Welcome! Redirecting you to onboarding...",
+          title: "Sign up failed",
+          description: error.message,
+          variant: "destructive",
         });
-        navigate("/onboarding");
+        return;
       }
-    } catch (error: any) {
+
+      // User exists: Supabase returns identities = []
+      if (data?.user?.identities?.length === 0) {
+        toast({
+          title: "Account already exists",
+          description: "This email is already registered. Try logging in instead.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Successful signup: wait for confirmation email
+      toast({
+        title: "Check your email",
+        description:
+          "We sent you a confirmation link. Verify your email to complete signup.",
+      });
+    } catch (err: any) {
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
@@ -69,12 +88,10 @@ const SignupForm = () => {
     try {
       const redirectUrl = `${window.location.origin}/auth`;
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl
-        }
+        provider: "google",
+        options: { redirectTo: redirectUrl },
       });
-      
+
       if (error) {
         toast({
           title: "Sign up failed",
@@ -82,9 +99,9 @@ const SignupForm = () => {
           variant: "destructive",
         });
       }
-    } catch (error: any) {
+    } catch (err: any) {
       toast({
-        title: "Error", 
+        title: "Error",
         description: "Something went wrong. Please try again.",
         variant: "destructive",
       });
@@ -115,7 +132,7 @@ const SignupForm = () => {
             />
             <Mail className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           </div>
-          
+
           <div className="relative">
             <Input
               type="password"
@@ -128,15 +145,24 @@ const SignupForm = () => {
             />
             <Lock className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           </div>
-          
-          <Button 
-            type="submit" 
-            className="w-full h-11 font-medium" 
+
+          <Button
+            type="submit"
+            className="w-full h-11 font-medium"
             size="lg"
             disabled={loading}
           >
-            {loading ? "Signing up..." : "Sign up with email"}
-            <ArrowRight className="w-4 h-4" />
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                Signing up...
+              </>
+            ) : (
+              <>
+                Sign up with email
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </>
+            )}
           </Button>
         </form>
 
@@ -157,7 +183,7 @@ const SignupForm = () => {
             className="w-full h-11"
             onClick={handleGoogleSignup}
           >
-            <svg className="w-4 h-4" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
               <path
                 fill="currentColor"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
