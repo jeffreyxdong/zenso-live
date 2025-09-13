@@ -57,12 +57,10 @@ const SignupForm = () => {
 
     setLoading(true);
     try {
-      const redirectUrl = `${window.location.origin}/`;
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: { 
-          emailRedirectTo: redirectUrl,
           data: { email_signup: true },
         },
       });
