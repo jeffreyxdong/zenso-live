@@ -19,6 +19,12 @@ interface PromptViewModalProps {
   };
 }
 
+interface ProductScores {
+  visibility_score: number | null;
+  position_score: number | null;
+  sentiment_score: number | null;
+}
+
 interface PromptResponse {
   id: string;
   model_name: string;
@@ -29,7 +35,11 @@ interface PromptResponse {
 
 export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProps) => {
   const [responses, setResponses] = useState<PromptResponse[]>([]);
-  const [productVisibilityScore, setProductVisibilityScore] = useState<number | null>(null);
+  const [productScores, setProductScores] = useState<ProductScores>({
+    visibility_score: null,
+    position_score: null,
+    sentiment_score: null
+  });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -51,18 +61,22 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
 
       if (responsesError) throw responsesError;
 
-      // Fetch product visibility score if product_id exists
+      // Fetch product scores if product_id exists
       if (prompt.product_id) {
         const { data: productData, error: productError } = await supabase
           .from('products')
-          .select('visibility_score')
+          .select('visibility_score, position_score, sentiment_score')
           .eq('id', prompt.product_id)
           .single();
 
         if (productError) {
-          console.warn('Could not fetch product visibility score:', productError);
+          console.warn('Could not fetch product scores:', productError);
         } else {
-          setProductVisibilityScore(productData?.visibility_score || null);
+          setProductScores({
+            visibility_score: productData?.visibility_score || null,
+            position_score: productData?.position_score || null,
+            sentiment_score: productData?.sentiment_score || null
+          });
         }
       }
 
@@ -125,32 +139,86 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
             </CardContent>
           </Card>
 
-          {/* Visibility Score */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Product Visibility Score</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="h-24 flex items-center justify-center text-sm text-muted-foreground">
-                  Loading score...
-                </div>
-              ) : productVisibilityScore !== null ? (
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-primary mb-2">
-                    {productVisibilityScore}%
+          {/* Product Scores */}
+          <div className="grid grid-cols-3 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Visibility Score</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="h-16 flex items-center justify-center text-sm text-muted-foreground">
+                    Loading...
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Brand visibility across all prompt responses
-                  </p>
-                </div>
-              ) : (
-                <div className="h-24 flex items-center justify-center text-sm text-muted-foreground">
-                  No visibility score available
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                ) : productScores.visibility_score !== null ? (
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-primary mb-1">
+                      {productScores.visibility_score}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Brand visibility
+                    </p>
+                  </div>
+                ) : (
+                  <div className="h-16 flex items-center justify-center text-sm text-muted-foreground">
+                    No Data
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Position Score</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="h-16 flex items-center justify-center text-sm text-muted-foreground">
+                    Loading...
+                  </div>
+                ) : productScores.position_score !== null ? (
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-primary mb-1">
+                      {productScores.position_score}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Position ranking
+                    </p>
+                  </div>
+                ) : (
+                  <div className="h-16 flex items-center justify-center text-sm text-muted-foreground">
+                    No Data
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Sentiment Score</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="h-16 flex items-center justify-center text-sm text-muted-foreground">
+                    Loading...
+                  </div>
+                ) : productScores.sentiment_score !== null ? (
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-primary mb-1">
+                      {productScores.sentiment_score}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Sentiment tone
+                    </p>
+                  </div>
+                ) : (
+                  <div className="h-16 flex items-center justify-center text-sm text-muted-foreground">
+                    No Data
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Responses Section */}
           <Card>

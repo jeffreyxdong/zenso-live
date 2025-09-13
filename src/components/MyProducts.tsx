@@ -32,7 +32,7 @@ interface Product {
   variants?: ProductVariant[];
   visibility_score?: number;
   sentiment_score?: number;
-  position?: number;
+  position_score?: number;
 }
 
 interface ProductVariant {
@@ -516,16 +516,8 @@ const MyProducts = () => {
         .eq("user_id", userData.user.id)
         .order("created_at", { ascending: false });
 
-      // Add mock data for visibility, sentiment, and position for demonstration
-      const enhancedProducts = (productsData || []).map(product => ({
-        ...product,
-        visibility_score: Math.floor(Math.random() * 100) + 1,
-        sentiment_score: Math.floor(Math.random() * 100) + 1,
-        position: Math.floor(Math.random() * 20) + 1,
-      }));
-
       if (error) throw error;
-      setProducts(enhancedProducts);
+      setProducts(productsData || []);
     } catch (error: any) {
       console.error("Error fetching products:", error);
       toast({
@@ -686,7 +678,9 @@ const MyProducts = () => {
                 <TableCell>
                   <div className="flex items-center gap-1">
                     <MapPin className="w-3 h-3 text-muted-foreground" />
-                    <span className="text-sm font-medium">#{product.position}</span>
+                    <span className="text-sm font-medium">
+                      {product.position_score ? `#${product.position_score}` : 'No Data'}
+                    </span>
                   </div>
                 </TableCell>
                 <TableCell onClick={(e) => e.stopPropagation()}>
@@ -1028,7 +1022,7 @@ const MyProducts = () => {
                       <span className="font-medium">Position</span>
                     </div>
                     <div className="text-2xl font-bold mb-1">
-                      #{selectedProduct.position || 'N/A'}
+                      #{selectedProduct.position_score || 'N/A'}
                     </div>
                     <Badge variant="outline">Search Ranking</Badge>
                   </CardContent>
