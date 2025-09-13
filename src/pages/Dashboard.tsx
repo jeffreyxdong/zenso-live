@@ -29,7 +29,7 @@ const Dashboard = () => {
       // Defer profile check to avoid deadlocks
       setTimeout(async () => {
         const { data, error } = await supabase
-          .from("profiles")
+          .from("stores")
           .select("id")
           .eq("user_id", session.user.id)
           .maybeSingle();
@@ -45,7 +45,7 @@ const Dashboard = () => {
         return;
       }
       const { data, error } = await supabase
-        .from("profiles")
+        .from("stores")
         .select("id")
         .eq("user_id", session.user.id)
         .maybeSingle();
