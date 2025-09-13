@@ -18,13 +18,16 @@ const SignupForm = () => {
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.id);
         if (event === "SIGNED_IN" && session) {
           // Check if user has profile for login, redirect to onboarding for new signups
-          const { data: profile } = await supabase
+          const { data: profile, error } = await supabase
             .from('profiles')
             .select('*')
             .eq('user_id', session.user.id)
             .single();
+
+          console.log('Profile check:', profile, error);
 
           if (profile) {
             toast({
@@ -91,10 +94,16 @@ const SignupForm = () => {
         return;
       }
 
+      console.log('Signup success:', data);
       toast({
         title: "Account created!",
         description: "Redirecting to onboarding...",
       });
+      
+      // Manual navigation as fallback
+      setTimeout(() => {
+        navigate("/onboarding");
+      }, 1000);
     } catch (err: any) {
       toast({
         title: "Error",
