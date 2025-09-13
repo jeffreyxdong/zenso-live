@@ -46,7 +46,7 @@ const Onboarding: React.FC = () => {
         return;
       }
       const { data } = await supabase
-        .from("profiles")
+        .from("stores")
         .select("id")
         .eq("user_id", session.user.id)
         .maybeSingle();
@@ -74,11 +74,15 @@ const Onboarding: React.FC = () => {
       }
 
       const { error } = await supabase
-        .from("profiles")
-        .upsert(
-          [{ user_id: user.id, company_name: companyName.trim(), company_website: website }],
-          { onConflict: "user_id" }
-        );
+        .from("stores")
+        .insert([
+          { 
+            user_id: user.id, 
+            name: companyName.trim(), 
+            website: website,
+            is_active: true
+          }
+        ]);
 
       if (error) {
         toast({ title: "Could not save company details", description: error.message });
