@@ -32,24 +32,26 @@ const SignupForm = () => {
       });
 
       if (error) {
-        toast({
-          title: "Sign up failed",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else if (data.user && !data.session) {
-        // User exists but needs email confirmation, or account already exists
-        toast({
-          title: "Account already exists",
-          description: "An account with this email already exists. Please try logging in instead.",
-          variant: "destructive",
-        });
+        // Check if error indicates user already exists
+        if (error.message.includes("User already registered")) {
+          toast({
+            title: "Account already exists",
+            description: "An account with this email already exists. Please try logging in instead.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Sign up failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
       } else {
+        // Successful signup - redirect to onboarding
         toast({
           title: "Account created successfully!",
           description: "Welcome! Redirecting you to onboarding...",
         });
-        // Redirect to onboarding
         navigate("/onboarding");
       }
     } catch (error: any) {
