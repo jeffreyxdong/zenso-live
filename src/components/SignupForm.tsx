@@ -11,18 +11,34 @@ const SignupForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isLogin, setIsLogin] = useState(false);
   const navigate = useNavigate();
 
-  // Listen for successful login after email confirmation
+  // Listen for auth state changes
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event) => {
-        if (event === "SIGNED_IN") {
-          toast({
-            title: "Welcome!",
-            description: "Redirecting you to onboarding...",
-          });
-          navigate("/onboarding");
+      async (event, session) => {
+        if (event === "SIGNED_IN" && session) {
+          // Check if user has profile for login, redirect to onboarding for new signups
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .single();
+
+          if (profile) {
+            toast({
+              title: "Welcome back!",
+              description: "Redirecting to dashboard...",
+            });
+            navigate("/dashboard");
+          } else {
+            toast({
+              title: "Welcome!",
+              description: "Redirecting you to onboarding...",
+            });
+            navigate("/onboarding");
+          }
         }
       }
     );
@@ -38,7 +54,7 @@ const SignupForm = () => {
 
     setLoading(true);
     try {
-      const redirectUrl = `${window.location.origin}/auth`; // handle confirmation here
+      const redirectUrl = `${window.location.origin}/`;
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -49,6 +65,14 @@ const SignupForm = () => {
       });
 
       if (error) {
+        if (error.message === "User already registered") {
+          toast({
+            title: "Account already exists",
+            description: "This email is already registered. Try logging in instead.",
+            variant: "destructive",
+          });
+          return;
+        }
         toast({
           title: "Sign up failed",
           description: error.message,
@@ -67,11 +91,9 @@ const SignupForm = () => {
         return;
       }
 
-      // Successful signup: wait for confirmation email
       toast({
-        title: "Check your email",
-        description:
-          "We sent you a confirmation link. Verify your email to complete signup.",
+        title: "Account created!",
+        description: "Redirecting to onboarding...",
       });
     } catch (err: any) {
       toast({
@@ -84,9 +106,44 @@ const SignupForm = () => {
     }
   };
 
-  const handleGoogleSignup = async () => {
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) return;
+
+    setLoading(true);
     try {
-      const redirectUrl = `${window.location.origin}/auth`;
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        toast({
+          title: "Login failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Welcome back!",
+        description: "Redirecting...",
+      });
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleAuth = async () => {
+    try {
+      const redirectUrl = `${window.location.origin}/`;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo: redirectUrl },
@@ -94,7 +151,7 @@ const SignupForm = () => {
 
       if (error) {
         toast({
-          title: "Sign up failed",
+          title: `${isLogin ? "Login" : "Sign up"} failed`,
           description: error.message,
           variant: "destructive",
         });
@@ -113,14 +170,17 @@ const SignupForm = () => {
       <CardContent className="p-8">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-foreground mb-2">
-            Track Your Brand in AI
+            {isLogin ? "Welcome Back" : "Track Your Brand in AI"}
           </h1>
           <p className="text-muted-foreground">
-            Monitor product recommendations across ChatGPT, Perplexity & Gemini.
+            {isLogin 
+              ? "Sign in to your account to continue monitoring your brand visibility."
+              : "Monitor product recommendations across ChatGPT, Perplexity & Gemini."
+            }
           </p>
         </div>
 
-        <form onSubmit={handleEmailSignup} className="space-y-4 mb-6">
+        <form onSubmit={isLogin ? handleLogin : handleEmailSignup} className="space-y-4 mb-6">
           <div className="relative">
             <Input
               type="email"
@@ -136,12 +196,12 @@ const SignupForm = () => {
           <div className="relative">
             <Input
               type="password"
-              placeholder="Create a password"
+              placeholder={isLogin ? "Enter your password" : "Create a password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="h-11 pl-4 pr-12"
               required
-              minLength={6}
+              minLength={isLogin ? 1 : 6}
             />
             <Lock className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           </div>
@@ -155,11 +215,11 @@ const SignupForm = () => {
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                Signing up...
+                {isLogin ? "Signing in..." : "Signing up..."}
               </>
             ) : (
               <>
-                Sign up with email
+                {isLogin ? "Sign in with email" : "Sign up with email"}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </>
             )}
@@ -181,7 +241,7 @@ const SignupForm = () => {
             variant="outline"
             size="lg"
             className="w-full h-11"
-            onClick={handleGoogleSignup}
+            onClick={handleGoogleAuth}
           >
             <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
               <path
@@ -201,15 +261,19 @@ const SignupForm = () => {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            Sign up with Google
+            {isLogin ? "Sign in with Google" : "Sign up with Google"}
           </Button>
         </div>
 
         <div className="text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <Link to="/auth" className="text-primary hover:underline font-medium">
-            Login instead
-          </Link>
+          {isLogin ? "Don't have an account? " : "Already have an account? "}
+          <button 
+            type="button"
+            onClick={() => setIsLogin(!isLogin)}
+            className="text-primary hover:underline font-medium"
+          >
+            {isLogin ? "Sign up instead" : "Login instead"}
+          </button>
         </div>
       </CardContent>
     </Card>

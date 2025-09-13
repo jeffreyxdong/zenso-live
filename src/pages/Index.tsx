@@ -18,11 +18,6 @@ const Index = () => {
                   View Dashboard
                 </Button>
               </Link>
-              <Link to="/auth">
-                <Button size="sm">
-                  Login
-                </Button>
-              </Link>
             </div>
           </div>
         </div>
