@@ -79,7 +79,9 @@ export type Database = {
           handle: string
           id: string
           images: Json | null
+          position_score: number | null
           product_type: string | null
+          sentiment_score: number | null
           shopify_id: string
           status: string
           tags: string[] | null
@@ -87,13 +89,16 @@ export type Database = {
           updated_at: string
           user_id: string
           vendor: string | null
+          visibility_score: number | null
         }
         Insert: {
           created_at?: string
           handle: string
           id?: string
           images?: Json | null
+          position_score?: number | null
           product_type?: string | null
+          sentiment_score?: number | null
           shopify_id: string
           status?: string
           tags?: string[] | null
@@ -101,13 +106,16 @@ export type Database = {
           updated_at?: string
           user_id: string
           vendor?: string | null
+          visibility_score?: number | null
         }
         Update: {
           created_at?: string
           handle?: string
           id?: string
           images?: Json | null
+          position_score?: number | null
           product_type?: string | null
+          sentiment_score?: number | null
           shopify_id?: string
           status?: string
           tags?: string[] | null
@@ -115,6 +123,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           vendor?: string | null
+          visibility_score?: number | null
         }
         Relationships: []
       }
@@ -144,38 +153,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
-      }
-      prompt_daily_scores: {
-        Row: {
-          created_at: string
-          id: string
-          measured_at: string
-          prompt_id: string
-          visibility_score: number
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          measured_at?: string
-          prompt_id: string
-          visibility_score: number
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          measured_at?: string
-          prompt_id?: string
-          visibility_score?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "prompt_daily_scores_prompt_id_fkey"
-            columns: ["prompt_id"]
-            isOneToOne: false
-            referencedRelation: "prompts"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       prompt_responses: {
         Row: {
@@ -223,7 +200,6 @@ export type Database = {
           status: string | null
           updated_at: string
           user_id: string
-          visibility_score: number | null
         }
         Insert: {
           active?: boolean
@@ -235,7 +211,6 @@ export type Database = {
           status?: string | null
           updated_at?: string
           user_id: string
-          visibility_score?: number | null
         }
         Update: {
           active?: boolean
@@ -247,7 +222,6 @@ export type Database = {
           status?: string | null
           updated_at?: string
           user_id?: string
-          visibility_score?: number | null
         }
         Relationships: [
           {

@@ -16,9 +16,9 @@ interface SavedPrompt {
   id: string;
   content: string;
   created_at: string;
-  visibility_score?: number;
   status: 'active' | 'suggested' | 'inactive';
   brand_name?: string;
+  product_id?: string;
 }
 
 export const PromptsTab = () => {
@@ -142,7 +142,6 @@ export const PromptsTab = () => {
           user_id: userData.user.id, 
           content: prompt.trim(),
           brand_name: brandName.trim(),
-          visibility_score: visibilityScore,
           status: 'active'
         })
         .select()
@@ -188,7 +187,7 @@ export const PromptsTab = () => {
 
       const { data, error } = await (supabase as any)
         .from('prompts')
-        .select('id, content, created_at, visibility_score, status, brand_name')
+        .select('id, content, created_at, status, brand_name, product_id')
         .eq('user_id', userData.user.id)
         .order('created_at', { ascending: false });
 
@@ -353,7 +352,6 @@ export const PromptsTab = () => {
                 <TableRow>
                   <TableHead>Prompt</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Visibility</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -368,16 +366,6 @@ export const PromptsTab = () => {
                     </TableCell>
                     <TableCell>
                       {getStatusBadge(prompt.status)}
-                    </TableCell>
-                    <TableCell>
-                      {prompt.visibility_score !== undefined ? (
-                        <div className="flex items-center gap-2">
-                          <Target className="w-4 h-4 text-muted-foreground" />
-                          <span className="font-medium">{prompt.visibility_score}%</span>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
                     </TableCell>
                     <TableCell>
                       <span className="text-sm text-muted-foreground">

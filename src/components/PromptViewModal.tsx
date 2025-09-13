@@ -2,10 +2,7 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { ExternalLink, Calendar, Target, Bot } from "lucide-react";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -17,15 +14,9 @@ interface PromptViewModalProps {
     id: string;
     content: string;
     brand_name?: string;
-    visibility_score?: number;
     created_at: string;
+    product_id?: string;
   };
-}
-
-interface DailyScore {
-  date: string;
-  visibility_score: number;
-  measured_at: string;
 }
 
 interface PromptResponse {
@@ -36,16 +27,9 @@ interface PromptResponse {
   created_at: string;
 }
 
-const chartConfig = {
-  visibility_score: {
-    label: "Visibility %",
-    color: "hsl(var(--primary))",
-  },
-};
-
 export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProps) => {
-  const [dailyScores, setDailyScores] = useState<DailyScore[]>([]);
   const [responses, setResponses] = useState<PromptResponse[]>([]);
+  const [productVisibilityScore, setProductVisibilityScore] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -58,15 +42,6 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
   const fetchPromptData = async () => {
     setIsLoading(true);
     try {
-      // Fetch daily scores
-      const { data: scoresData, error: scoresError } = await supabase
-        .from('prompt_daily_scores')
-        .select('visibility_score, measured_at')
-        .eq('prompt_id', prompt.id)
-        .order('measured_at', { ascending: true });
-
-      if (scoresError) throw scoresError;
-
       // Fetch responses
       const { data: responsesData, error: responsesError } = await supabase
         .from('prompt_responses')
@@ -76,14 +51,21 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
 
       if (responsesError) throw responsesError;
 
-      // Format daily scores for chart
-      const formattedScores = (scoresData || []).map(score => ({
-        date: format(new Date(score.measured_at), 'MMM dd'),
-        visibility_score: score.visibility_score,
-        measured_at: score.measured_at
-      }));
+      // Fetch product visibility score if product_id exists
+      if (prompt.product_id) {
+        const { data: productData, error: productError } = await supabase
+          .from('products')
+          .select('visibility_score')
+          .eq('id', prompt.product_id)
+          .single();
 
-      setDailyScores(formattedScores);
+        if (productError) {
+          console.warn('Could not fetch product visibility score:', productError);
+        } else {
+          setProductVisibilityScore(productData?.visibility_score || null);
+        }
+      }
+
       setResponses(responsesData || []);
     } catch (error: any) {
       console.error('Error fetching prompt data:', error);
@@ -143,53 +125,28 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
             </CardContent>
           </Card>
 
-          {/* Visibility Chart */}
+          {/* Visibility Score */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Brand Visibility Over Time</CardTitle>
+              <CardTitle className="text-sm">Product Visibility Score</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <div className="h-64 flex items-center justify-center text-sm text-muted-foreground">
-                  Loading chart data...
+                <div className="h-24 flex items-center justify-center text-sm text-muted-foreground">
+                  Loading score...
                 </div>
-              ) : dailyScores.length > 0 ? (
-                <ChartContainer config={chartConfig} className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={dailyScores}>
-                      <XAxis 
-                        dataKey="date" 
-                        tick={{ fontSize: 12 }}
-                        axisLine={false}
-                        tickLine={false}
-                      />
-                      <YAxis 
-                        domain={[0, 100]}
-                        tick={{ fontSize: 12 }}
-                        axisLine={false}
-                        tickLine={false}
-                      />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Line 
-                        type="monotone" 
-                        dataKey="visibility_score" 
-                        stroke="hsl(var(--primary))"
-                        strokeWidth={2}
-                        dot={{ fill: "hsl(var(--primary))", r: 4 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
+              ) : productVisibilityScore !== null ? (
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-primary mb-2">
+                    {productVisibilityScore}%
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Brand visibility across all prompt responses
+                  </p>
+                </div>
               ) : (
-                <div className="h-64 flex items-center justify-center text-sm text-muted-foreground">
-                  {prompt.visibility_score !== undefined ? (
-                    <div className="text-center">
-                      <p>Current Score: {prompt.visibility_score}%</p>
-                      <p className="text-xs mt-1">Daily tracking data will appear here</p>
-                    </div>
-                  ) : (
-                    "No visibility data available"
-                  )}
+                <div className="h-24 flex items-center justify-center text-sm text-muted-foreground">
+                  No visibility score available
                 </div>
               )}
             </CardContent>

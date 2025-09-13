@@ -183,7 +183,7 @@ Return ONLY a JSON array of 15 strings, no additional formatting or explanation.
     
     console.log(`Generated ${responses.length}/${insertedPrompts.length} responses`);
     
-    // STEP 3: Calculate single visibility score
+    // STEP 3: Calculate single visibility score for the product
     if (responses.length > 0) {
       const allResponsesText = responses.map(r => r.response_text).join('\n\n');
     
@@ -218,18 +218,19 @@ Return ONLY a JSON array of 15 strings, no additional formatting or explanation.
         const scoreText = scoringData.choices[0].message.content.trim();
         const visibilityScore = parseInt(scoreText) || 0;
     
-        console.log(`Calculated visibility score: ${visibilityScore}`);
+        console.log(`Calculated visibility score: ${visibilityScore} for product: ${productTitle}`);
     
-        const { data: updatedRows, error: updateError } = await supabase
-          .from('prompts')
+        // Update the product with the visibility score
+        const { data: updatedProduct, error: updateError } = await supabase
+          .from('products')
           .update({ visibility_score: visibilityScore })
-          .in('id', insertedPrompts.map(p => p.id))
+          .eq('id', productId)
           .select();
     
         if (updateError) {
-          console.error('Failed to update visibility scores:', updateError);
+          console.error('Failed to update product visibility score:', updateError);
         } else {
-          console.log(`Updated ${updatedRows.length} prompts with visibility_score`);
+          console.log(`Updated product ${productId} with visibility_score: ${visibilityScore}`);
         }
       } else {
         console.error('Failed to calculate visibility score:', scoringResponse.status);
