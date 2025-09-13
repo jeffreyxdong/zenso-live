@@ -108,7 +108,7 @@ const Onboarding: React.FC = () => {
                   id="companyName"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  placeholder="Acme Inc."
+                  placeholder="Enter your company name"
                   required
                 />
               </div>
@@ -120,7 +120,7 @@ const Onboarding: React.FC = () => {
                   type="url"
                   value={companyWebsite}
                   onChange={(e) => setCompanyWebsite(e.target.value)}
-                  placeholder="https://www.acme.com"
+                  placeholder="Enter your company website"
                   required
                 />
               </div>
