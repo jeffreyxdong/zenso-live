@@ -78,7 +78,15 @@ Return ONLY a JSON array of 15 strings, no additional formatting or explanation.
     // Parse the JSON response
     let prompts;
     try {
-      prompts = JSON.parse(generatedContent);
+      // Clean the response by removing markdown code block formatting
+      let cleanedContent = generatedContent.trim();
+      if (cleanedContent.startsWith('```json')) {
+        cleanedContent = cleanedContent.replace(/^```json\s*/i, '').replace(/\s*```$/, '');
+      } else if (cleanedContent.startsWith('```')) {
+        cleanedContent = cleanedContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+      }
+      
+      prompts = JSON.parse(cleanedContent);
     } catch (parseError) {
       console.error('Failed to parse OpenAI response as JSON:', generatedContent);
       throw new Error('Failed to parse AI response');
