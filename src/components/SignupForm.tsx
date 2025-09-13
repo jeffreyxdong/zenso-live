@@ -39,11 +39,11 @@ const SignupForm = () => {
         });
       } else {
         toast({
-          title: "Check your email!",
-          description: "We sent you a confirmation link to complete signup.",
+          title: "Account created successfully!",
+          description: "Welcome! Redirecting you to onboarding...",
         });
-        setEmail("");
-        setPassword("");
+        // Redirect to onboarding
+        navigate("/onboarding");
       }
     } catch (error: any) {
       toast({
