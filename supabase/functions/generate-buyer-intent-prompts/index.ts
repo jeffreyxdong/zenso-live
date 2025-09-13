@@ -128,67 +128,69 @@ Return ONLY a JSON array of 15 strings, no additional formatting or explanation.
 
     console.log(`Successfully generated and saved ${insertedPrompts.length} buyer-intent prompts`);
 
-    // Run each prompt through OpenAI and store responses
-    console.log('Generating responses for each prompt...');
-    const responses = [];
-    
-    for (const prompt of insertedPrompts) {
-      try {
-        const promptResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${openAIApiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'gpt-4o-mini',
-            messages: [
-              { role: 'user', content: prompt.content }
-            ],
-            max_tokens: 500,
-            temperature: 0.7,
-          }),
-        });
+    // Start background task for response generation and scoring
+    const backgroundTask = async () => {
+      console.log('Starting background task: Generating responses for each prompt...');
+      const responses = [];
+      
+      for (const prompt of insertedPrompts) {
+        try {
+          const promptResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openAIApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o-mini',
+              messages: [
+                { role: 'user', content: prompt.content }
+              ],
+              max_tokens: 500,
+              temperature: 0.7,
+            }),
+          });
 
-        if (!promptResponse.ok) {
-          console.error(`Failed to get response for prompt ${prompt.id}:`, promptResponse.status);
-          continue;
+          if (!promptResponse.ok) {
+            console.error(`Failed to get response for prompt ${prompt.id}:`, promptResponse.status);
+            continue;
+          }
+
+          const promptData = await promptResponse.json();
+          const responseText = promptData.choices[0].message.content;
+
+          // Store response in database
+          const { data: storedResponse, error: responseError } = await supabase
+            .from('prompt_responses')
+            .insert({
+              prompt_id: prompt.id,
+              response_text: responseText,
+              model_name: 'gpt-4o-mini'
+            })
+            .select()
+            .single();
+
+          if (responseError) {
+            console.error(`Failed to store response for prompt ${prompt.id}:`, responseError);
+          } else {
+            responses.push(storedResponse);
+            console.log(`Generated response ${responses.length}/${insertedPrompts.length}`);
+          }
+        } catch (error) {
+          console.error(`Error processing prompt ${prompt.id}:`, error);
         }
-
-        const promptData = await promptResponse.json();
-        const responseText = promptData.choices[0].message.content;
-
-        // Store response in database
-        const { data: storedResponse, error: responseError } = await supabase
-          .from('prompt_responses')
-          .insert({
-            prompt_id: prompt.id,
-            response_text: responseText,
-            model_name: 'gpt-4o-mini'
-          })
-          .select()
-          .single();
-
-        if (responseError) {
-          console.error(`Failed to store response for prompt ${prompt.id}:`, responseError);
-        } else {
-          responses.push(storedResponse);
-        }
-      } catch (error) {
-        console.error(`Error processing prompt ${prompt.id}:`, error);
       }
-    }
 
-    console.log(`Generated ${responses.length} prompt responses`);
+      console.log(`Generated ${responses.length} prompt responses`);
 
-    // Calculate visibility score by analyzing all responses
-    if (responses.length > 0) {
-      console.log('Calculating visibility scores...');
-      
-      // Combine all responses for analysis
-      const allResponsesText = responses.map(r => r.response_text).join('\n\n');
-      
-      const scoringPrompt = `You are an expert research analyst. Given a collection of AI-generated responses to buyer-intent prompts, provide a score of 1-100 based on how visible the product "${productTitle}" (or variations of it) is mentioned across ALL the responses. 
+      // Calculate visibility score by analyzing all responses
+      if (responses.length > 0) {
+        console.log('Calculating visibility scores...');
+        
+        // Combine all responses for analysis
+        const allResponsesText = responses.map(r => r.response_text).join('\n\n');
+        
+        const scoringPrompt = `You are an expert research analyst. Given a collection of AI-generated responses to buyer-intent prompts, provide a score of 1-100 based on how visible the product "${productTitle}" (or variations of it) is mentioned across ALL the responses. 
 
 Consider:
 - How many responses mention the product by name
@@ -200,54 +202,59 @@ Respond with ONLY a number between 1-100, nothing else.
 Responses to analyze:
 ${allResponsesText}`;
 
-      try {
-        const scoringResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${openAIApiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'gpt-4o-mini',
-            messages: [
-              { role: 'user', content: scoringPrompt }
-            ],
-            max_tokens: 10,
-            temperature: 0.1,
-          }),
-        });
+        try {
+          const scoringResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openAIApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o-mini',
+              messages: [
+                { role: 'user', content: scoringPrompt }
+              ],
+              max_tokens: 10,
+              temperature: 0.1,
+            }),
+          });
 
-        if (scoringResponse.ok) {
-          const scoringData = await scoringResponse.json();
-          const scoreText = scoringData.choices[0].message.content.trim();
-          const visibilityScore = parseInt(scoreText) || 0;
+          if (scoringResponse.ok) {
+            const scoringData = await scoringResponse.json();
+            const scoreText = scoringData.choices[0].message.content.trim();
+            const visibilityScore = parseInt(scoreText) || 0;
 
-          console.log(`Calculated visibility score: ${visibilityScore}`);
+            console.log(`Calculated visibility score: ${visibilityScore}`);
 
-          // Update all prompts with the visibility score
-          const { error: updateError } = await supabase
-            .from('prompts')
-            .update({ visibility_score: visibilityScore })
-            .in('id', insertedPrompts.map(p => p.id));
+            // Update all prompts with the visibility score
+            const { error: updateError } = await supabase
+              .from('prompts')
+              .update({ visibility_score: visibilityScore })
+              .in('id', insertedPrompts.map(p => p.id));
 
-          if (updateError) {
-            console.error('Failed to update visibility scores:', updateError);
+            if (updateError) {
+              console.error('Failed to update visibility scores:', updateError);
+            } else {
+              console.log('Successfully updated visibility scores for all prompts');
+            }
           } else {
-            console.log('Successfully updated visibility scores for all prompts');
+            console.error('Failed to calculate visibility score:', scoringResponse.status);
           }
-        } else {
-          console.error('Failed to calculate visibility score:', scoringResponse.status);
+        } catch (error) {
+          console.error('Error calculating visibility score:', error);
         }
-      } catch (error) {
-        console.error('Error calculating visibility score:', error);
       }
-    }
+    };
 
+    // Start background task
+    EdgeRuntime.waitUntil(backgroundTask());
+
+    // Return immediate response
     return new Response(JSON.stringify({ 
       success: true, 
       promptsGenerated: insertedPrompts.length,
-      responsesGenerated: responses.length,
-      prompts: insertedPrompts 
+      prompts: insertedPrompts,
+      message: 'Prompts generated successfully. Response generation and scoring in progress...'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
