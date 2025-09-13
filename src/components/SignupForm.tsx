@@ -98,7 +98,7 @@ const SignupForm = () => {
           <div className="relative">
             <Input
               type="email"
-              placeholder="Enter your store email"
+              placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="h-11 pl-4 pr-12"
