@@ -143,9 +143,31 @@ const MyProducts = () => {
 
       if (variantError) throw variantError;
 
+      // Generate buyer-intent prompts for the new product
+      try {
+        const { data: session } = await supabase.auth.getSession();
+        if (session?.session) {
+          await supabase.functions.invoke('generate-buyer-intent-prompts', {
+            body: {
+              productId: productData.id,
+              productTitle: data.title,
+              productType: data.product_type,
+              vendor: data.vendor,
+              tags: tags
+            },
+            headers: {
+              Authorization: `Bearer ${session.session.access_token}`,
+            },
+          });
+        }
+      } catch (promptError) {
+        console.error('Error generating prompts:', promptError);
+        // Don't block product creation if prompt generation fails
+      }
+
       toast({
         title: "Success",
-        description: "Product added successfully",
+        description: "Product added successfully with buyer-intent prompts generated",
       });
 
       form.reset();

@@ -214,36 +214,50 @@ export type Database = {
       }
       prompts: {
         Row: {
+          active: boolean
           brand_name: string | null
           content: string
           created_at: string
           id: string
+          product_id: string | null
           status: string | null
           updated_at: string
           user_id: string
           visibility_score: number | null
         }
         Insert: {
+          active?: boolean
           brand_name?: string | null
           content: string
           created_at?: string
           id?: string
+          product_id?: string | null
           status?: string | null
           updated_at?: string
           user_id: string
           visibility_score?: number | null
         }
         Update: {
+          active?: boolean
           brand_name?: string | null
           content?: string
           created_at?: string
           id?: string
+          product_id?: string | null
           status?: string | null
           updated_at?: string
           user_id?: string
           visibility_score?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "prompts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shops: {
         Row: {
