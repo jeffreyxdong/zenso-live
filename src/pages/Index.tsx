@@ -14,9 +14,6 @@ const Index = () => {
             <h1 className="text-2xl font-bold text-foreground">BrandRefs</h1>
             <div className="flex items-center gap-4">
               <Link to="/dashboard">
-                <Button variant="outline" size="sm">
-                  View Dashboard
-                </Button>
               </Link>
             </div>
           </div>
