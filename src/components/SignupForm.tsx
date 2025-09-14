@@ -17,31 +17,33 @@ const SignupForm = () => {
   // Listen for auth state changes
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('Auth state change:', event, session?.user?.id);
         if (event === "SIGNED_IN" && session) {
-          // Check if user has profile for login, redirect to onboarding for new signups
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .single();
+          // Defer database check to avoid deadlocks
+          setTimeout(async () => {
+            const { data: store, error } = await supabase
+              .from('stores')
+              .select('*')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
 
-          console.log('Profile check:', profile, error);
+            console.log('Store check:', store, error);
 
-          if (profile) {
-            toast({
-              title: "Welcome back!",
-              description: "Redirecting to dashboard...",
-            });
-            navigate("/dashboard");
-          } else {
-            toast({
-              title: "Welcome!",
-              description: "Redirecting you to onboarding...",
-            });
-            navigate("/onboarding");
-          }
+            if (store) {
+              toast({
+                title: "Welcome back!",
+                description: "Redirecting to dashboard...",
+              });
+              navigate("/dashboard");
+            } else {
+              toast({
+                title: "Welcome!",
+                description: "Redirecting you to onboarding...",
+              });
+              navigate("/onboarding");
+            }
+          }, 0);
         }
       }
     );
@@ -97,11 +99,6 @@ const SignupForm = () => {
         title: "Account created!",
         description: "Redirecting to onboarding...",
       });
-      
-      // Manual navigation as fallback
-      setTimeout(() => {
-        navigate("/onboarding");
-      }, 1000);
     } catch (err: any) {
       toast({
         title: "Error",
