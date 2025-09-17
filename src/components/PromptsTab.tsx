@@ -99,6 +99,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
       let totalVisibilityScore = 0;
       let totalSentimentScore = 0;
       let totalPositionScore = 0;
+      validResponses = responses.length;
 
       for (const response of responses) {
         try {
