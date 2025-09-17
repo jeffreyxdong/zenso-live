@@ -12,6 +12,7 @@ const Onboarding: React.FC = () => {
   const [companyName, setCompanyName] = useState("");
   const [companyWebsite, setCompanyWebsite] = useState("");
   const [loading, setLoading] = useState(false);
+  const [initializing, setInitializing] = useState(true);
 
   // SEO basics
   useEffect(() => {
@@ -52,6 +53,8 @@ const Onboarding: React.FC = () => {
         .limit(1);
       if (data && data.length > 0) {
         navigate("/dashboard", { replace: true });
+      } else {
+        setInitializing(false);
       }
     };
     init();
@@ -94,6 +97,17 @@ const Onboarding: React.FC = () => {
       setLoading(false);
     }
   };
+
+  if (initializing) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
