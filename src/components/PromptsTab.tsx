@@ -2,12 +2,10 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Bot, Target, Eye } from "lucide-react";
+import { Loader2, Bot, Eye, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { PromptViewModal } from "./PromptViewModal";
@@ -19,6 +17,9 @@ interface SavedPrompt {
   status: 'active' | 'suggested' | 'inactive';
   brand_name?: string;
   product_id?: string;
+  visibility_score?: number;
+  sentiment_score?: number;
+  position_score?: number;
 }
 
 interface Store {
@@ -94,30 +95,50 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
         });
       }
 
-      // Score brand visibility for responses
+      // Score all metrics for responses
+      let totalVisibilityScore = 0;
+      let totalSentimentScore = 0;
+      let totalPositionScore = 0;
+
       for (const response of responses) {
         try {
-          const { data: scoreData } = await supabase.functions.invoke('score-brand-visibility', {
-            body: { content: response.content, brandName: activeStore.name }
-          });
+          // Score all metrics in parallel
+          const [visibilityResult, sentimentResult, positionResult] = await Promise.allSettled([
+            supabase.functions.invoke('score-brand-visibility', {
+              body: { content: response.content, brandName: activeStore.name }
+            }),
+            supabase.functions.invoke('score-sentiment', {
+              body: { content: response.content, brandName: activeStore.name }
+            }),
+            supabase.functions.invoke('score-position', {
+              body: { content: response.content, brandName: activeStore.name }
+            })
+          ]);
 
-          if (scoreData?.score !== undefined) {
-            totalScore += scoreData.score;
-            validResponses++;
+          if (visibilityResult.status === 'fulfilled' && visibilityResult.value.data?.score !== undefined) {
+            totalVisibilityScore += visibilityResult.value.data.score;
+          }
+          if (sentimentResult.status === 'fulfilled' && sentimentResult.value.data?.score !== undefined) {
+            totalSentimentScore += sentimentResult.value.data.score;
+          }
+          if (positionResult.status === 'fulfilled' && positionResult.value.data?.score !== undefined) {
+            totalPositionScore += positionResult.value.data.score;
           }
         } catch (error) {
           console.error('Error scoring response:', error);
         }
       }
 
-      const averageScore = validResponses > 0 ? Math.round(totalScore / validResponses) : 0;
+      const averageVisibilityScore = validResponses > 0 ? Math.round(totalVisibilityScore / validResponses) : 0;
+      const averageSentimentScore = validResponses > 0 ? Math.round(totalSentimentScore / validResponses) : 0;
+      const averagePositionScore = validResponses > 0 ? Math.round(totalPositionScore / validResponses) : 0;
 
-      // Save prompt with visibility score and responses
-      await savePromptWithScore(averageScore, responses);
+      // Save prompt with all scores and responses
+      await savePromptWithScores(averageVisibilityScore, averageSentimentScore, averagePositionScore, responses);
 
       toast({
         title: "Success",
-        description: `Prompt processed and saved with visibility score: ${averageScore}/100`,
+        description: `Prompt processed and saved with scores - Visibility: ${averageVisibilityScore}/100, Sentiment: ${averageSentimentScore}/100, Position: ${averagePositionScore || 'N/A'}`,
       });
 
       // Clear form
@@ -135,7 +156,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
     }
   };
 
-  const savePromptWithScore = async (visibilityScore: number, responses: any[] = []) => {
+  const savePromptWithScores = async (visibilityScore: number, sentimentScore: number, positionScore: number, responses: any[] = []) => {
     try {
       const { data: userData, error: userErr } = await supabase.auth.getUser();
       if (userErr) throw userErr;
@@ -150,7 +171,10 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
           user_id: userData.user.id, 
           content: prompt.trim(),
           brand_name: activeStore?.name || '',
-          status: 'active'
+          status: 'active',
+          visibility_score: visibilityScore,
+          sentiment_score: sentimentScore,
+          position_score: positionScore
         })
         .select()
         .single();
@@ -195,7 +219,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
 
       const { data, error } = await (supabase as any)
         .from('prompts')
-        .select('id, content, created_at, status, brand_name, product_id')
+        .select('id, content, created_at, status, brand_name, product_id, visibility_score, sentiment_score, position_score')
         .eq('user_id', userData.user.id)
         .order('created_at', { ascending: false });
 
@@ -214,17 +238,18 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
   }, []);
 
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <Badge variant="default">Active</Badge>;
-      case 'suggested':
-        return <Badge variant="secondary">Suggested</Badge>;
-      case 'inactive':
-        return <Badge variant="outline">Inactive</Badge>;
-      default:
-        return <Badge variant="outline">Unknown</Badge>;
-    }
+  const getVisibilityBadge = (score?: number) => {
+    if (!score) return <Badge variant="outline">No Data</Badge>;
+    if (score >= 80) return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">High</Badge>;
+    if (score >= 60) return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Medium</Badge>;
+    return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Low</Badge>;
+  };
+
+  const getSentimentBadge = (score?: number) => {
+    if (!score) return <Badge variant="outline">No Data</Badge>;
+    if (score >= 70) return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Positive</Badge>;
+    if (score >= 30) return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Neutral</Badge>;
+    return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Negative</Badge>;
   };
 
   const filteredPrompts = savedPrompts.filter(prompt => 
@@ -242,7 +267,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-3">
-            <Label htmlFor="prompt" className="block">Enter your prompt</Label>
+            <label htmlFor="prompt" className="block text-sm font-medium">Enter your prompt</label>
             <Textarea
               id="prompt"
               placeholder="Ask anything you'd like to test across AI platforms..."
@@ -299,46 +324,59 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
               No {activeTab} prompts yet. Create one above to get started.
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Prompt</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredPrompts.map((prompt) => (
-                  <TableRow key={prompt.id}>
-                    <TableCell>
-                      <div className="max-w-md">
-                        <p className="text-sm text-muted-foreground truncate">{prompt.content}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {getStatusBadge(prompt.status)}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-muted-foreground">
-                        {new Date(prompt.created_at).toLocaleDateString()}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <Button 
-                        size="sm" 
-                        variant="ghost"
-                        onClick={() => {
-                          setSelectedPrompt(prompt);
-                          setIsViewModalOpen(true);
-                        }}
-                      >
-                        <Eye className="w-4 h-4 mr-1" />
-                        View
-                      </Button>
-                    </TableCell>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Prompt</TableHead>
+                    <TableHead>Visibility</TableHead>
+                    <TableHead>Sentiment</TableHead>
+                    <TableHead>Position</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ))}
+                </TableHeader>
+              <TableBody>
+                  {filteredPrompts.map((prompt) => (
+                    <TableRow key={prompt.id}>
+                      <TableCell>
+                        <div className="max-w-md">
+                          <p className="text-sm text-muted-foreground truncate">{prompt.content}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {getVisibilityBadge(prompt.visibility_score)}
+                      </TableCell>
+                      <TableCell>
+                        {getSentimentBadge(prompt.sentiment_score)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-sm font-medium">
+                            {prompt.position_score ? `#${prompt.position_score}` : 'No Data'}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-muted-foreground">
+                          {new Date(prompt.created_at).toLocaleDateString()}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => {
+                            setSelectedPrompt(prompt);
+                            setIsViewModalOpen(true);
+                          }}
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          View
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
               </TableBody>
             </Table>
           )}

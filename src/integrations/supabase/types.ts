@@ -196,10 +196,13 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          position_score: number | null
           product_id: string | null
+          sentiment_score: number | null
           status: string | null
           updated_at: string
           user_id: string
+          visibility_score: number | null
         }
         Insert: {
           active?: boolean
@@ -207,10 +210,13 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          position_score?: number | null
           product_id?: string | null
+          sentiment_score?: number | null
           status?: string | null
           updated_at?: string
           user_id: string
+          visibility_score?: number | null
         }
         Update: {
           active?: boolean
@@ -218,10 +224,13 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          position_score?: number | null
           product_id?: string | null
+          sentiment_score?: number | null
           status?: string | null
           updated_at?: string
           user_id?: string
+          visibility_score?: number | null
         }
         Relationships: [
           {
