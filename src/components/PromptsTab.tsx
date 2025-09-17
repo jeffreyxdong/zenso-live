@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Bot, Eye, MapPin } from "lucide-react";
+import { Loader2, Bot, Eye, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { PromptViewModal } from "./PromptViewModal";
@@ -19,7 +19,6 @@ interface SavedPrompt {
   product_id?: string;
   visibility_score?: number;
   sentiment_score?: number;
-  position_score?: number;
 }
 
 interface Store {
@@ -95,23 +94,19 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
         });
       }
 
-      // Score all metrics for responses
+      // Score visibility and sentiment for responses
       let totalVisibilityScore = 0;
       let totalSentimentScore = 0;
-      let totalPositionScore = 0;
       validResponses = responses.length;
 
       for (const response of responses) {
         try {
-          // Score all metrics in parallel
-          const [visibilityResult, sentimentResult, positionResult] = await Promise.allSettled([
+          // Score visibility and sentiment in parallel
+          const [visibilityResult, sentimentResult] = await Promise.allSettled([
             supabase.functions.invoke('score-brand-visibility', {
               body: { content: response.content, brandName: activeStore.name }
             }),
             supabase.functions.invoke('score-sentiment', {
-              body: { content: response.content, brandName: activeStore.name }
-            }),
-            supabase.functions.invoke('score-position', {
               body: { content: response.content, brandName: activeStore.name }
             })
           ]);
@@ -122,9 +117,6 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
           if (sentimentResult.status === 'fulfilled' && sentimentResult.value.data?.score !== undefined) {
             totalSentimentScore += sentimentResult.value.data.score;
           }
-          if (positionResult.status === 'fulfilled' && positionResult.value.data?.score !== undefined) {
-            totalPositionScore += positionResult.value.data.score;
-          }
         } catch (error) {
           console.error('Error scoring response:', error);
         }
@@ -132,14 +124,13 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
 
       const averageVisibilityScore = validResponses > 0 ? Math.round(totalVisibilityScore / validResponses) : 0;
       const averageSentimentScore = validResponses > 0 ? Math.round(totalSentimentScore / validResponses) : 0;
-      const averagePositionScore = validResponses > 0 ? Math.round(totalPositionScore / validResponses) : 0;
 
-      // Save prompt with all scores and responses
-      await savePromptWithScores(averageVisibilityScore, averageSentimentScore, averagePositionScore, responses);
+      // Save prompt with scores and responses
+      await savePromptWithScores(averageVisibilityScore, averageSentimentScore, responses);
 
       toast({
         title: "Success",
-        description: `Prompt processed and saved with scores - Visibility: ${averageVisibilityScore}/100, Sentiment: ${averageSentimentScore}/100, Position: ${averagePositionScore || 'N/A'}`,
+        description: `Prompt processed and saved with scores - Visibility: ${averageVisibilityScore}/100, Sentiment: ${averageSentimentScore}/100`,
       });
 
       // Clear form
@@ -157,7 +148,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
     }
   };
 
-  const savePromptWithScores = async (visibilityScore: number, sentimentScore: number, positionScore: number, responses: any[] = []) => {
+  const savePromptWithScores = async (visibilityScore: number, sentimentScore: number, responses: any[] = []) => {
     try {
       const { data: userData, error: userErr } = await supabase.auth.getUser();
       if (userErr) throw userErr;
@@ -174,8 +165,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
           brand_name: activeStore?.name || '',
           status: 'active',
           visibility_score: visibilityScore,
-          sentiment_score: sentimentScore,
-          position_score: positionScore
+          sentiment_score: sentimentScore
         })
         .select()
         .single();
@@ -220,7 +210,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
 
       const { data, error } = await (supabase as any)
         .from('prompts')
-        .select('id, content, created_at, status, brand_name, product_id, visibility_score, sentiment_score, position_score')
+        .select('id, content, created_at, status, brand_name, product_id, visibility_score, sentiment_score')
         .eq('user_id', userData.user.id)
         .order('created_at', { ascending: false });
 
@@ -231,6 +221,31 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
       toast({ title: 'Error', description: 'Failed to load saved prompts', variant: 'destructive' });
     } finally {
       setIsLoadingSaved(false);
+    }
+  };
+
+  const deletePrompt = async (promptId: string) => {
+    try {
+      const { error } = await supabase
+        .from('prompts')
+        .delete()
+        .eq('id', promptId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Prompt deleted successfully",
+      });
+
+      fetchSavedPrompts();
+    } catch (error) {
+      console.error('Error deleting prompt:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete prompt",
+        variant: "destructive",
+      });
     }
   };
 
@@ -331,7 +346,6 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
                     <TableHead>Prompt</TableHead>
                     <TableHead>Visibility</TableHead>
                     <TableHead>Sentiment</TableHead>
-                    <TableHead>Position</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -351,30 +365,33 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
                         {getSentimentBadge(prompt.sentiment_score)}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-muted-foreground" />
-                          <span className="text-sm font-medium">
-                            {prompt.position_score ? `#${prompt.position_score}` : 'No Data'}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
                         <span className="text-sm text-muted-foreground">
                           {new Date(prompt.created_at).toLocaleDateString()}
                         </span>
                       </TableCell>
                       <TableCell>
-                        <Button 
-                          size="sm" 
-                          variant="ghost"
-                          onClick={() => {
-                            setSelectedPrompt(prompt);
-                            setIsViewModalOpen(true);
-                          }}
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          View
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => {
+                              setSelectedPrompt(prompt);
+                              setIsViewModalOpen(true);
+                            }}
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            View
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => deletePrompt(prompt.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Delete
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
