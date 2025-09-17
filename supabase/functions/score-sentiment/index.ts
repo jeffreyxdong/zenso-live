@@ -23,15 +23,24 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    const scoringPrompt = `You are an expert sentiment analysis tool. Given a prompt output, analyze the sentiment towards the brand "${brandName}" when mentioned in the content. Provide a score of 1-100 where:
+    // First check if brand is mentioned at all
+    const brandMentioned = content.toLowerCase().includes(brandName.toLowerCase());
+    
+    if (!brandMentioned) {
+      console.log(`Brand "${brandName}" not mentioned in content - returning sentiment score 0`);
+      return new Response(JSON.stringify({ score: 0 }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const scoringPrompt = `You are an expert sentiment analysis tool. The brand "${brandName}" is mentioned in this content. Analyze the sentiment towards this brand and provide a score of 1-100 where:
 - 90-100: Extremely positive sentiment (highly recommended, praised, top choice)
 - 70-89: Positive sentiment (recommended, good option, mentioned favorably) 
 - 30-69: Neutral sentiment (mentioned factually without strong opinion)
 - 10-29: Negative sentiment (not recommended, criticized, poor option)
 - 1-9: Very negative sentiment (strongly criticized, warned against)
-- 0: Brand not mentioned at all
 
-Respond with ONLY a number between 0-100, nothing else.
+Respond with ONLY a number between 1-100, nothing else.
 
 Content to analyze:
 ${content}`;

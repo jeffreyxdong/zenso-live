@@ -23,9 +23,23 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    const scoringPrompt = `You are an expert research analyst. Given a prompt output, provide a score of 1-100 based on how visible the brand "${brandName}" is within the prompt output. Factor in the position in which the brand is mentioned, and if it isn't mentioned at all, give a score of 0. 
+    // First check if brand is mentioned at all
+    const brandMentioned = content.toLowerCase().includes(brandName.toLowerCase());
+    
+    if (!brandMentioned) {
+      console.log(`Brand "${brandName}" not mentioned in content - returning visibility score 0`);
+      return new Response(JSON.stringify({ score: 0 }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-Respond with ONLY a number between 0-100, nothing else.
+    const scoringPrompt = `You are an expert research analyst. The brand "${brandName}" is mentioned in this content. Provide a visibility score of 1-100 based on how prominently and visibly the brand is featured. Consider factors like:
+- Position in the content (earlier mentions score higher)
+- Context of the mention (positive context, recommendations score higher)
+- Frequency of mentions
+- Overall prominence in the response
+
+Respond with ONLY a number between 1-100, nothing else.
 
 Content to analyze:
 ${content}`;

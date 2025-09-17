@@ -23,7 +23,17 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    const scoringPrompt = `You are an expert at analyzing brand positioning in AI responses. Given a prompt output, determine the ranking position of the brand "${brandName}" when it appears in lists, recommendations, or comparisons.
+    // First check if brand is mentioned at all
+    const brandMentioned = content.toLowerCase().includes(brandName.toLowerCase());
+    
+    if (!brandMentioned) {
+      console.log(`Brand "${brandName}" not mentioned in content - returning position score 0`);
+      return new Response(JSON.stringify({ score: 0 }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const scoringPrompt = `You are an expert at analyzing brand positioning in AI responses. The brand "${brandName}" is mentioned in this content. Determine its ranking position when it appears in lists, recommendations, or comparisons.
 
 Rules for scoring:
 - If the brand appears in a numbered list, return that number (e.g., if it's #3 in a list, return 3)
@@ -31,9 +41,8 @@ Rules for scoring:
 - If the brand is mentioned as "the best" or "top choice" without a list, return 1
 - If the brand is mentioned alongside others but not in a clear ranking, estimate position based on context
 - If the brand is mentioned negatively or as a poor option, return a higher number (8-10)
-- If the brand is not mentioned at all, return 0
 
-Respond with ONLY a number (0-10), nothing else.
+Respond with ONLY a number (1-10), nothing else.
 
 Content to analyze:
 ${content}`;
