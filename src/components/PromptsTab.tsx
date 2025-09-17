@@ -236,7 +236,6 @@ export const PromptsTab = () => {
             <Label htmlFor="brandName" className="block">Brand name (for visibility scoring)</Label>
             <Input
               id="brandName"
-              placeholder="e.g., Tesla, Apple, Microsoft"
               value={brandName}
               onChange={(e) => setBrandName(e.target.value)}
             />
