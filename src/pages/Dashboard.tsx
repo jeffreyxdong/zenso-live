@@ -32,8 +32,8 @@ const Dashboard = () => {
           .from("stores")
           .select("id")
           .eq("user_id", session.user.id)
-          .maybeSingle();
-        if (error || !data) {
+          .limit(1);
+        if (error || !data || data.length === 0) {
           navigate("/onboarding", { replace: true });
         }
       }, 0);
@@ -48,8 +48,8 @@ const Dashboard = () => {
         .from("stores")
         .select("id")
         .eq("user_id", session.user.id)
-        .maybeSingle();
-      if (error || !data) {
+        .limit(1);
+      if (error || !data || data.length === 0) {
         navigate("/onboarding", { replace: true });
       }
     });

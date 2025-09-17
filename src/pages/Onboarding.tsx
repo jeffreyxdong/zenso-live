@@ -49,8 +49,8 @@ const Onboarding: React.FC = () => {
         .from("stores")
         .select("id")
         .eq("user_id", session.user.id)
-        .maybeSingle();
-      if (data) {
+        .limit(1);
+      if (data && data.length > 0) {
         navigate("/dashboard", { replace: true });
       }
     };
