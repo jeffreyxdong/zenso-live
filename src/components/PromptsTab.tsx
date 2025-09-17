@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Bot, BookmarkPlus, Target, Eye } from "lucide-react";
+import { Loader2, Bot, Target, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { PromptViewModal } from "./PromptViewModal";
@@ -25,7 +25,6 @@ export const PromptsTab = () => {
   const [prompt, setPrompt] = useState("");
   const [brandName, setBrandName] = useState("");
   const [savedPrompts, setSavedPrompts] = useState<SavedPrompt[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
   const [isLoadingSaved, setIsLoadingSaved] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState("active");
@@ -205,39 +204,6 @@ export const PromptsTab = () => {
     fetchSavedPrompts();
   }, []);
 
-  const handleSavePrompt = async () => {
-    if (!prompt.trim()) {
-      toast({ title: 'Error', description: 'Please enter a prompt', variant: 'destructive' });
-      return;
-    }
-    setIsSaving(true);
-    try {
-      const { data: userData, error: userErr } = await supabase.auth.getUser();
-      if (userErr) throw userErr;
-      if (!userData?.user) {
-        toast({ title: 'Not signed in', description: 'Please sign in to save prompts', variant: 'destructive' });
-        return;
-      }
-
-      const { error } = await (supabase as any)
-        .from('prompts')
-        .insert({ 
-          user_id: userData.user.id, 
-          content: prompt.trim(),
-          status: 'suggested'
-        });
-
-      if (error) throw error;
-
-      toast({ title: 'Saved', description: 'Prompt saved to your library' });
-      fetchSavedPrompts();
-    } catch (e: any) {
-      console.error('Error saving prompt', e);
-      toast({ title: 'Error', description: e.message || 'Failed to save prompt', variant: 'destructive' });
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -283,41 +249,20 @@ export const PromptsTab = () => {
               className="min-h-[100px]"
             />
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleSavePrompt}
-              disabled={isSaving || !prompt.trim()}
-              className="sm:w-1/3"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <BookmarkPlus className="w-4 h-4 mr-2" />
-                  Save as Draft
-                </>
-              )}
-            </Button>
-            <Button 
-              onClick={handleSubmit} 
-              disabled={isProcessing || !prompt.trim() || !brandName.trim()}
-              className="w-full"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                "Process & Score Prompt"
-              )}
-            </Button>
-          </div>
+          <Button 
+            onClick={handleSubmit} 
+            disabled={isProcessing || !prompt.trim() || !brandName.trim()}
+            className="w-full"
+          >
+            {isProcessing ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              "Process & Score Prompt"
+            )}
+          </Button>
         </CardContent>
       </Card>
 
