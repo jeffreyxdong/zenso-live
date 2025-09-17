@@ -21,9 +21,19 @@ interface SavedPrompt {
   product_id?: string;
 }
 
-export const PromptsTab = () => {
+interface Store {
+  id: string;
+  name: string;
+  website: string;
+  is_active: boolean;
+}
+
+interface PromptsTabProps {
+  activeStore: Store | null;
+}
+
+export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
   const [prompt, setPrompt] = useState("");
-  const [brandName, setBrandName] = useState("");
   const [savedPrompts, setSavedPrompts] = useState<SavedPrompt[]>([]);
   const [isLoadingSaved, setIsLoadingSaved] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -42,10 +52,10 @@ export const PromptsTab = () => {
       return;
     }
 
-    if (!brandName.trim()) {
+    if (!activeStore?.name) {
       toast({
         title: "Error", 
-        description: "Please enter a brand name for visibility scoring",
+        description: "No store selected. Please select a store to process prompts.",
         variant: "destructive",
       });
       return;
@@ -88,7 +98,7 @@ export const PromptsTab = () => {
       for (const response of responses) {
         try {
           const { data: scoreData } = await supabase.functions.invoke('score-brand-visibility', {
-            body: { content: response.content, brandName: brandName.trim() }
+            body: { content: response.content, brandName: activeStore.name }
           });
 
           if (scoreData?.score !== undefined) {
@@ -112,7 +122,6 @@ export const PromptsTab = () => {
 
       // Clear form
       setPrompt("");
-      setBrandName("");
 
     } catch (error) {
       console.error('Error processing prompt:', error);
@@ -140,7 +149,7 @@ export const PromptsTab = () => {
         .insert({ 
           user_id: userData.user.id, 
           content: prompt.trim(),
-          brand_name: brandName.trim(),
+          brand_name: activeStore?.name || '',
           status: 'active'
         })
         .select()
@@ -233,12 +242,6 @@ export const PromptsTab = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-3">
-            <Label htmlFor="brandName" className="block">Brand name (for visibility scoring)</Label>
-            <Input
-              id="brandName"
-              value={brandName}
-              onChange={(e) => setBrandName(e.target.value)}
-            />
             <Label htmlFor="prompt" className="block">Enter your prompt</Label>
             <Textarea
               id="prompt"
@@ -247,10 +250,15 @@ export const PromptsTab = () => {
               onChange={(e) => setPrompt(e.target.value)}
               className="min-h-[100px]"
             />
+            {activeStore && (
+              <p className="text-sm text-muted-foreground">
+                Prompts will be scored for brand visibility of: <strong>{activeStore.name}</strong>
+              </p>
+            )}
           </div>
           <Button 
             onClick={handleSubmit} 
-            disabled={isProcessing || !prompt.trim() || !brandName.trim()}
+            disabled={isProcessing || !prompt.trim() || !activeStore}
             className="w-full"
           >
             {isProcessing ? (

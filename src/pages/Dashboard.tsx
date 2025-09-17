@@ -17,6 +17,7 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [showAddStoreModal, setShowAddStoreModal] = useState(false);
   const [refreshStores, setRefreshStores] = useState(0);
+  const [activeStore, setActiveStore] = useState<{ id: string; name: string; website: string; is_active: boolean } | null>(null);
   const navigate = useNavigate();
 
   // Protect route: redirect unauthenticated users and ensure onboarding complete
@@ -80,7 +81,7 @@ const Dashboard = () => {
               </Badge>
             </div>
             <div className="flex items-center gap-3">
-              <StoreSelector />
+              <StoreSelector onStoreChange={setActiveStore} />
               <Button variant="outline" size="sm">
                 <Settings className="w-4 h-4" />
                 Settings
@@ -276,7 +277,7 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="prompts">
-            <PromptsTab />
+            <PromptsTab activeStore={activeStore} />
           </TabsContent>
         </Tabs>
       </main>
