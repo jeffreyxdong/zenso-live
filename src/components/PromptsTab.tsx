@@ -93,45 +93,40 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
         });
       }
 
-      // Second round: Score visibility and sentiment for each response
+      // Second round: Score visibility and sentiment for each response using dedicated scoring functions
       let totalVisibilityScore = 0;
       let totalSentimentScore = 0;
       validResponses = responses.length;
 
       for (const response of responses) {
         try {
-          // Create visibility and sentiment prompts
-          const visibilityPrompt = `Rate the visibility of the brand "${activeStore.name}" in the following text on a scale of 0–100.
-0 = not mentioned at all, 100 = the brand is the main focus.
-Return ONLY a number.
-
-Text:
-${response.content}`;
-
-          const sentimentPrompt = `Rate the sentiment toward the brand "${activeStore.name}" in the following text on a scale of 0–100.
-0 = very negative, 50 = completely neutral, 100 = very positive.
-Return ONLY a number.
-
-Text:
-${response.content}`;
-
-          // Score with OpenAI only for more reliable numerical scoring
-          const [openaiVisibility, openaiSentiment] = await Promise.allSettled([
-            supabase.functions.invoke('chat-with-openai', { body: { prompt: visibilityPrompt } }),
-            supabase.functions.invoke('chat-with-openai', { body: { prompt: sentimentPrompt } })
+          // Use dedicated scoring functions for more accurate results
+          const [visibilityResult, sentimentResult] = await Promise.allSettled([
+            supabase.functions.invoke('score-brand-visibility', { 
+              body: { 
+                content: response.content,
+                brandName: activeStore.name 
+              } 
+            }),
+            supabase.functions.invoke('score-sentiment', { 
+              body: { 
+                content: response.content,
+                brandName: activeStore.name 
+              } 
+            })
           ]);
 
           // Parse visibility score
-          if (openaiVisibility.status === 'fulfilled' && openaiVisibility.value.data?.result) {
-            const score = parseInt(openaiVisibility.value.data.result.trim()) || 0;
-            console.log('OpenAI visibility score:', score, 'Raw:', openaiVisibility.value.data.result);
+          if (visibilityResult.status === 'fulfilled' && visibilityResult.value.data?.score !== undefined) {
+            const score = visibilityResult.value.data.score;
+            console.log('Visibility score:', score, 'for model:', response.model);
             totalVisibilityScore += score;
           }
 
           // Parse sentiment score
-          if (openaiSentiment.status === 'fulfilled' && openaiSentiment.value.data?.result) {
-            const score = parseInt(openaiSentiment.value.data.result.trim()) || 0;
-            console.log('OpenAI sentiment score:', score, 'Raw:', openaiSentiment.value.data.result);
+          if (sentimentResult.status === 'fulfilled' && sentimentResult.value.data?.score !== undefined) {
+            const score = sentimentResult.value.data.score;
+            console.log('Sentiment score:', score, 'for model:', response.model);
             totalSentimentScore += score;
           }
         } catch (error) {
