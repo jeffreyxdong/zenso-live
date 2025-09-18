@@ -87,10 +87,13 @@ ${content}`;
     }
 
     const data = await response.json();
-    const scoreText = data.choices[0].message.content.trim();
+    console.log('OpenAI API full response:', JSON.stringify(data, null, 2));
+    
+    const scoreText = data.choices?.[0]?.message?.content?.trim() || '';
+    console.log(`Raw GPT output: "${scoreText}"`);
+    
     const score = parseInt(scoreText) || 0;
-
-    console.log(`Brand visibility score: ${score}`);
+    console.log(`Final visibility score: ${score}`);
 
     return new Response(JSON.stringify({ score }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
