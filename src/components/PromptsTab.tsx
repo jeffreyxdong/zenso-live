@@ -115,46 +115,24 @@ Return ONLY a number.
 Text:
 ${response.content}`;
 
-          // Score with both OpenAI and Gemini for each response
-          const [openaiVisibility, openaiSentiment, geminiVisibility, geminiSentiment] = await Promise.allSettled([
+          // Score with OpenAI only for more reliable numerical scoring
+          const [openaiVisibility, openaiSentiment] = await Promise.allSettled([
             supabase.functions.invoke('chat-with-openai', { body: { prompt: visibilityPrompt } }),
-            supabase.functions.invoke('chat-with-openai', { body: { prompt: sentimentPrompt } }),
-            supabase.functions.invoke('chat-with-gemini', { body: { prompt: visibilityPrompt } }),
-            supabase.functions.invoke('chat-with-gemini', { body: { prompt: sentimentPrompt } })
+            supabase.functions.invoke('chat-with-openai', { body: { prompt: sentimentPrompt } })
           ]);
 
-          // Parse and average visibility scores
-          let visibilityScores = [];
+          // Parse visibility score
           if (openaiVisibility.status === 'fulfilled' && openaiVisibility.value.data?.result) {
             const score = parseInt(openaiVisibility.value.data.result.trim()) || 0;
             console.log('OpenAI visibility score:', score, 'Raw:', openaiVisibility.value.data.result);
-            visibilityScores.push(score);
-          }
-          if (geminiVisibility.status === 'fulfilled' && geminiVisibility.value.data?.result) {
-            const score = parseInt(geminiVisibility.value.data.result.trim()) || 0;
-            console.log('Gemini visibility score:', score, 'Raw:', geminiVisibility.value.data.result);
-            visibilityScores.push(score);
+            totalVisibilityScore += score;
           }
 
-          // Parse and average sentiment scores  
-          let sentimentScores = [];
+          // Parse sentiment score
           if (openaiSentiment.status === 'fulfilled' && openaiSentiment.value.data?.result) {
             const score = parseInt(openaiSentiment.value.data.result.trim()) || 0;
             console.log('OpenAI sentiment score:', score, 'Raw:', openaiSentiment.value.data.result);
-            sentimentScores.push(score);
-          }
-          if (geminiSentiment.status === 'fulfilled' && geminiSentiment.value.data?.result) {
-            const score = parseInt(geminiSentiment.value.data.result.trim()) || 0;
-            console.log('Gemini sentiment score:', score, 'Raw:', geminiSentiment.value.data.result);
-            sentimentScores.push(score);
-          }
-
-          // Add averaged scores for this response
-          if (visibilityScores.length > 0) {
-            totalVisibilityScore += Math.round(visibilityScores.reduce((a, b) => a + b, 0) / visibilityScores.length);
-          }
-          if (sentimentScores.length > 0) {
-            totalSentimentScore += Math.round(sentimentScores.reduce((a, b) => a + b, 0) / sentimentScores.length);
+            totalSentimentScore += score;
           }
         } catch (error) {
           console.error('Error scoring response:', error);
