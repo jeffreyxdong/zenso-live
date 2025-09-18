@@ -254,6 +254,53 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
   }, []);
 
 
+  const getScoreDisplay = (score: number | undefined, type: 'visibility' | 'sentiment') => {
+    if (!score && score !== 0) {
+      return (
+        <div className="flex items-center justify-center">
+          <span className="text-xs text-muted-foreground px-2 py-1 rounded bg-muted/50">
+            No Data
+          </span>
+        </div>
+      );
+    }
+
+    let colorClass = '';
+    let bgClass = '';
+    
+    if (type === 'visibility') {
+      if (score >= 80) {
+        colorClass = 'text-green-700';
+        bgClass = 'bg-green-50 border-green-200';
+      } else if (score >= 60) {
+        colorClass = 'text-yellow-700';
+        bgClass = 'bg-yellow-50 border-yellow-200';
+      } else {
+        colorClass = 'text-red-700';
+        bgClass = 'bg-red-50 border-red-200';
+      }
+    } else {
+      if (score >= 70) {
+        colorClass = 'text-green-700';
+        bgClass = 'bg-green-50 border-green-200';
+      } else if (score >= 30) {
+        colorClass = 'text-yellow-700';
+        bgClass = 'bg-yellow-50 border-yellow-200';
+      } else {
+        colorClass = 'text-red-700';
+        bgClass = 'bg-red-50 border-red-200';
+      }
+    }
+
+    return (
+      <div className="flex items-center justify-center">
+        <span className={`text-sm font-semibold px-3 py-1.5 rounded-md border ${colorClass} ${bgClass}`}>
+          {score}/100
+        </span>
+      </div>
+    );
+  };
+
   const filteredPrompts = savedPrompts;
 
   return (
@@ -335,14 +382,10 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm font-medium">
-                          {prompt.visibility_score || 0}
-                        </span>
+                        {getScoreDisplay(prompt.visibility_score, 'visibility')}
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm font-medium">
-                          {prompt.sentiment_score || 0}
-                        </span>
+                        {getScoreDisplay(prompt.sentiment_score, 'sentiment')}
                       </TableCell>
                       <TableCell>
                         <span className="text-sm text-muted-foreground">
