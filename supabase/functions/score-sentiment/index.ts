@@ -31,22 +31,30 @@ serve(async (req) => {
       });
     }
 
-    // More flexible brand mention detection
+    // Improved brand mention detection
     const contentLower = content.toLowerCase();
     const brandLower = brandName.toLowerCase();
     
-    // Check for exact brand name or partial matches
-    const brandMentioned = contentLower.includes(brandLower) || 
-                          contentLower.includes(brandLower.split(' ')[0]) ||
-                          contentLower.includes(brandLower.replace(/[^a-z0-9]/g, ''));
+    console.log(`Searching for brand "${brandName}" in content...`);
+    console.log(`Content length: ${content.length} characters`);
+    
+    // Check for brand mention with multiple approaches
+    const exactMatch = contentLower.includes(brandLower);
+    const wordBoundaryMatch = new RegExp(`\\b${brandLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(content);
+    const partialMatch = brandLower.split(' ').some(word => word.length > 2 && contentLower.includes(word));
+    
+    const brandMentioned = exactMatch || wordBoundaryMatch || partialMatch;
+    
+    console.log(`Brand detection results - Exact: ${exactMatch}, WordBoundary: ${wordBoundaryMatch}, Partial: ${partialMatch}`);
     
     if (!brandMentioned) {
       console.log(`Brand "${brandName}" not mentioned in content - returning sentiment score 0`);
-      console.log(`Content searched: ${contentLower.substring(0, 100)}...`);
       return new Response(JSON.stringify({ score: 0 }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    
+    console.log(`Brand "${brandName}" found in content - proceeding with AI scoring`);
 
     const scoringPrompt = `You are an expert sentiment analysis tool. The brand "${brandName}" is mentioned in this content. Analyze the sentiment towards this brand and provide a score of 1-100 where:
 - 90-100: Extremely positive sentiment (highly recommended, praised, top choice)
