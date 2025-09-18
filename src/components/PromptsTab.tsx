@@ -344,6 +344,14 @@ ${response.content}`;
               placeholder="Ask anything you'd like to test across AI platforms..."
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (!isProcessing && prompt.trim() && activeStore) {
+                    handleSubmit();
+                  }
+                }
+              }}
               className="min-h-[100px]"
             />
             {activeStore && (
