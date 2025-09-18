@@ -285,7 +285,11 @@ const Dashboard = () => {
       <AddStoreModal 
         open={showAddStoreModal} 
         onOpenChange={setShowAddStoreModal}
-        onStoreAdded={() => setRefreshStores(prev => prev + 1)}
+        onStoreAdded={() => {
+          setRefreshStores(prev => prev + 1);
+          // Refresh the page to reload all data with the new store
+          window.location.reload();
+        }}
       />
     </div>
   );
