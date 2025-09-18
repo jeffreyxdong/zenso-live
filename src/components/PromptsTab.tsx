@@ -366,7 +366,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-center">Prompt</TableHead>
+                    <TableHead>Prompt</TableHead>
                     <TableHead className="text-center">Visibility</TableHead>
                     <TableHead className="text-center">Sentiment</TableHead>
                     <TableHead className="text-center">Created</TableHead>
@@ -376,8 +376,8 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
               <TableBody>
                   {filteredPrompts.map((prompt) => (
                     <TableRow key={prompt.id}>
-                      <TableCell className="text-center">
-                        <div className="max-w-md mx-auto">
+                      <TableCell>
+                        <div className="max-w-md">
                           <p className="text-sm text-muted-foreground truncate">{prompt.content}</p>
                         </div>
                       </TableCell>
