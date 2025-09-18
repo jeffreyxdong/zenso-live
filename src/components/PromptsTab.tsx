@@ -377,7 +377,13 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
                   {filteredPrompts.map((prompt) => (
                     <TableRow key={prompt.id}>
                       <TableCell>
-                        <div className="max-w-md">
+                        <div 
+                          className="max-w-md cursor-pointer hover:bg-muted/50 rounded px-2 py-1 transition-colors"
+                          onClick={() => {
+                            setSelectedPrompt(prompt);
+                            setIsViewModalOpen(true);
+                          }}
+                        >
                           <p className="text-sm text-muted-foreground truncate">{prompt.content}</p>
                         </div>
                       </TableCell>
