@@ -366,33 +366,33 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Prompt</TableHead>
-                    <TableHead>Visibility</TableHead>
-                    <TableHead>Sentiment</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead className="text-center">Prompt</TableHead>
+                    <TableHead className="text-center">Visibility</TableHead>
+                    <TableHead className="text-center">Sentiment</TableHead>
+                    <TableHead className="text-center">Created</TableHead>
+                    <TableHead className="text-center">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
               <TableBody>
                   {filteredPrompts.map((prompt) => (
                     <TableRow key={prompt.id}>
-                      <TableCell>
-                        <div className="max-w-md">
+                      <TableCell className="text-center">
+                        <div className="max-w-md mx-auto">
                           <p className="text-sm text-muted-foreground truncate">{prompt.content}</p>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-center">
                         {getScoreDisplay(prompt.visibility_score, 'visibility')}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-center">
                         {getScoreDisplay(prompt.sentiment_score, 'sentiment')}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-center">
                         <span className="text-sm text-muted-foreground">
                           {new Date(prompt.created_at).toLocaleDateString()}
                         </span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-center">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="h-8 w-8 p-0">
