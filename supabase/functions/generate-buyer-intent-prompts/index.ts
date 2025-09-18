@@ -18,10 +18,10 @@ serve(async (req) => {
   }
 
   try {
-    const { productId, productTitle, productType, vendor, tags } = await req.json();
+    const { productId, productTitle, productType, vendor, tags, storeId } = await req.json();
 
-    if (!productId || !productTitle) {
-      return new Response(JSON.stringify({ error: 'Product ID and title are required' }), {
+    if (!productId || !productTitle || !storeId) {
+      return new Response(JSON.stringify({ error: 'Product ID, title, and store ID are required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -118,6 +118,7 @@ Return ONLY a JSON array of 15 strings, no additional formatting or explanation.
     // Insert prompts into database
     const promptsToInsert = prompts.map(promptText => ({
       user_id: userData.user.id,
+      store_id: storeId,
       product_id: productId,
       content: promptText,
       active: true,

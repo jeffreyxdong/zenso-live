@@ -45,6 +45,17 @@ interface ProductVariant {
   inventory_quantity: number;
 }
 
+interface Store {
+  id: string;
+  name: string;
+  website: string;
+  is_active: boolean;
+}
+
+interface MyProductsProps {
+  activeStore: Store | null;
+}
+
 const productSchema = z.object({
   title: z.string().min(1, "Product title is required"),
   handle: z.string().optional(),
@@ -60,7 +71,7 @@ const productSchema = z.object({
 
 type ProductFormData = z.infer<typeof productSchema>;
 
-const MyProducts = () => {
+const MyProducts = ({ activeStore }: MyProductsProps) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -92,7 +103,7 @@ const MyProducts = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [activeStore]);
 
   const generateHandle = (title: string) => {
     return title
@@ -104,27 +115,31 @@ const MyProducts = () => {
   const handleAddProduct = async (data: ProductFormData) => {
     setIsSubmitting(true);
     try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+        if (!activeStore?.id) {
+          throw new Error('No active store selected');
+        }
 
-      const handle = data.handle || generateHandle(data.title);
-      const tags = data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [];
+        const handle = data.handle || generateHandle(data.title);
+        const tags = data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [];
 
-      // Create product
-      const { data: productData, error: productError } = await supabase
-        .from("products")
-        .insert({
-          user_id: userData.user.id,
-          shopify_id: `manual-${Date.now()}`,
-          title: data.title,
-          handle: handle,
-          product_type: data.product_type || null,
-          vendor: data.vendor || null,
-          status: data.status,
-          tags: tags.length > 0 ? tags : null,
-        })
-        .select()
-        .single();
+        // Create product
+        const { data: productData, error: productError } = await supabase
+          .from("products")
+          .insert({
+            user_id: userData.user.id,
+            store_id: activeStore.id,
+            shopify_id: `manual-${Date.now()}`,
+            title: data.title,
+            handle: handle,
+            product_type: data.product_type || null,
+            vendor: data.vendor || null,
+            status: data.status,
+            tags: tags.length > 0 ? tags : null,
+          })
+          .select()
+          .single();
 
       if (productError) throw productError;
 
@@ -150,6 +165,7 @@ const MyProducts = () => {
           await supabase.functions.invoke('generate-buyer-intent-prompts', {
             body: {
               productId: productData.id,
+              storeId: activeStore.id,
               productTitle: data.title,
               productType: data.product_type,
               vendor: data.vendor,
@@ -506,6 +522,11 @@ const MyProducts = () => {
     try {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
+      if (!activeStore?.id) {
+        setProducts([]);
+        setLoading(false);
+        return;
+      }
 
       const { data: productsData, error } = await supabase
         .from("products")
@@ -514,6 +535,7 @@ const MyProducts = () => {
           variants:product_variants(*)
         `)
         .eq("user_id", userData.user.id)
+        .eq("store_id", activeStore.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;

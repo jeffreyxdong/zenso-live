@@ -155,11 +155,16 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
         toast({ title: 'Not signed in', description: 'Please sign in to save prompts', variant: 'destructive' });
         return;
       }
+      if (!activeStore?.id) {
+        toast({ title: 'No store selected', description: 'Please select a store to save prompts', variant: 'destructive' });
+        return;
+      }
 
       const { data: promptData, error } = await (supabase as any)
         .from('prompts')
         .insert({ 
           user_id: userData.user.id, 
+          store_id: activeStore.id,
           content: prompt.trim(),
           brand_name: activeStore?.name || '',
           status: 'active',
@@ -201,7 +206,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
       setIsLoadingSaved(true);
       const { data: userData, error: userErr } = await supabase.auth.getUser();
       if (userErr) throw userErr;
-      if (!userData?.user) {
+      if (!userData?.user || !activeStore?.id) {
         setSavedPrompts([]);
         setIsLoadingSaved(false);
         return;
@@ -211,6 +216,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
         .from('prompts')
         .select('id, content, created_at, status, brand_name, product_id, visibility_score, sentiment_score')
         .eq('user_id', userData.user.id)
+        .eq('store_id', activeStore.id)
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 
@@ -251,7 +257,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
 
   useEffect(() => {
     fetchSavedPrompts();
-  }, []);
+  }, [activeStore]);
 
 
   const getScoreDisplay = (score: number | undefined, type: 'visibility' | 'sentiment') => {

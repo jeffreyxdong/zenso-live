@@ -84,6 +84,7 @@ export type Database = {
           sentiment_score: number | null
           shopify_id: string
           status: string
+          store_id: string | null
           tags: string[] | null
           title: string
           updated_at: string
@@ -101,6 +102,7 @@ export type Database = {
           sentiment_score?: number | null
           shopify_id: string
           status?: string
+          store_id?: string | null
           tags?: string[] | null
           title: string
           updated_at?: string
@@ -118,6 +120,7 @@ export type Database = {
           sentiment_score?: number | null
           shopify_id?: string
           status?: string
+          store_id?: string | null
           tags?: string[] | null
           title?: string
           updated_at?: string
@@ -125,7 +128,15 @@ export type Database = {
           vendor?: string | null
           visibility_score?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -200,6 +211,7 @@ export type Database = {
           product_id: string | null
           sentiment_score: number | null
           status: string | null
+          store_id: string | null
           updated_at: string
           user_id: string
           visibility_score: number | null
@@ -214,6 +226,7 @@ export type Database = {
           product_id?: string | null
           sentiment_score?: number | null
           status?: string | null
+          store_id?: string | null
           updated_at?: string
           user_id: string
           visibility_score?: number | null
@@ -228,6 +241,7 @@ export type Database = {
           product_id?: string | null
           sentiment_score?: number | null
           status?: string | null
+          store_id?: string | null
           updated_at?: string
           user_id?: string
           visibility_score?: number | null
@@ -238,6 +252,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prompts_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
             referencedColumns: ["id"]
           },
         ]

@@ -192,11 +192,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { shopifyStoreName, accessToken } = await req.json();
+    const { shopifyStoreName, accessToken, storeId } = await req.json();
 
-    if (!shopifyStoreName || !accessToken) {
+    if (!shopifyStoreName || !accessToken || !storeId) {
       return new Response(
-        JSON.stringify({ error: 'Missing required parameters: shopifyStoreName and accessToken' }),
+        JSON.stringify({ error: 'Missing required parameters: shopifyStoreName, accessToken, and storeId' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -240,6 +240,7 @@ Deno.serve(async (req) => {
           .from('products')
           .upsert({
             user_id: user.id,
+            store_id: storeId,
             ...normalizedProduct,
           }, {
             onConflict: 'user_id,shopify_id',

@@ -273,7 +273,7 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="my-products">
-            <MyProducts />
+            <MyProducts activeStore={activeStore} />
           </TabsContent>
 
           <TabsContent value="prompts">

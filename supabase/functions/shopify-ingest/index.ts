@@ -87,6 +87,23 @@ Deno.serve(async (req) => {
 
     console.log(`Processing ${items.length} products for user: ${user.id}`);
 
+    // Get the user's active store
+    const { data: activeStore, error: storeError } = await supabaseAdmin
+      .from('stores')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .single();
+
+    if (storeError || !activeStore) {
+      return new Response(
+        JSON.stringify({ error: 'No active store found. Please ensure you have an active store set up.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`Using active store: ${activeStore.id}`);
+
     let importedCount = 0;
     let skippedCount = 0;
 
@@ -98,6 +115,7 @@ Deno.serve(async (req) => {
         // Normalize product data
         const productData = {
           user_id: userId,
+          store_id: activeStore.id,
           shopify_id: String((item as any).productId ?? (item as any).id),
           title: item.title,
           handle: item.handle || (item.title ? item.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : `product-${(item as any).productId ?? (item as any).id}`),
