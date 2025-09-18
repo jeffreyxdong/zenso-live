@@ -178,7 +178,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setSavedPrompts(data ?? []);
+      setSavedPrompts((data ?? []) as SavedPrompt[]);
     } catch (err) {
       console.error("Error fetching prompts:", err);
       toast({ title: "Error", description: "Failed to load saved prompts", variant: "destructive" });
