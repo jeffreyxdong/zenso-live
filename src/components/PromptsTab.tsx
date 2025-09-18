@@ -4,8 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Bot, Eye, Trash2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Loader2, Bot, Eye, Trash2, MoreVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { PromptViewModal } from "./PromptViewModal";
@@ -37,7 +37,6 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
   const [savedPrompts, setSavedPrompts] = useState<SavedPrompt[]>([]);
   const [isLoadingSaved, setIsLoadingSaved] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [activeTab, setActiveTab] = useState("active");
   const [selectedPrompt, setSelectedPrompt] = useState<SavedPrompt | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const { toast } = useToast();
@@ -212,6 +211,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
         .from('prompts')
         .select('id, content, created_at, status, brand_name, product_id, visibility_score, sentiment_score')
         .eq('user_id', userData.user.id)
+        .eq('status', 'active')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -254,23 +254,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
   }, []);
 
 
-  const getVisibilityBadge = (score?: number) => {
-    if (!score) return <Badge variant="outline">No Data</Badge>;
-    if (score >= 80) return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">High</Badge>;
-    if (score >= 60) return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Medium</Badge>;
-    return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Low</Badge>;
-  };
-
-  const getSentimentBadge = (score?: number) => {
-    if (!score) return <Badge variant="outline">No Data</Badge>;
-    if (score >= 70) return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Positive</Badge>;
-    if (score >= 30) return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Neutral</Badge>;
-    return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Negative</Badge>;
-  };
-
-  const filteredPrompts = savedPrompts.filter(prompt => 
-    activeTab === 'all' || prompt.status === activeTab
-  );
+  const filteredPrompts = savedPrompts;
 
   return (
     <div className="space-y-6">
@@ -322,14 +306,6 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-            <TabsList>
-              <TabsTrigger value="active">Active</TabsTrigger>
-              <TabsTrigger value="suggested">Suggested</TabsTrigger>
-              <TabsTrigger value="inactive">Inactive</TabsTrigger>
-            </TabsList>
-          </Tabs>
-
           {isLoadingSaved ? (
             <div className="flex items-center gap-2 text-sm py-8">
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -337,7 +313,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
             </div>
           ) : filteredPrompts.length === 0 ? (
             <p className="text-sm text-muted-foreground py-8 text-center">
-              No {activeTab} prompts yet. Create one above to get started.
+              No prompts yet. Create one above to get started.
             </p>
           ) : (
               <Table>
@@ -359,10 +335,14 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {getVisibilityBadge(prompt.visibility_score)}
+                        <span className="text-sm font-medium">
+                          {prompt.visibility_score || 0}
+                        </span>
                       </TableCell>
                       <TableCell>
-                        {getSentimentBadge(prompt.sentiment_score)}
+                        <span className="text-sm font-medium">
+                          {prompt.sentiment_score || 0}
+                        </span>
                       </TableCell>
                       <TableCell>
                         <span className="text-sm text-muted-foreground">
@@ -370,28 +350,31 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            size="sm" 
-                            variant="ghost"
-                            onClick={() => {
-                              setSelectedPrompt(prompt);
-                              setIsViewModalOpen(true);
-                            }}
-                          >
-                            <Eye className="w-4 h-4 mr-1" />
-                            View
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="ghost"
-                            onClick={() => deletePrompt(prompt.id)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4 mr-1" />
-                            Delete
-                          </Button>
-                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedPrompt(prompt);
+                                setIsViewModalOpen(true);
+                              }}
+                            >
+                              <Eye className="w-4 h-4 mr-2" />
+                              View
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => deletePrompt(prompt.id)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))}
