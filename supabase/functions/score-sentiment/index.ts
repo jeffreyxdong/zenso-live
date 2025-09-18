@@ -18,16 +18,31 @@ serve(async (req) => {
     const { content, brandName } = await req.json();
     
     console.log(`Scoring sentiment for brand: ${brandName}`);
+    console.log(`Content to analyze (first 200 chars): ${content?.substring(0, 200)}...`);
 
     if (!openAIApiKey) {
       throw new Error('OpenAI API key not configured');
     }
 
-    // First check if brand is mentioned at all
-    const brandMentioned = content.toLowerCase().includes(brandName.toLowerCase());
+    if (!content || !brandName) {
+      console.log('Missing content or brandName - returning score 0');
+      return new Response(JSON.stringify({ score: 0 }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // More flexible brand mention detection
+    const contentLower = content.toLowerCase();
+    const brandLower = brandName.toLowerCase();
+    
+    // Check for exact brand name or partial matches
+    const brandMentioned = contentLower.includes(brandLower) || 
+                          contentLower.includes(brandLower.split(' ')[0]) ||
+                          contentLower.includes(brandLower.replace(/[^a-z0-9]/g, ''));
     
     if (!brandMentioned) {
       console.log(`Brand "${brandName}" not mentioned in content - returning sentiment score 0`);
+      console.log(`Content searched: ${contentLower.substring(0, 100)}...`);
       return new Response(JSON.stringify({ score: 0 }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
