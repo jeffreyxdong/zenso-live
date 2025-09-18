@@ -4,9 +4,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Store } from "lucide-react";
+import { ChevronDown, Store, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -19,9 +20,10 @@ interface Store {
 
 interface StoreSelectorProps {
   onStoreChange?: (store: Store) => void;
+  onAddStore?: () => void;
 }
 
-const StoreSelector = ({ onStoreChange }: StoreSelectorProps) => {
+const StoreSelector = ({ onStoreChange, onAddStore }: StoreSelectorProps) => {
   const [stores, setStores] = useState<Store[]>([]);
   const [activeStore, setActiveStore] = useState<Store | null>(null);
   const [loading, setLoading] = useState(true);
@@ -141,19 +143,67 @@ const StoreSelector = ({ onStoreChange }: StoreSelectorProps) => {
 
   if (stores.length === 0) {
     return (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Store className="w-4 h-4" />
-        No stores added
-      </div>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="flex items-center gap-2">
+            <Store className="w-4 h-4" />
+            No stores added
+            <ChevronDown className="w-4 h-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-64 bg-popover border shadow-lg z-50">
+          {onAddStore && (
+            <DropdownMenuItem
+              onClick={onAddStore}
+              className="cursor-pointer flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Store</span>
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
     );
   }
 
   if (stores.length === 1) {
     return (
-      <div className="flex items-center gap-2 text-sm">
-        <Store className="w-4 h-4" />
-        {activeStore?.name || stores[0].name}
-      </div>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="flex items-center gap-2">
+            <Store className="w-4 h-4" />
+            {activeStore?.name || stores[0].name}
+            <ChevronDown className="w-4 h-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-64 bg-popover border shadow-lg z-50">
+          <DropdownMenuItem
+            onClick={() => switchToStore(stores[0])}
+            className={`cursor-pointer ${
+              stores[0].is_active ? "bg-muted" : ""
+            }`}
+          >
+            <div className="flex flex-col gap-1 w-full">
+              <div className="font-medium">{stores[0].name}</div>
+              <div className="text-xs text-muted-foreground truncate">
+                {stores[0].website}
+              </div>
+            </div>
+          </DropdownMenuItem>
+          {onAddStore && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={onAddStore}
+                className="cursor-pointer flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add Store</span>
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
     );
   }
 
@@ -166,7 +216,7 @@ const StoreSelector = ({ onStoreChange }: StoreSelectorProps) => {
           <ChevronDown className="w-4 h-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64 bg-popover border z-50">
+      <DropdownMenuContent align="end" className="w-64 bg-popover border shadow-lg z-50">
         {stores.map((store) => (
           <DropdownMenuItem
             key={store.id}
@@ -183,6 +233,18 @@ const StoreSelector = ({ onStoreChange }: StoreSelectorProps) => {
             </div>
           </DropdownMenuItem>
         ))}
+        {onAddStore && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={onAddStore}
+              className="cursor-pointer flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Store</span>
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

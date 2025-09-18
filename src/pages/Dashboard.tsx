@@ -81,17 +81,10 @@ const Dashboard = () => {
               </Badge>
             </div>
             <div className="flex items-center gap-3">
-              <StoreSelector onStoreChange={setActiveStore} />
+              <StoreSelector onStoreChange={setActiveStore} onAddStore={() => setShowAddStoreModal(true)} />
               <Button variant="outline" size="sm">
                 <Settings className="w-4 h-4" />
                 Settings
-              </Button>
-              <Button 
-                size="sm" 
-                onClick={() => setShowAddStoreModal(true)}
-              >
-                <Plus className="w-4 h-4" />
-                Add Store
               </Button>
               <Button variant="outline" size="sm" onClick={handleLogout}>
                 Logout
