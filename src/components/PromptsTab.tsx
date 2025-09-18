@@ -93,28 +93,68 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
         });
       }
 
-      // Score visibility and sentiment for responses
+      // Second round: Score visibility and sentiment for each response
       let totalVisibilityScore = 0;
       let totalSentimentScore = 0;
       validResponses = responses.length;
 
       for (const response of responses) {
         try {
-          // Score visibility and sentiment in parallel
-          const [visibilityResult, sentimentResult] = await Promise.allSettled([
-            supabase.functions.invoke('score-brand-visibility', {
-              body: { content: response.content, brandName: activeStore.name }
-            }),
-            supabase.functions.invoke('score-sentiment', {
-              body: { content: response.content, brandName: activeStore.name }
-            })
+          // Create visibility and sentiment prompts
+          const visibilityPrompt = `Rate the visibility of the brand "${activeStore.name}" in the following text on a scale of 0–100.
+0 = not mentioned at all, 100 = the brand is the main focus.
+Return ONLY a number.
+
+Text:
+${response.content}`;
+
+          const sentimentPrompt = `Rate the sentiment toward the brand "${activeStore.name}" in the following text on a scale of 0–100.
+0 = very negative, 50 = completely neutral, 100 = very positive.
+Return ONLY a number.
+
+Text:
+${response.content}`;
+
+          // Score with both OpenAI and Gemini for each response
+          const [openaiVisibility, openaiSentiment, geminiVisibility, geminiSentiment] = await Promise.allSettled([
+            supabase.functions.invoke('chat-with-openai', { body: { prompt: visibilityPrompt } }),
+            supabase.functions.invoke('chat-with-openai', { body: { prompt: sentimentPrompt } }),
+            supabase.functions.invoke('chat-with-gemini', { body: { prompt: visibilityPrompt } }),
+            supabase.functions.invoke('chat-with-gemini', { body: { prompt: sentimentPrompt } })
           ]);
 
-          if (visibilityResult.status === 'fulfilled' && visibilityResult.value.data?.score !== undefined) {
-            totalVisibilityScore += visibilityResult.value.data.score;
+          // Parse and average visibility scores
+          let visibilityScores = [];
+          if (openaiVisibility.status === 'fulfilled' && openaiVisibility.value.data?.result) {
+            const score = parseInt(openaiVisibility.value.data.result.trim()) || 0;
+            console.log('OpenAI visibility score:', score, 'Raw:', openaiVisibility.value.data.result);
+            visibilityScores.push(score);
           }
-          if (sentimentResult.status === 'fulfilled' && sentimentResult.value.data?.score !== undefined) {
-            totalSentimentScore += sentimentResult.value.data.score;
+          if (geminiVisibility.status === 'fulfilled' && geminiVisibility.value.data?.result) {
+            const score = parseInt(geminiVisibility.value.data.result.trim()) || 0;
+            console.log('Gemini visibility score:', score, 'Raw:', geminiVisibility.value.data.result);
+            visibilityScores.push(score);
+          }
+
+          // Parse and average sentiment scores  
+          let sentimentScores = [];
+          if (openaiSentiment.status === 'fulfilled' && openaiSentiment.value.data?.result) {
+            const score = parseInt(openaiSentiment.value.data.result.trim()) || 0;
+            console.log('OpenAI sentiment score:', score, 'Raw:', openaiSentiment.value.data.result);
+            sentimentScores.push(score);
+          }
+          if (geminiSentiment.status === 'fulfilled' && geminiSentiment.value.data?.result) {
+            const score = parseInt(geminiSentiment.value.data.result.trim()) || 0;
+            console.log('Gemini sentiment score:', score, 'Raw:', geminiSentiment.value.data.result);
+            sentimentScores.push(score);
+          }
+
+          // Add averaged scores for this response
+          if (visibilityScores.length > 0) {
+            totalVisibilityScore += Math.round(visibilityScores.reduce((a, b) => a + b, 0) / visibilityScores.length);
+          }
+          if (sentimentScores.length > 0) {
+            totalSentimentScore += Math.round(sentimentScores.reduce((a, b) => a + b, 0) / sentimentScores.length);
           }
         } catch (error) {
           console.error('Error scoring response:', error);
