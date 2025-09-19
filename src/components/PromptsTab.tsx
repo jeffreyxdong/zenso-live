@@ -290,10 +290,13 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
               <TableBody>
                 {savedPrompts.map((p) => (
                   <TableRow key={p.id}>
-                    <TableCell onClick={() => { setSelectedPrompt(p); setIsViewModalOpen(true); }}>
-                      <p className="text-sm text-muted-foreground truncate cursor-pointer hover:bg-muted/50 rounded px-2 py-1">
-                        {p.content}
-                      </p>
+                    <TableCell onClick={() => { setSelectedPrompt(p); setIsViewModalOpen(true); }} className="cursor-pointer">
+                      <div className="flex items-center gap-2 p-2 rounded-md border border-transparent hover:border-border hover:bg-accent/50 transition-all duration-200 group">
+                        <Eye className="w-4 h-4 text-muted-foreground group-hover:text-primary opacity-60 group-hover:opacity-100" />
+                        <p className="text-sm text-foreground/80 group-hover:text-foreground truncate font-medium">
+                          {p.content}
+                        </p>
+                      </div>
                     </TableCell>
                     <TableCell className="text-center">{getScoreDisplay(p.visibility_score, "visibility")}</TableCell>
                     <TableCell className="text-center">{getScoreDisplay(p.sentiment_score, "sentiment")}</TableCell>
