@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Loader2, Bot, Eye, Trash2, MoreVertical } from "lucide-react";
+import { Loader2, Bot, Eye, Trash2, MoreVertical, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { PromptViewModal } from "./PromptViewModal";
@@ -45,6 +46,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [promptToDelete, setPromptToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
   /** Fetch AI responses from OpenAI + Gemini */
@@ -208,7 +210,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedPrompts(savedPrompts.map(p => p.id));
+      setSelectedPrompts(filteredPrompts.map(p => p.id));
     } else {
       setSelectedPrompts([]);
     }
@@ -293,6 +295,10 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
     return <span className={`text-sm font-semibold px-3 py-1.5 rounded-md border ${colorClass}`}>{score}/100</span>;
   };
 
+  const filteredPrompts = savedPrompts.filter(prompt =>
+    prompt.content.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="space-y-6">
       {/* Input Card */}
@@ -332,36 +338,51 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Your Prompts</span>
-            <div className="flex items-center gap-2">
-              {selectedPrompts.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDeleteSelected}
-                  className="flex items-center gap-2 text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Delete Selected ({selectedPrompts.length})
-                </Button>
-              )}
-              <Badge variant="outline">{savedPrompts.length} Prompts</Badge>
-            </div>
+            <Badge variant="outline">{savedPrompts.length} Prompts</Badge>
           </CardTitle>
         </CardHeader>
+        
+        {/* Search and Bulk Actions */}
+        <div className="px-6 pb-4">
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search prompts..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            {selectedPrompts.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDeleteSelected}
+                className="flex items-center gap-2 text-destructive hover:text-destructive"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete Selected ({selectedPrompts.length})
+              </Button>
+            )}
+          </div>
+        </div>
         <CardContent>
           {isLoadingSaved ? (
             <div className="flex items-center gap-2 text-sm py-8">
               <Loader2 className="w-4 h-4 animate-spin" /> Loading prompts...
             </div>
-          ) : savedPrompts.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">No prompts yet. Create one above.</p>
+          ) : filteredPrompts.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-8 text-center">
+              {savedPrompts.length === 0 ? "No prompts yet. Create one above." : "No prompts match your search."}
+            </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">
                     <Checkbox
-                      checked={selectedPrompts.length === savedPrompts.length && savedPrompts.length > 0}
+                      checked={selectedPrompts.length === filteredPrompts.length && filteredPrompts.length > 0}
                       onCheckedChange={handleSelectAll}
                     />
                   </TableHead>
@@ -373,7 +394,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {savedPrompts.map((p) => (
+                {filteredPrompts.map((p) => (
                   <TableRow key={p.id}>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <Checkbox
