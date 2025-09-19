@@ -338,7 +338,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Your Prompts</span>
-            <Badge variant="outline">{savedPrompts.length} Prompts</Badge>
+            
           </CardTitle>
         </CardHeader>
         
