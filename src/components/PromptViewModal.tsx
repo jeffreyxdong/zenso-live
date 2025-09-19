@@ -22,7 +22,7 @@ interface PromptViewModalProps {
 
 interface PromptScores {
   visibility_score: number | null;
-  position_score: number | null;
+  sentiment_score: number | null;
 }
 
 interface PromptResponse {
@@ -37,7 +37,7 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
   const [responses, setResponses] = useState<PromptResponse[]>([]);
   const [promptScores, setPromptScores] = useState<PromptScores>({
     visibility_score: null,
-    position_score: null,
+    sentiment_score: null,
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -63,7 +63,7 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
       // Fetch prompt scores from the prompts table
       const { data: promptData, error: promptError } = await supabase
         .from('prompts')
-        .select('visibility_score, position_score')
+        .select('visibility_score, sentiment_score')
         .eq('id', prompt.id)
         .single();
 
@@ -72,7 +72,7 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
       } else {
         setPromptScores({
           visibility_score: promptData?.visibility_score || null,
-          position_score: promptData?.position_score || null,
+          sentiment_score: promptData?.sentiment_score || null,
         });
       }
 
@@ -152,20 +152,20 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Position Score</CardTitle>
+                <CardTitle className="text-sm">Sentiment Score</CardTitle>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
                   <div className="h-16 flex items-center justify-center text-sm text-muted-foreground">
                     Loading...
                   </div>
-                ) : promptScores.position_score !== null ? (
+                ) : promptScores.sentiment_score !== null ? (
                   <div className="text-center">
                     <div className="text-2xl font-bold text-primary mb-1">
-                      {promptScores.position_score}
+                      {promptScores.sentiment_score}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Position ranking
+                      Sentiment tone
                     </p>
                   </div>
                 ) : (
