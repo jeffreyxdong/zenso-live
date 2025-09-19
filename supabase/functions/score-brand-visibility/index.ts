@@ -78,7 +78,7 @@ ${content}`;
         messages: [
           { role: 'user', content: scoringPrompt }
         ],
-        max_completion_tokens: 10,
+        max_completion_tokens: 50,
       }),
     });
 
