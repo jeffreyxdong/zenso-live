@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Loader2, Bot, Eye, Trash2, MoreVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +41,10 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedPrompt, setSelectedPrompt] = useState<SavedPrompt | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedPrompts, setSelectedPrompts] = useState<string[]>([]);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [promptToDelete, setPromptToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
 
   /** Fetch AI responses from OpenAI + Gemini */
@@ -192,15 +198,75 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
     }
   };
 
-  const deletePrompt = async (id: string) => {
-    try {
-      await supabase.from("prompts").delete().eq("id", id);
-      fetchSavedPrompts();
-      toast({ title: "Success", description: "Prompt deleted" });
-    } catch (err) {
-      console.error("Error deleting prompt:", err);
-      toast({ title: "Error", description: "Failed to delete prompt", variant: "destructive" });
+  const handleSelectPrompt = (promptId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedPrompts([...selectedPrompts, promptId]);
+    } else {
+      setSelectedPrompts(selectedPrompts.filter(id => id !== promptId));
     }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedPrompts(savedPrompts.map(p => p.id));
+    } else {
+      setSelectedPrompts([]);
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedPrompts.length > 0) {
+      setPromptToDelete(null);
+      setShowDeleteDialog(true);
+    }
+  };
+
+  const handleDeleteSingle = (promptId: string) => {
+    setPromptToDelete(promptId);
+    setShowDeleteDialog(true);
+  };
+
+  const deletePrompts = async (promptIds: string[]) => {
+    setIsDeleting(true);
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
+      // Delete prompts
+      const { error: promptError } = await supabase
+        .from("prompts")
+        .delete()
+        .in("id", promptIds)
+        .eq("user_id", userData.user.id);
+
+      if (promptError) throw promptError;
+
+      toast({
+        title: "Success",
+        description: `${promptIds.length} prompt(s) deleted successfully`,
+      });
+
+      // Reset selection and refresh
+      setSelectedPrompts([]);
+      setPromptToDelete(null);
+      setShowDeleteDialog(false);
+      fetchSavedPrompts();
+
+    } catch (error: any) {
+      console.error("Error deleting prompts:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete prompts",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const confirmDelete = () => {
+    const idsToDelete = promptToDelete ? [promptToDelete] : selectedPrompts;
+    deletePrompts(idsToDelete);
   };
 
   useEffect(() => {
@@ -266,7 +332,20 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Your Prompts</span>
-            <Badge variant="outline">{savedPrompts.length} Prompts</Badge>
+            <div className="flex items-center gap-2">
+              {selectedPrompts.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDeleteSelected}
+                  className="flex items-center gap-2 text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete Selected ({selectedPrompts.length})
+                </Button>
+              )}
+              <Badge variant="outline">{savedPrompts.length} Prompts</Badge>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -280,6 +359,12 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={selectedPrompts.length === savedPrompts.length && savedPrompts.length > 0}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </TableHead>
                   <TableHead>Prompt</TableHead>
                   <TableHead className="text-center">Visibility</TableHead>
                   <TableHead className="text-center">Sentiment</TableHead>
@@ -290,6 +375,12 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
               <TableBody>
                 {savedPrompts.map((p) => (
                   <TableRow key={p.id}>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={selectedPrompts.includes(p.id)}
+                        onCheckedChange={(checked) => handleSelectPrompt(p.id, !!checked)}
+                      />
+                    </TableCell>
                     <TableCell onClick={() => { setSelectedPrompt(p); setIsViewModalOpen(true); }} className="cursor-pointer">
                       <div className="flex items-center gap-2 p-2 rounded-md border border-transparent hover:border-border hover:bg-accent/50 transition-all duration-200 group">
                         <Eye className="w-4 h-4 text-muted-foreground group-hover:text-primary opacity-60 group-hover:opacity-100" />
@@ -303,7 +394,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
                     <TableCell className="text-center text-sm text-muted-foreground">
                       {new Date(p.created_at).toLocaleDateString()}
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
@@ -314,7 +405,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
                           <DropdownMenuItem onClick={() => { setSelectedPrompt(p); setIsViewModalOpen(true); }}>
                             <Eye className="w-4 h-4 mr-2" /> View
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => deletePrompt(p.id)} className="text-destructive">
+                          <DropdownMenuItem onClick={() => handleDeleteSingle(p.id)} className="text-destructive">
                             <Trash2 className="w-4 h-4 mr-2" /> Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -335,6 +426,38 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
           prompt={selectedPrompt}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Prompt{(promptToDelete ? '' : 's')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {promptToDelete 
+                ? "Are you sure you want to delete this prompt? This action cannot be undone."
+                : `Are you sure you want to delete ${selectedPrompts.length} selected prompt${selectedPrompts.length === 1 ? '' : 's'}? This action cannot be undone.`
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                `Delete ${promptToDelete ? '' : `${selectedPrompts.length} `}Prompt${promptToDelete ? '' : 's'}`
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
