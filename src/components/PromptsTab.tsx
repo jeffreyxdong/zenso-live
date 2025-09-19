@@ -60,37 +60,43 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
 
   /** Call Supabase scoring functions — they handle the GPT prompt logic */
   const scoreResponses = async (responses: { model: string; content: string }[], brandName: string) => {
-    // Combine all responses into a single content for ChatGPT to score
-    const combinedContent = responses.map(r => `${r.model.toUpperCase()} Response: ${r.content}`).join('\n\n');
-    
-    console.log(`Scoring combined content with brand "${brandName}"`);
-    console.log(`Combined content preview: ${combinedContent.substring(0, 200)}...`);
-    
-    const [visibilityRes, sentimentRes] = await Promise.allSettled([
-      supabase.functions.invoke("score-brand-visibility", {
-        body: { content: combinedContent, brandName },
-      }),
-      supabase.functions.invoke("score-brand-sentiment", {
-        body: { content: combinedContent, brandName },
-      }),
-    ]);
+    let totalVisibility = 0;
+    let totalSentiment = 0;
 
-    console.log('Visibility result:', visibilityRes);
-    console.log('Sentiment result:', sentimentRes);
+    for (const res of responses) {
+      console.log(`Scoring content for ${res.model} with brand "${brandName}"`);
+      console.log(`Content preview: ${res.content.substring(0, 200)}...`);
+      
+      const [visibilityRes, sentimentRes] = await Promise.allSettled([
+        supabase.functions.invoke("score-brand-visibility", {
+          body: { content: res.content, brandName },
+        }),
+        supabase.functions.invoke("score-sentiment", {
+          body: { content: res.content, brandName },
+        }),
+      ]);
 
-    const visibility = visibilityRes.status === "fulfilled" && visibilityRes.value.data?.score !== undefined 
-      ? visibilityRes.value.data.score 
-      : 0;
-    
-    const sentiment = sentimentRes.status === "fulfilled" && sentimentRes.value.data?.score !== undefined 
-      ? sentimentRes.value.data.score 
-      : 0;
+      console.log('Visibility result:', visibilityRes);
+      console.log('Sentiment result:', sentimentRes);
 
-    console.log(`Final scores - Visibility: ${visibility}, Sentiment: ${sentiment}`);
+      if (visibilityRes.status === "fulfilled" && visibilityRes.value.data?.score !== undefined) {
+        totalVisibility += visibilityRes.value.data.score;
+        console.log(`Visibility (${res.model}):`, visibilityRes.value.data.score);
+      } else {
+        console.error(`Visibility scoring failed for ${res.model}:`, visibilityRes);
+      }
+      
+      if (sentimentRes.status === "fulfilled" && sentimentRes.value.data?.score !== undefined) {
+        totalSentiment += sentimentRes.value.data.score;
+        console.log(`Sentiment (${res.model}):`, sentimentRes.value.data.score);
+      } else {
+        console.error(`Sentiment scoring failed for ${res.model}:`, sentimentRes);
+      }
+    }
 
     return {
-      avgVisibility: visibility,
-      avgSentiment: sentiment,
+      avgVisibility: responses.length ? Math.round(totalVisibility / responses.length) : 0,
+      avgSentiment: responses.length ? Math.round(totalSentiment / responses.length) : 0,
     };
   };
 
