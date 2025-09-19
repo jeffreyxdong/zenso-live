@@ -64,6 +64,9 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
     let totalSentiment = 0;
 
     for (const res of responses) {
+      console.log(`Scoring content for ${res.model} with brand "${brandName}"`);
+      console.log(`Content preview: ${res.content.substring(0, 200)}...`);
+      
       const [visibilityRes, sentimentRes] = await Promise.allSettled([
         supabase.functions.invoke("score-brand-visibility", {
           body: { content: res.content, brandName },
@@ -73,13 +76,21 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
         }),
       ]);
 
+      console.log('Visibility result:', visibilityRes);
+      console.log('Sentiment result:', sentimentRes);
+
       if (visibilityRes.status === "fulfilled" && visibilityRes.value.data?.score !== undefined) {
         totalVisibility += visibilityRes.value.data.score;
         console.log(`Visibility (${res.model}):`, visibilityRes.value.data.score);
+      } else {
+        console.error(`Visibility scoring failed for ${res.model}:`, visibilityRes);
       }
+      
       if (sentimentRes.status === "fulfilled" && sentimentRes.value.data?.score !== undefined) {
         totalSentiment += sentimentRes.value.data.score;
         console.log(`Sentiment (${res.model}):`, sentimentRes.value.data.score);
+      } else {
+        console.error(`Sentiment scoring failed for ${res.model}:`, sentimentRes);
       }
     }
 
