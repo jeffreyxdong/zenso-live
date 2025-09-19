@@ -60,8 +60,8 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
 
   /** Call Supabase scoring functions — they handle the GPT prompt logic */
   const scoreResponses = async (responses: { model: string; content: string }[], brandName: string) => {
-    let totalVisibility = 15;
-    let totalSentiment = 15;
+    let totalVisibility = 0;
+    let totalSentiment = 0;
 
     for (const res of responses) {
       console.log(`Scoring content for ${res.model} with brand "${brandName}"`);
