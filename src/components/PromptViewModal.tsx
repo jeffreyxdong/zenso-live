@@ -233,54 +233,90 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
           </Card>
 
           {/* Prompt Scores */}
-          <div className="grid grid-cols-2 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Visibility Score</CardTitle>
+          <div className="grid grid-cols-2 gap-6">
+            <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-primary/5 to-primary/10">
+              <div className="absolute inset-0 bg-grid-pattern opacity-5" />
+              <CardHeader className="relative pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2 text-primary">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <TrendingUp className="w-4 h-4 text-primary" />
+                  </div>
+                  Visibility Score
+                </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="relative pt-2">
                 {isLoading ? (
-                  <div className="h-16 flex items-center justify-center text-sm text-muted-foreground">
-                    Loading...
+                  <div className="h-20 flex items-center justify-center">
+                    <div className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
                   </div>
                 ) : promptScores.visibility_score !== null ? (
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary mb-1">
-                      {promptScores.visibility_score}
+                  <div className="space-y-3">
+                    <div className="flex items-baseline gap-2">
+                      <div className="text-3xl font-bold text-primary">
+                        {promptScores.visibility_score}
+                      </div>
+                      <div className="text-lg font-medium text-primary/70">%</div>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Brand visibility
+                    <div className="w-full bg-primary/10 rounded-full h-2">
+                      <div 
+                        className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-1000 ease-out"
+                        style={{ width: `${promptScores.visibility_score}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground font-medium">
+                      Brand visibility rating
                     </p>
                   </div>
                 ) : (
-                  <div className="h-16 flex items-center justify-center text-sm text-muted-foreground">
-                    No Data
+                  <div className="h-20 flex flex-col items-center justify-center space-y-2">
+                    <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center">
+                      <span className="text-xs text-muted-foreground">?</span>
+                    </div>
+                    <span className="text-sm text-muted-foreground">No Data Available</span>
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Sentiment Score</CardTitle>
+            <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-secondary/5 to-secondary/10">
+              <div className="absolute inset-0 bg-grid-pattern opacity-5" />
+              <CardHeader className="relative pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2 text-secondary-foreground">
+                  <div className="w-8 h-8 rounded-lg bg-secondary/20 flex items-center justify-center">
+                    <Bot className="w-4 h-4 text-secondary-foreground" />
+                  </div>
+                  Sentiment Score
+                </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="relative pt-2">
                 {isLoading ? (
-                  <div className="h-16 flex items-center justify-center text-sm text-muted-foreground">
-                    Loading...
+                  <div className="h-20 flex items-center justify-center">
+                    <div className="w-6 h-6 border-2 border-secondary/20 border-t-secondary-foreground rounded-full animate-spin" />
                   </div>
                 ) : promptScores.sentiment_score !== null ? (
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary mb-1">
-                      {promptScores.sentiment_score}
+                  <div className="space-y-3">
+                    <div className="flex items-baseline gap-2">
+                      <div className="text-3xl font-bold text-secondary-foreground">
+                        {promptScores.sentiment_score}
+                      </div>
+                      <div className="text-lg font-medium text-secondary-foreground/70">%</div>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Sentiment tone
+                    <div className="w-full bg-secondary/20 rounded-full h-2">
+                      <div 
+                        className="bg-gradient-to-r from-secondary-foreground to-secondary-foreground/80 h-2 rounded-full transition-all duration-1000 ease-out"
+                        style={{ width: `${promptScores.sentiment_score}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground font-medium">
+                      Sentiment analysis rating
                     </p>
                   </div>
                 ) : (
-                  <div className="h-16 flex items-center justify-center text-sm text-muted-foreground">
-                    No Data
+                  <div className="h-20 flex flex-col items-center justify-center space-y-2">
+                    <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center">
+                      <span className="text-xs text-muted-foreground">?</span>
+                    </div>
+                    <span className="text-sm text-muted-foreground">No Data Available</span>
                   </div>
                 )}
               </CardContent>
