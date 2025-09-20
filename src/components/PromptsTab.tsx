@@ -1,14 +1,13 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Loader2, Bot, Eye, Trash2, MoreVertical, Search } from "lucide-react";
+import { Loader2, Bot, Eye, Trash2, MoreVertical, Search, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { PromptViewModal } from "./PromptViewModal";
@@ -47,6 +46,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
   const [promptToDelete, setPromptToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showAddPromptDialog, setShowAddPromptDialog] = useState(false);
   const { toast } = useToast();
 
   /** Fetch AI responses from OpenAI + Gemini */
@@ -126,6 +126,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
       });
 
       setPrompt("");
+      setShowAddPromptDialog(false);
     } catch (err: any) {
       console.error("Error processing prompt:", err);
       toast({ title: "Error", description: err.message || "Failed to process prompt", variant: "destructive" });
@@ -323,139 +324,173 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
 
   return (
     <div className="space-y-6">
-      {/* Input Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bot className="w-5 h-5" /> Add New Prompt
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Textarea
-            id="prompt"
-            placeholder="Ask anything you'd like to test across AI platforms..."
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                if (!isProcessing && prompt.trim() && activeStore) handleSubmit();
-              }
-            }}
-            className="min-h-[100px]"
-          />
-          {activeStore && (
-            <p className="text-sm text-muted-foreground">
-              Prompts will be scored for: <strong>{activeStore.name}</strong>
-            </p>
-          )}
-          <Button onClick={handleSubmit} disabled={isProcessing || !prompt.trim() || !activeStore} className="w-full">
-            {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Process & Score Prompt"}
+      {/* Header with title, count, and actions */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">My Prompts</h2>
+          <p className="text-sm text-muted-foreground">
+            {savedPrompts.length} prompts
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            className="flex items-center gap-2"
+            onClick={() => setShowAddPromptDialog(true)}
+          >
+            <Plus className="w-4 h-4" />
+            Add Prompt
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Saved Prompts Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Your Prompts</span>
-            <div className="flex items-center gap-4">
-              {selectedPrompts.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDeleteSelected}
-                  className="flex items-center gap-2 text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Delete Selected ({selectedPrompts.length})
-                </Button>
-              )}
-              <div className="relative max-w-md">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search prompts..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 h-9"
-                />
-              </div>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoadingSaved ? (
-            <div className="flex items-center gap-2 text-sm py-8">
-              <Loader2 className="w-4 h-4 animate-spin" /> Loading prompts...
-            </div>
-          ) : filteredPrompts.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">
+      {/* Search and Bulk Actions */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search prompts..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        {selectedPrompts.length > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDeleteSelected}
+            className="flex items-center gap-2 text-destructive hover:text-destructive"
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete Selected ({selectedPrompts.length})
+          </Button>
+        )}
+      </div>
+
+      {/* Prompts Table */}
+      <div className="border rounded-lg">
+        {isLoadingSaved ? (
+          <div className="flex items-center gap-2 text-sm py-8 justify-center">
+            <Loader2 className="w-4 h-4 animate-spin" /> Loading prompts...
+          </div>
+        ) : filteredPrompts.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-sm text-muted-foreground">
               {savedPrompts.length === 0 ? "No prompts yet. Create one above." : "No prompts match your search."}
             </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-12">
+                  <Checkbox
+                    checked={selectedPrompts.length === filteredPrompts.length && filteredPrompts.length > 0}
+                    onCheckedChange={handleSelectAll}
+                  />
+                </TableHead>
+                <TableHead>Prompt</TableHead>
+                <TableHead>Visibility</TableHead>
+                <TableHead>Sentiment</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead className="w-12">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredPrompts.map((p) => (
+                <TableRow key={p.id}>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <Checkbox
-                      checked={selectedPrompts.length === filteredPrompts.length && filteredPrompts.length > 0}
-                      onCheckedChange={handleSelectAll}
+                      checked={selectedPrompts.includes(p.id)}
+                      onCheckedChange={(checked) => handleSelectPrompt(p.id, !!checked)}
                     />
-                  </TableHead>
-                  <TableHead>Prompt</TableHead>
-                  <TableHead className="text-center">Visibility</TableHead>
-                  <TableHead className="text-center">Sentiment</TableHead>
-                  <TableHead className="text-center">Created</TableHead>
-                  <TableHead className="text-center">Actions</TableHead>
+                  </TableCell>
+                  <TableCell onClick={() => { setSelectedPrompt(p); setIsViewModalOpen(true); }} className="cursor-pointer">
+                    <div className="flex items-center gap-2 p-2 rounded-md border border-transparent hover:border-border hover:bg-accent/50 transition-all duration-200 group">
+                      <Eye className="w-4 h-4 text-muted-foreground group-hover:text-primary opacity-60 group-hover:opacity-100" />
+                      <p className="text-sm text-foreground/80 group-hover:text-foreground truncate font-medium">
+                        {p.content}
+                      </p>
+                    </div>
+                  </TableCell>
+                  <TableCell>{getScoreDisplay(p.visibility_score, "visibility")}</TableCell>
+                  <TableCell>{getScoreDisplay(p.sentiment_score, "sentiment")}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {new Date(p.created_at).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => { setSelectedPrompt(p); setIsViewModalOpen(true); }}>
+                          <Eye className="w-4 h-4 mr-2" /> View
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteSingle(p.id)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredPrompts.map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <Checkbox
-                        checked={selectedPrompts.includes(p.id)}
-                        onCheckedChange={(checked) => handleSelectPrompt(p.id, !!checked)}
-                      />
-                    </TableCell>
-                    <TableCell onClick={() => { setSelectedPrompt(p); setIsViewModalOpen(true); }} className="cursor-pointer">
-                      <div className="flex items-center gap-2 p-2 rounded-md border border-transparent hover:border-border hover:bg-accent/50 transition-all duration-200 group">
-                        <Eye className="w-4 h-4 text-muted-foreground group-hover:text-primary opacity-60 group-hover:opacity-100" />
-                        <p className="text-sm text-foreground/80 group-hover:text-foreground truncate font-medium">
-                          {p.content}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center">{getScoreDisplay(p.visibility_score, "visibility")}</TableCell>
-                    <TableCell className="text-center">{getScoreDisplay(p.sentiment_score, "sentiment")}</TableCell>
-                    <TableCell className="text-center text-sm text-muted-foreground">
-                      {new Date(p.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => { setSelectedPrompt(p); setIsViewModalOpen(true); }}>
-                            <Eye className="w-4 h-4 mr-2" /> View
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDeleteSingle(p.id)} className="text-destructive">
-                            <Trash2 className="w-4 h-4 mr-2" /> Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </div>
+
+      {/* Add Prompt Dialog */}
+      <Dialog open={showAddPromptDialog} onOpenChange={setShowAddPromptDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bot className="w-5 h-5" /> Add New Prompt
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Textarea
+              id="prompt"
+              placeholder="Ask anything you'd like to test across AI platforms..."
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  if (!isProcessing && prompt.trim() && activeStore) handleSubmit();
+                }
+              }}
+              className="min-h-[100px]"
+            />
+            {activeStore && (
+              <p className="text-sm text-muted-foreground">
+                Prompts will be scored for: <strong>{activeStore.name}</strong>
+              </p>
+            )}
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowAddPromptDialog(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSubmit} 
+                disabled={isProcessing || !prompt.trim() || !activeStore} 
+                className="flex-1"
+              >
+                {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Process & Score Prompt"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {selectedPrompt && (
         <PromptViewModal
