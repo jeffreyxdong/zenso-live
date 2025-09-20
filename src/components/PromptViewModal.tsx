@@ -116,17 +116,20 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
         });
       }
 
-      // Fetch daily scores for time series
+      // Fetch daily scores for time series - rolling 7-day window
       const { data: dailyScoresData, error: dailyScoresError } = await supabase
         .from('prompt_daily_scores')
         .select('date, visibility_score, sentiment_score')
         .eq('prompt_id', prompt.id)
-        .order('date', { ascending: true });
+        .order('date', { ascending: false })
+        .limit(7);
 
       if (dailyScoresError) {
         console.warn('Could not fetch daily scores:', dailyScoresError);
       } else {
-        setDailyScores(dailyScoresData || []);
+        // Reverse the array so oldest date appears first for chart rendering
+        const reversedData = (dailyScoresData || []).reverse();
+        setDailyScores(reversedData);
       }
 
       setResponses(responsesData || []);
@@ -149,52 +152,36 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
     },
   };
 
-  // Prepare chart data to show all 7 days on x-axis but only data points where scores exist
+  // Prepare chart data to show rolling 7-day window from database
   const prepareChartData = (
     scoreType: "visibility" | "sentiment"
   ): ChartDataPoint[] => {
     const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const promptCreatedDate = new Date(prompt.created_at);
 
     console.log("Chart Debug:", {
       userTimeZone,
-      promptCreatedDate: format(promptCreatedDate, 'yyyy-MM-dd'),
       dailyScoresCount: dailyScores.length,
       scoreType,
       existingDates: dailyScores.map((s) => s.date),
     });
 
-    // Create a lookup map for existing scores
-    const scoreMap = new Map();
+    const chartData: ChartDataPoint[] = [];
+    
+    // Use the actual dates from the rolling 7-day window
     dailyScores.forEach((score) => {
       const scoreValue = scoreType === "visibility" 
         ? score.visibility_score 
         : score.sentiment_score;
       
-      if (scoreValue !== null) {
-        scoreMap.set(score.date, scoreValue);
-      }
-    });
-    
-    const chartData: ChartDataPoint[] = [];
-    
-    // Generate all 7 days starting from prompt creation date for x-axis
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(promptCreatedDate);
-      date.setDate(promptCreatedDate.getDate() + i);
-      const dateStr = formatInTimeZone(date, userTimeZone, "yyyy-MM-dd");
-    
-      // Check if we have historical data for this date
-      const existingScore = scoreMap.get(dateStr);
-    
-      // Add all dates to show on x-axis, but only include scores where they exist
+      const date = new Date(score.date + 'T00:00:00');
+      
       chartData.push({
-        date: dateStr,
-        score: existingScore ?? null,
+        date: score.date,
+        score: scoreValue,
         formattedDate: formatInTimeZone(date, userTimeZone, "MMM dd"),
         isProjected: false,
       });
-    }
+    });
     
     console.log("Generated chart data:", chartData);
     return chartData;
