@@ -43,8 +43,9 @@ interface DailyScore {
 
 interface ChartDataPoint {
   date: string;
-  score: number;
+  score: number | null;
   formattedDate: string;
+  isProjected?: boolean;
 }
 
 export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProps) => {
@@ -140,15 +141,45 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
     }
   };
 
-  // Prepare chart data
+  // Prepare chart data with 5-day projection
   const prepareChartData = (scoreType: 'visibility' | 'sentiment'): ChartDataPoint[] => {
-    return dailyScores
-      .filter(score => scoreType === 'visibility' ? score.visibility_score !== null : score.sentiment_score !== null)
+    const today = new Date();
+    const futureData: ChartDataPoint[] = [];
+    
+    // Create data points for the next 5 days
+    for (let i = 0; i < 5; i++) {
+      const futureDate = new Date(today);
+      futureDate.setDate(today.getDate() + i);
+      const dateString = format(futureDate, 'yyyy-MM-dd');
+      
+      // Check if we have actual data for this date
+      const existingScore = dailyScores.find(score => score.date === dateString);
+      const scoreValue = existingScore 
+        ? (scoreType === 'visibility' ? existingScore.visibility_score : existingScore.sentiment_score)
+        : null;
+      
+      futureData.push({
+        date: dateString,
+        score: scoreValue,
+        formattedDate: format(futureDate, 'MMM dd'),
+        isProjected: !existingScore || scoreValue === null
+      });
+    }
+    
+    // Combine historical data with future projections
+    const historicalData = dailyScores
+      .filter(score => {
+        const scoreDate = new Date(score.date);
+        return scoreDate < today && (scoreType === 'visibility' ? score.visibility_score !== null : score.sentiment_score !== null);
+      })
       .map(score => ({
         date: score.date,
         score: scoreType === 'visibility' ? score.visibility_score! : score.sentiment_score!,
-        formattedDate: format(new Date(score.date), 'MMM dd')
+        formattedDate: format(new Date(score.date), 'MMM dd'),
+        isProjected: false
       }));
+    
+    return [...historicalData, ...futureData].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   };
 
   const chartConfig = {
@@ -296,15 +327,28 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                              return value;
                            }}
                          />
-                         <Line 
-                           type="monotone" 
-                           dataKey="score" 
-                           stroke="hsl(var(--primary))"
-                           strokeWidth={2}
-                           dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 3 }}
-                           activeDot={{ r: 4, fill: "hsl(var(--primary))" }}
-                           fill="url(#visibilityGradient)"
-                         />
+                          <Line 
+                            type="monotone" 
+                            dataKey="score" 
+                            stroke="hsl(var(--primary))"
+                            strokeWidth={2}
+                            connectNulls={false}
+                            dot={(props) => {
+                              const { payload } = props;
+                              if (payload && payload.score !== null) {
+                                return <circle 
+                                  cx={props.cx} 
+                                  cy={props.cy} 
+                                  r={3} 
+                                  fill="hsl(var(--primary))" 
+                                  strokeWidth={2}
+                                  stroke="hsl(var(--background))"
+                                />;
+                              }
+                              return null;
+                            }}
+                            activeDot={{ r: 4, fill: "hsl(var(--primary))" }}
+                          />
                        </LineChart>
                      </ResponsiveContainer>
                    </ChartContainer>
@@ -358,15 +402,28 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                              return value;
                            }}
                          />
-                         <Line 
-                           type="monotone" 
-                           dataKey="score" 
-                           stroke="hsl(var(--primary))"
-                           strokeWidth={2}
-                           dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 3 }}
-                           activeDot={{ r: 4, fill: "hsl(var(--primary))" }}
-                           fill="url(#sentimentGradient)"
-                         />
+                          <Line 
+                            type="monotone" 
+                            dataKey="score" 
+                            stroke="hsl(var(--primary))"
+                            strokeWidth={2}
+                            connectNulls={false}
+                            dot={(props) => {
+                              const { payload } = props;
+                              if (payload && payload.score !== null) {
+                                return <circle 
+                                  cx={props.cx} 
+                                  cy={props.cy} 
+                                  r={3} 
+                                  fill="hsl(var(--primary))" 
+                                  strokeWidth={2}
+                                  stroke="hsl(var(--background))"
+                                />;
+                              }
+                              return null;
+                            }}
+                            activeDot={{ r: 4, fill: "hsl(var(--primary))" }}
+                          />
                        </LineChart>
                      </ResponsiveContainer>
                    </ChartContainer>
