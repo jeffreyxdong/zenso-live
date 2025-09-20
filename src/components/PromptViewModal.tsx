@@ -232,9 +232,6 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
     },
   };
 
-
-
-
   return (
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
