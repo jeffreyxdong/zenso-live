@@ -66,7 +66,7 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
         .channel(`prompt_daily_scores_${prompt.id}`)
         .on('postgres_changes', 
           { 
-            event: 'INSERT', 
+            event: '*', 
             schema: 'public', 
             table: 'prompt_daily_scores',
             filter: `prompt_id=eq.${prompt.id}`
