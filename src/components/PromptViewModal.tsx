@@ -346,10 +346,7 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                             fontSize={12}
                             tickLine={false}
                             axisLine={false}
-                            tick={{
-                              fill: 'hsl(var(--muted-foreground))',
-                              dy: 20, // 👈 moves the labels left by 10px
-                            }}
+                            tick={{ fill: 'hsl(var(--muted-foreground))' }}
                             interval={0}
                             angle={0}
                             textAnchor="middle"
@@ -362,7 +359,7 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                             axisLine={false}
                             tick={{
                               fill: 'hsl(var(--muted-foreground))',
-                              dx: -20, // 👈 moves the labels left by 10px
+                              dx: 0, // 👈 moves the labels left by 10px
                             }}
                             tickFormatter={(value) => `${value}%`}
                             width={50} // may need to increase slightly so labels don't get cut off
