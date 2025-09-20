@@ -144,42 +144,42 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
   // Prepare chart data with 5-day projection
   const prepareChartData = (scoreType: 'visibility' | 'sentiment'): ChartDataPoint[] => {
     const today = new Date();
-    const futureData: ChartDataPoint[] = [];
+    today.setHours(0, 0, 0, 0); // Reset time to start of day
     
-    // Create data points for the next 5 days
-    for (let i = 0; i < 5; i++) {
-      const futureDate = new Date(today);
-      futureDate.setDate(today.getDate() + i);
-      const dateString = format(futureDate, 'yyyy-MM-dd');
-      
-      // Check if we have actual data for this date
-      const existingScore = dailyScores.find(score => score.date === dateString);
-      const scoreValue = existingScore 
-        ? (scoreType === 'visibility' ? existingScore.visibility_score : existingScore.sentiment_score)
-        : null;
-      
-      futureData.push({
-        date: dateString,
-        score: scoreValue,
-        formattedDate: format(futureDate, 'MMM dd'),
-        isProjected: !existingScore || scoreValue === null
-      });
-    }
-    
-    // Combine historical data with future projections
+    // Get all historical data first
     const historicalData = dailyScores
-      .filter(score => {
-        const scoreDate = new Date(score.date);
-        return scoreDate < today && (scoreType === 'visibility' ? score.visibility_score !== null : score.sentiment_score !== null);
-      })
+      .filter(score => (scoreType === 'visibility' ? score.visibility_score !== null : score.sentiment_score !== null))
       .map(score => ({
         date: score.date,
         score: scoreType === 'visibility' ? score.visibility_score! : score.sentiment_score!,
         formattedDate: format(new Date(score.date), 'MMM dd'),
         isProjected: false
       }));
+
+    // Create a map of existing dates for quick lookup
+    const existingDates = new Set(historicalData.map(item => item.date));
     
-    return [...historicalData, ...futureData].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    // Create future data points (5 days from today)
+    const futureData: ChartDataPoint[] = [];
+    for (let i = 0; i < 5; i++) {
+      const futureDate = new Date(today);
+      futureDate.setDate(today.getDate() + i);
+      const dateString = format(futureDate, 'yyyy-MM-dd');
+      
+      // Only add if not already in historical data
+      if (!existingDates.has(dateString)) {
+        futureData.push({
+          date: dateString,
+          score: null,
+          formattedDate: format(futureDate, 'MMM dd'),
+          isProjected: true
+        });
+      }
+    }
+    
+    // Combine and sort all data
+    const allData = [...historicalData, ...futureData];
+    return allData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   };
 
   const chartConfig = {
@@ -313,16 +313,16 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                            width={35}
                          />
                           <CartesianGrid 
-                            strokeDasharray="3 3" 
+                            strokeDasharray="1 1" 
                             stroke="hsl(var(--border))" 
-                            opacity={0.3}
+                            opacity={0.8}
                             horizontal={true}
                             vertical={false}
                           />
                           <CartesianGrid 
-                            strokeDasharray="3 3" 
+                            strokeDasharray="1 1" 
                             stroke="hsl(var(--border))" 
-                            opacity={0.3}
+                            opacity={0.8}
                             horizontal={true}
                             vertical={false}
                           />
