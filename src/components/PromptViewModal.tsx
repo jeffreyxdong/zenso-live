@@ -348,7 +348,7 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                             axisLine={false}
                             tick={{
                               fill: 'hsl(var(--muted-foreground))',
-                              dy: 10, // 👈 moves the labels left by 10px
+                              dy: 10,
                             }}
                             interval={0}
                             angle={0}
@@ -362,13 +362,12 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                             axisLine={false}
                             tick={{
                               fill: 'hsl(var(--muted-foreground))',
-                              dx: -5, // 👈 moves the labels left by 10px
+                              dx: -5,
                             }}
                             tickFormatter={(value) => `${value}%`}
                             width={50} // may need to increase slightly so labels don't get cut off
                             orientation="left"
                           />
-   
                            <CartesianGrid 
                              strokeDasharray="1 1" 
                              stroke="hsl(var(--muted-foreground))" 
@@ -432,27 +431,30 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                      <ResponsiveContainer width="100%" height="100%">
                         <LineChart 
                           data={prepareChartData('sentiment')} 
-                          margin={{ top: 10, right: 20, left: 0, bottom: 10 }}
+                          margin={{ top: 10, right: 20, left: -10, bottom: 10 }}
                         >
                           <XAxis 
                             dataKey="formattedDate" 
                             fontSize={12}
                             tickLine={false}
                             axisLine={false}
-                            tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                            tick={{
+                              fill: 'hsl(var(--muted-foreground))',
+                              dy: 10,
+                            }}
                             interval={0}
                             angle={0}
                             textAnchor="middle"
                             height={40}
                           />
-                         <YAxis
+                          <YAxis
                             domain={[0, 100]}
                             fontSize={12}
                             tickLine={false}
                             axisLine={false}
                             tick={{
                               fill: 'hsl(var(--muted-foreground))',
-                              dx: -20, // 👈 moves the labels left by 10px
+                              dx: -5,
                             }}
                             tickFormatter={(value) => `${value}%`}
                             width={50} // may need to increase slightly so labels don't get cut off
