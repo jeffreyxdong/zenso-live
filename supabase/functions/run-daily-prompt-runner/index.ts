@@ -107,45 +107,53 @@ serve(async (req) => {
 
         // Score responses and save
         if (responses.length > 0) {
-          let totalScore = 0;
+          let totalVisibilityScore = 0;
+          let totalSentimentScore = 0;
           let validScores = 0;
 
-          for (const response of responses) {
-            try {
-              // Score brand visibility
-              const scoreResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+          // Combine all responses into one for comprehensive scoring
+          const combinedContent = responses.map(r => `${r.model.toUpperCase()} Response: ${r.text}`).join('\n\n');
+          console.log(`Scoring combined content with brand "${prompt.brand_name}"`);
+          console.log(`Combined content preview: ${combinedContent.substring(0, 200)}...`);
+
+          try {
+            // Score brand visibility and sentiment using edge functions
+            const [visibilityResult, sentimentResult] = await Promise.allSettled([
+              fetch(`${supabaseUrl}/functions/v1/score-brand-visibility`, {
                 method: 'POST',
                 headers: {
-                  'Authorization': `Bearer ${openAIApiKey}`,
+                  'Authorization': `Bearer ${supabaseServiceKey}`,
                   'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                  model: 'gpt-4o-mini',
-                  messages: [
-                    {
-                      role: 'system',
-                      content: `You are tasked with scoring the visibility of a specific brand in the given text. Rate the brand visibility from 0-100 based on how prominently the brand "${prompt.brand_name}" is mentioned, discussed, or featured in the content. Consider frequency, context, and prominence of mentions. Respond only with a number between 0 and 100.`
-                    },
-                    {
-                      role: 'user',
-                      content: response.text
-                    }
-                  ],
-                  max_tokens: 10
+                  content: combinedContent,
+                  brandName: prompt.brand_name
                 }),
-              });
+              }).then(res => res.json()),
+              
+              fetch(`${supabaseUrl}/functions/v1/score-brand-sentiment`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${supabaseServiceKey}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  content: combinedContent,
+                  brandName: prompt.brand_name
+                }),
+              }).then(res => res.json())
+            ]);
 
-              if (scoreResponse.ok) {
-                const scoreData = await scoreResponse.json();
-                const scoreText = scoreData.choices[0].message.content.trim();
-                const score = parseInt(scoreText);
-                if (!isNaN(score) && score >= 0 && score <= 100) {
-                  totalScore += score;
-                  validScores++;
-                }
-              }
+            console.log('Visibility result:', visibilityResult);
+            console.log('Sentiment result:', sentimentResult);
 
-              // Save response
+            const visibilityScore = visibilityResult.status === 'fulfilled' ? visibilityResult.value?.score || 0 : 0;
+            const sentimentScore = sentimentResult.status === 'fulfilled' ? sentimentResult.value?.score || 0 : 0;
+
+            console.log(`Final scores - Visibility: ${visibilityScore}, Sentiment: ${sentimentScore}`);
+
+            // Save responses
+            for (const response of responses) {
               await supabase
                 .from('prompt_responses')
                 .insert({
@@ -154,24 +162,45 @@ serve(async (req) => {
                   response_text: response.text,
                   sources: response.sources
                 });
-
-            } catch (error) {
-              console.error('Error processing response:', error);
             }
-          }
 
-          // Save daily score
-          if (validScores > 0) {
-            const averageScore = Math.round(totalScore / validScores);
+            // Update prompt with scores
             await supabase
-              .from('prompt_daily_scores')
-              .insert({
-                prompt_id: prompt.id,
-                visibility_score: averageScore,
-                measured_at: new Date().toISOString()
-              });
+              .from('prompts')
+              .update({
+                visibility_score: visibilityScore,
+                sentiment_score: sentimentScore
+              })
+              .eq('id', prompt.id);
 
-            console.log(`Saved daily score ${averageScore} for prompt ${prompt.id}`);
+            // Save daily score entry
+            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+            
+            // Check if we already have a score for today
+            const { data: existingScore } = await supabase
+              .from('prompt_daily_scores')
+              .select('id')
+              .eq('prompt_id', prompt.id)
+              .eq('date', today)
+              .single();
+
+            if (!existingScore) {
+              await supabase
+                .from('prompt_daily_scores')
+                .insert({
+                  prompt_id: prompt.id,
+                  date: today,
+                  visibility_score: visibilityScore,
+                  sentiment_score: sentimentScore
+                });
+
+              console.log(`Saved daily scores for prompt ${prompt.id} - Visibility: ${visibilityScore}, Sentiment: ${sentimentScore}`);
+            } else {
+              console.log(`Daily score already exists for prompt ${prompt.id} on ${today}`);
+            }
+
+          } catch (error) {
+            console.error('Error scoring responses:', error);
           }
         }
 
