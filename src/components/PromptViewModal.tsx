@@ -142,82 +142,69 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
     }
   };
 
-  // Prepare chart data with timezone-aware date handling
-  const prepareChartData = (scoreType: 'visibility' | 'sentiment'): ChartDataPoint[] => {
+    // Prepare chart data with timezone-aware date handling
+  const prepareChartData = (scoreType: "visibility" | "sentiment"): ChartDataPoint[] => {
     const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const today = new Date();
-    
-    // Get today's date in user's timezone as YYYY-MM-DD format for database comparison
-    const todayStr = formatInTimeZone(today, userTimeZone, 'yyyy-MM-dd');
-    
-    console.log('Chart Debug:', {
-      userTimeZone,
-      todayStr,
-      dailyScoresCount: dailyScores.length,
-      scoreType,
-      existingDates: dailyScores.map(s => s.date)
-    });
-
-    // Get all historical data first
-    const historicalData = dailyScores
-      .filter(score => (scoreType === 'visibility' ? score.visibility_score !== null : score.sentiment_score !== null))
-      .map(score => ({
-        date: score.date,
-        score: scoreType === 'visibility' ? score.visibility_score! : score.sentiment_score!,
-        formattedDate: formatInTimeZone(new Date(score.date + 'T12:00:00'), userTimeZone, 'MMM dd'),
-        isProjected: false
-      }));
-
-    // Create a map of existing dates for quick lookup
-    const existingDates = new Set(historicalData.map(item => item.date));
-    
-    // Generate 7 days starting from today
+  
+    // Normalize daily scores into a consistent array (keep nulls instead of filtering)
+    const normalizedData = dailyScores.map((score) => ({
+      date: score.date,
+      score:
+        scoreType === "visibility"
+          ? score.visibility_score ?? null
+          : score.sentiment_score ?? null,
+      formattedDate: formatInTimeZone(
+        new Date(score.date + "T12:00:00"),
+        userTimeZone,
+        "MMM dd"
+      ),
+      isProjected: false,
+    }));
+  
+    // Make a quick lookup map by date for score values
+    const scoreByDate = new Map(normalizedData.map((item) => [item.date, item.score]));
+  
     const chartData: ChartDataPoint[] = [];
-    
-    for (let i = 0; i < 7; i++) {
+  
+    // Generate last 7 days (including today) with nulls where we have no record
+    for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
-      date.setDate(today.getDate() - (6 - i)); // Last 7 days including today
-      const dateStr = formatInTimeZone(date, userTimeZone, 'yyyy-MM-dd');
-      
-      // Check if we have historical data for this date
-      const existingScore = historicalData.find(item => item.date === dateStr);
-      
+      date.setDate(today.getDate() - i);
+  
+      const dateStr = formatInTimeZone(date, userTimeZone, "yyyy-MM-dd");
+      const score = scoreByDate.get(dateStr) ?? null;
+  
       chartData.push({
         date: dateStr,
-        score: existingScore ? existingScore.score : null,
-        formattedDate: formatInTimeZone(date, userTimeZone, 'MMM dd'),
-        isProjected: false
+        score,
+        formattedDate: formatInTimeZone(date, userTimeZone, "MMM dd"),
+        isProjected: false,
       });
     }
-    
-    // Add future projections (next 7 days) if we have historical data
-    if (historicalData.length > 0) {
-      const latestScore = historicalData[historicalData.length - 1].score;
-      
+  
+    // Add projections for the next 7 days based on the latest known score
+    const historicalScores = normalizedData.filter((item) => item.score !== null);
+    if (historicalScores.length > 0) {
+      const latestScore = historicalScores[historicalScores.length - 1].score;
+  
       for (let i = 1; i <= 7; i++) {
         const futureDate = new Date(today);
         futureDate.setDate(today.getDate() + i);
-        const dateStr = formatInTimeZone(futureDate, userTimeZone, 'yyyy-MM-dd');
-        
+  
         chartData.push({
-          date: dateStr,
+          date: formatInTimeZone(futureDate, userTimeZone, "yyyy-MM-dd"),
           score: latestScore,
-          formattedDate: formatInTimeZone(futureDate, userTimeZone, 'MMM dd'),
-          isProjected: true
+          formattedDate: formatInTimeZone(futureDate, userTimeZone, "MMM dd"),
+          isProjected: true,
         });
       }
     }
-
-    console.log('Generated chart data:', chartData);
+  
+    console.log("Generated chart data:", chartData);
     return chartData;
   };
 
-  const chartConfig = {
-    score: {
-      label: "Score",
-      color: "hsl(var(--primary))",
-    },
-  };
 
 
   return (
