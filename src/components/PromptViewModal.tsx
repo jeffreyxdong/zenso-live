@@ -289,28 +289,31 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                   </CardTitle>
                 </CardHeader>
                  <CardContent>
-                   <ChartContainer config={chartConfig} className="h-40">
+                   <ChartContainer config={chartConfig} className="h-64 w-full">
                      <ResponsiveContainer width="100%" height="100%">
                        <LineChart 
                          data={prepareChartData('visibility')} 
-                         margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
+                         margin={{ top: 10, right: 20, left: 10, bottom: 10 }}
                        >
                          <XAxis 
                            dataKey="formattedDate" 
-                           fontSize={11}
+                           fontSize={12}
                            tickLine={false}
                            axisLine={false}
                            tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                           className="text-xs"
+                           interval={0}
+                           angle={-45}
+                           textAnchor="end"
+                           height={60}
                          />
                           <YAxis 
                             domain={[0, 100]}
-                            fontSize={11}
+                            fontSize={12}
                             tickLine={false}
                             axisLine={false}
                             tick={{ fill: 'hsl(var(--muted-foreground))' }}
                             tickFormatter={(value) => `${value}%`}
-                            width={35}
+                            width={40}
                             orientation="left"
                           />
                           <CartesianGrid 
@@ -379,30 +382,33 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                   </CardTitle>
                 </CardHeader>
                  <CardContent>
-                   <ChartContainer config={chartConfig} className="h-40">
+                   <ChartContainer config={chartConfig} className="h-64 w-full">
                      <ResponsiveContainer width="100%" height="100%">
                        <LineChart 
                          data={prepareChartData('sentiment')} 
-                         margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
+                         margin={{ top: 10, right: 20, left: 10, bottom: 10 }}
                        >
                          <XAxis 
                            dataKey="formattedDate" 
-                           fontSize={11}
+                           fontSize={12}
                            tickLine={false}
                            axisLine={false}
                            tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                           className="text-xs"
+                           interval={0}
+                           angle={-45}
+                           textAnchor="end"
+                           height={60}
                          />
                           <YAxis 
                             domain={[0, 100]}
-                            fontSize={11}
+                            fontSize={12}
                             tickLine={false}
                             axisLine={false}
                             tick={{ fill: 'hsl(var(--muted-foreground))' }}
                             tickFormatter={(value) => `${value}%`}
-                            width={35}
+                            width={40}
                             orientation="left"
-                           />
+                          />
                            <CartesianGrid 
                              strokeDasharray="1 1" 
                              stroke="hsl(var(--border))" 
