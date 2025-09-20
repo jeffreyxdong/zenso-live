@@ -339,7 +339,7 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                      <ResponsiveContainer width="100%" height="100%">
                         <LineChart 
                           data={prepareChartData('visibility')} 
-                          margin={{ top: 10, right: 20, left: -99, bottom: 10 }}
+                          margin={{ top: 10, right: 20, left: -20, bottom: 10 }}
                         >
                           <XAxis 
                             dataKey="formattedDate" 
