@@ -278,12 +278,16 @@ const Dashboard = () => {
         open={showAddStoreModal} 
         onOpenChange={setShowAddStoreModal}
         onStoreAdded={(newStore) => {
-          // Set the new store as active
+          // Set the new store as active and refresh page to load all data
           setActiveStore(newStore);
           toast({
             title: "Success",
             description: `Switched to ${newStore.name}. Loading store data...`,
           });
+          // Refresh the page to reload all data with the new active store
+          setTimeout(() => {
+            window.location.reload();
+          }, 500);
         }}
       />
     </div>
