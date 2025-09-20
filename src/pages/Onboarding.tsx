@@ -139,7 +139,7 @@ const Onboarding: React.FC = () => {
                 <Label htmlFor="companyWebsite">Company Website</Label>
                 <Input
                   id="companyWebsite"
-                  type="url"
+                  type="text"
                   value={companyWebsite}
                   onChange={(e) => setCompanyWebsite(e.target.value)}                  
                 />
