@@ -360,29 +360,29 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Your Prompts</span>
-            <div className="relative max-w-md">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search prompts..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-9"
-              />
+            <div className="flex items-center gap-4">
+              {selectedPrompts.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDeleteSelected}
+                  className="flex items-center gap-2 text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete Selected ({selectedPrompts.length})
+                </Button>
+              )}
+              <div className="relative max-w-md">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search prompts..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 h-9"
+                />
+              </div>
             </div>
           </CardTitle>
-          {selectedPrompts.length > 0 && (
-            <div className="flex justify-end">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDeleteSelected}
-                className="flex items-center gap-2 text-destructive hover:text-destructive"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete Selected ({selectedPrompts.length})
-              </Button>
-            </div>
-          )}
         </CardHeader>
         <CardContent>
           {isLoadingSaved ? (
