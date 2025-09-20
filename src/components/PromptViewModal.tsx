@@ -353,15 +353,19 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                             height={40}
                           />
                           <YAxis
-                            domain={[dataMin => Math.max(0, dataMin - 10), dataMax => Math.min(100, dataMax + 10)]}
+                            domain={[0, 100]}
                             fontSize={12}
                             tickLine={false}
                             axisLine={false}
-                            tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                            tick={{
+                              fill: 'hsl(var(--muted-foreground))',
+                              dx: -10, // 👈 moves the labels left by 10px
+                            }}
                             tickFormatter={(value) => `${value}%`}
-                            width={40}
+                            width={50} // may need to increase slightly so labels don't get cut off
                             orientation="left"
-                          />                    
+                          />
+   
                           <CartesianGrid 
                             strokeDasharray="1 1" 
                             stroke="hsl(var(--border))" 
