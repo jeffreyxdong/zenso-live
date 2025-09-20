@@ -13,7 +13,8 @@ const Index = () => {
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-foreground">BrandRefs</h1>
             <div className="flex items-center gap-4">
-              <Link to="/dashboard">
+              <Link to="/welcome-back">
+                <Button variant="outline">Sign In</Button>
               </Link>
             </div>
           </div>
