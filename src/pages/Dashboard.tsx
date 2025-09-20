@@ -108,7 +108,7 @@ const Dashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="prompts" className="flex items-center gap-2">
               <MessageCircle className="w-4 h-4" />
-              Prompts
+              My Prompts
             </TabsTrigger>
           </TabsList>
 
