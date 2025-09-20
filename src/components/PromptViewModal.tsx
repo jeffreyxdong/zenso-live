@@ -144,44 +144,44 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
 
     // Prepare chart data with timezone-aware date handling
     const prepareChartData = (
-    scoreType: "visibility" | "sentiment"
-  ): ChartDataPoint[] => {
-    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const today = new Date();
-  
-    // Get today's date in user's timezone as YYYY-MM-DD format
-    const todayStr = formatInTimeZone(today, userTimeZone, "yyyy-MM-dd");
-  
-    console.log("Chart Debug:", {
-      userTimeZone,
-      todayStr,
-      dailyScoresCount: dailyScores.length,
-      scoreType,
-      existingDates: dailyScores.map((s) => s.date),
-    });
-  
-    // Normalize all historical data (keep all rows, filter out only if no scores exist)
-    const historicalData = dailyScores
-      .filter((score) =>
+  scoreType: "visibility" | "sentiment"
+): ChartDataPoint[] => {
+  const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const today = new Date();
+
+  // Get today's date in user's timezone as YYYY-MM-DD format
+  const todayStr = formatInTimeZone(today, userTimeZone, "yyyy-MM-dd");
+
+  console.log("Chart Debug:", {
+    userTimeZone,
+    todayStr,
+    dailyScoresCount: dailyScores.length,
+    scoreType,
+    existingDates: dailyScores.map((s) => s.date),
+  });
+
+  // Normalize all historical data (keep all rows, filter out only if no scores exist)
+  const historicalData = dailyScores
+    .filter((score) =>
+      scoreType === "visibility"
+        ? score.visibility_score !== null
+        : score.sentiment_score !== null
+    )
+    .map((score) => ({
+      date: score.date,
+      score:
         scoreType === "visibility"
-          ? score.visibility_score !== null
-          : score.sentiment_score !== null
-      )
-      .map((score) => ({
-        date: score.date,
-        score:
-          scoreType === "visibility"
-            ? score.visibility_score!
-            : score.sentiment_score!,
-        formattedDate: formatInTimeZone(
-          new Date(score.date + "T12:00:00"),
-          userTimeZone,
-          "MMM dd"
-        ),
-        isProjected: false,
-      }));
-  
-    // Create a quick lookup map for existing scores
+          ? score.visibility_score!
+          : score.sentiment_score!,
+      formattedDate: formatInTimeZone(
+        new Date(score.date + "T12:00:00"),
+        userTimeZone,
+        "MMM dd"
+      ),
+      isProjected: false,
+    }));
+
+  // Create a quick lookup map for existing scores
     const scoreMap = new Map(historicalData.map((item) => [item.date, item.score]));
   
     const chartData: ChartDataPoint[] = [];
@@ -189,7 +189,48 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
     // Generate last 7 days (including today)
     for (let i = 0; i < 7; i++) {
       const date = new Date(today);
-      date.setDate(today.getDate() - (6 - i)); // L
+      date.setDate(today.getDate() - (6 - i)); // Last 7 days including today
+      const dateStr = formatInTimeZone(date, userTimeZone, "yyyy-MM-dd");
+  
+      // Check if we have historical data for this date
+      const existingScore = scoreMap.get(dateStr);
+  
+      chartData.push({
+        date: dateStr,
+        score: existingScore ?? null,
+        formattedDate: formatInTimeZone(date, userTimeZone, "MMM dd"),
+        isProjected: false,
+      });
+    }
+  
+    // Add future projections (next 7 days) if we have historical data
+    if (historicalData.length > 0) {
+      const latestScore = historicalData[historicalData.length - 1].score;
+  
+      for (let i = 1; i <= 7; i++) {
+        const futureDate = new Date(today);
+        futureDate.setDate(today.getDate() + i);
+        const dateStr = formatInTimeZone(futureDate, userTimeZone, "yyyy-MM-dd");
+  
+        chartData.push({
+          date: dateStr,
+          score: latestScore,
+          formattedDate: formatInTimeZone(futureDate, userTimeZone, "MMM dd"),
+          isProjected: true,
+        });
+      }
+    }
+  
+    console.log("Generated chart data:", chartData);
+    return chartData;
+  };
+  
+  const chartConfig = {
+    score: {
+      label: "Score",
+      color: "hsl(var(--primary))",
+    },
+  };
 
 
 
