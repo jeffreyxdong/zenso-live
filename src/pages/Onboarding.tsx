@@ -62,6 +62,18 @@ const Onboarding: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validation
+    if (!companyName.trim()) {
+      toast({ title: "Company name is required", description: "Please enter your company name." });
+      return;
+    }
+    
+    if (!companyWebsite.trim()) {
+      toast({ title: "Company website is required", description: "Please enter your company website." });
+      return;
+    }
+
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -70,19 +82,13 @@ const Onboarding: React.FC = () => {
         return;
       }
 
-      // Basic URL normalization
-      let website = companyWebsite.trim();
-      if (website && !/^https?:\/\//i.test(website)) {
-        website = `https://${website}`;
-      }
-
       const { error } = await supabase
         .from("stores")
         .insert([
           { 
             user_id: user.id, 
             name: companyName.trim(), 
-            website: website,
+            website: companyWebsite.trim(),
             is_active: true
           }
         ]);
