@@ -149,7 +149,7 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
     },
   };
 
-  // Prepare chart data to show only actual data points for next 7 days from prompt creation
+  // Prepare chart data to show all 7 days on x-axis but only data points where scores exist
   const prepareChartData = (
     scoreType: "visibility" | "sentiment"
   ): ChartDataPoint[] => {
@@ -164,33 +164,21 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
       existingDates: dailyScores.map((s) => s.date),
     });
 
-    // Filter and map historical data to only include data with actual scores
-    const historicalData = dailyScores
-      .filter((score) =>
-        scoreType === "visibility"
-          ? score.visibility_score !== null
-          : score.sentiment_score !== null
-      )
-      .map((score) => ({
-        date: score.date,
-        score:
-          scoreType === "visibility"
-            ? score.visibility_score!
-            : score.sentiment_score!,
-        formattedDate: formatInTimeZone(
-          new Date(score.date + "T12:00:00"),
-          userTimeZone,
-          "MMM dd"
-        ),
-        isProjected: false,
-      }));
-
-    // Create a quick lookup map for existing scores
-    const scoreMap = new Map(historicalData.map((item) => [item.date, item.score]));
+    // Create a lookup map for existing scores
+    const scoreMap = new Map();
+    dailyScores.forEach((score) => {
+      const scoreValue = scoreType === "visibility" 
+        ? score.visibility_score 
+        : score.sentiment_score;
+      
+      if (scoreValue !== null) {
+        scoreMap.set(score.date, scoreValue);
+      }
+    });
     
     const chartData: ChartDataPoint[] = [];
     
-    // Generate next 7 days starting from prompt creation date
+    // Generate all 7 days starting from prompt creation date for x-axis
     for (let i = 0; i < 7; i++) {
       const date = new Date(promptCreatedDate);
       date.setDate(promptCreatedDate.getDate() + i);
@@ -199,15 +187,13 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
       // Check if we have historical data for this date
       const existingScore = scoreMap.get(dateStr);
     
-      // Only add to chart if we have actual data
-      if (existingScore !== undefined) {
-        chartData.push({
-          date: dateStr,
-          score: existingScore,
-          formattedDate: formatInTimeZone(date, userTimeZone, "MMM dd"),
-          isProjected: false,
-        });
-      }
+      // Add all dates to show on x-axis, but only include scores where they exist
+      chartData.push({
+        date: dateStr,
+        score: existingScore ?? null,
+        formattedDate: formatInTimeZone(date, userTimeZone, "MMM dd"),
+        isProjected: false,
+      });
     }
     
     console.log("Generated chart data:", chartData);
