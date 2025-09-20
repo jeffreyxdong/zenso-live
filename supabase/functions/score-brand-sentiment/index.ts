@@ -75,11 +75,11 @@ ${content}`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-2025-08-07',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'user', content: scoringPrompt }
         ],
-        max_completion_tokens: 50,
+        max_tokens: 10,
       }),
     });
 
