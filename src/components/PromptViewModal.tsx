@@ -341,17 +341,17 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                          data={prepareChartData('visibility')} 
                          margin={{ top: 10, right: 20, left: 10, bottom: 10 }}
                        >
-                         <XAxis 
-                           dataKey="formattedDate" 
-                           fontSize={12}
-                           tickLine={false}
-                           axisLine={false}
-                           tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                           interval={0}
-                           angle={-45}
-                           textAnchor="end"
-                           height={60}
-                         />
+                          <XAxis 
+                            dataKey="formattedDate" 
+                            fontSize={12}
+                            tickLine={false}
+                            axisLine={false}
+                            tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                            interval={0}
+                            angle={0}
+                            textAnchor="middle"
+                            height={40}
+                          />
                           <YAxis 
                             domain={[0, 100]}
                             fontSize={12}
@@ -434,17 +434,17 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                          data={prepareChartData('sentiment')} 
                          margin={{ top: 10, right: 20, left: 10, bottom: 10 }}
                        >
-                         <XAxis 
-                           dataKey="formattedDate" 
-                           fontSize={12}
-                           tickLine={false}
-                           axisLine={false}
-                           tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                           interval={0}
-                           angle={-45}
-                           textAnchor="end"
-                           height={60}
-                         />
+                          <XAxis 
+                            dataKey="formattedDate" 
+                            fontSize={12}
+                            tickLine={false}
+                            axisLine={false}
+                            tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                            interval={0}
+                            angle={0}
+                            textAnchor="middle"
+                            height={40}
+                          />
                           <YAxis 
                             domain={[0, 100]}
                             fontSize={12}
