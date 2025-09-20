@@ -111,8 +111,8 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
         console.warn('Could not fetch prompt scores:', promptError);
       } else {
         setPromptScores({
-          visibility_score: promptData?.visibility_score || null,
-          sentiment_score: promptData?.sentiment_score || null,
+          visibility_score: promptData?.visibility_score ?? null,
+          sentiment_score: promptData?.sentiment_score ?? null,
         });
       }
 
