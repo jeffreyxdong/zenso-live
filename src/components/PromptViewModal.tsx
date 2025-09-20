@@ -257,42 +257,58 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                     Visibility Score Over Time
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <ChartContainer config={chartConfig} className="h-32">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={prepareChartData('visibility')}>
-                        <XAxis 
-                          dataKey="formattedDate" 
-                          fontSize={12}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                        <YAxis 
-                          domain={[0, 100]}
-                          fontSize={12}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                        <ChartTooltip 
-                          content={<ChartTooltipContent />}
-                          labelFormatter={(value, payload) => {
-                            if (payload && payload[0]) {
-                              return format(new Date(payload[0].payload.date), 'PPP');
-                            }
-                            return value;
-                          }}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="score" 
-                          stroke="var(--color-score)"
-                          strokeWidth={2}
-                          dot={{ fill: "var(--color-score)", strokeWidth: 2, r: 4 }}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </CardContent>
+                 <CardContent>
+                   <ChartContainer config={chartConfig} className="h-40">
+                     <ResponsiveContainer width="100%" height="100%">
+                       <LineChart 
+                         data={prepareChartData('visibility')} 
+                         margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
+                       >
+                         <XAxis 
+                           dataKey="formattedDate" 
+                           fontSize={11}
+                           tickLine={false}
+                           axisLine={false}
+                           tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                           className="text-xs"
+                         />
+                         <YAxis 
+                           domain={[0, 100]}
+                           fontSize={11}
+                           tickLine={false}
+                           axisLine={false}
+                           tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                           tickFormatter={(value) => `${value}%`}
+                           width={35}
+                         />
+                         <defs>
+                           <linearGradient id="visibilityGradient" x1="0" y1="0" x2="0" y2="1">
+                             <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.1} />
+                             <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                           </linearGradient>
+                         </defs>
+                         <ChartTooltip 
+                           content={<ChartTooltipContent />}
+                           labelFormatter={(value, payload) => {
+                             if (payload && payload[0]) {
+                               return format(new Date(payload[0].payload.date), 'PPP');
+                             }
+                             return value;
+                           }}
+                         />
+                         <Line 
+                           type="monotone" 
+                           dataKey="score" 
+                           stroke="hsl(var(--primary))"
+                           strokeWidth={2}
+                           dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 3 }}
+                           activeDot={{ r: 4, fill: "hsl(var(--primary))" }}
+                           fill="url(#visibilityGradient)"
+                         />
+                       </LineChart>
+                     </ResponsiveContainer>
+                   </ChartContainer>
+                 </CardContent>
               </Card>
 
               {/* Sentiment Score Chart */}
@@ -303,42 +319,58 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                     Sentiment Score Over Time
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <ChartContainer config={chartConfig} className="h-32">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={prepareChartData('sentiment')}>
-                        <XAxis 
-                          dataKey="formattedDate" 
-                          fontSize={12}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                        <YAxis 
-                          domain={[0, 100]}
-                          fontSize={12}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                        <ChartTooltip 
-                          content={<ChartTooltipContent />}
-                          labelFormatter={(value, payload) => {
-                            if (payload && payload[0]) {
-                              return format(new Date(payload[0].payload.date), 'PPP');
-                            }
-                            return value;
-                          }}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="score" 
-                          stroke="var(--color-score)"
-                          strokeWidth={2}
-                          dot={{ fill: "var(--color-score)", strokeWidth: 2, r: 4 }}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </CardContent>
+                 <CardContent>
+                   <ChartContainer config={chartConfig} className="h-40">
+                     <ResponsiveContainer width="100%" height="100%">
+                       <LineChart 
+                         data={prepareChartData('sentiment')} 
+                         margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
+                       >
+                         <XAxis 
+                           dataKey="formattedDate" 
+                           fontSize={11}
+                           tickLine={false}
+                           axisLine={false}
+                           tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                           className="text-xs"
+                         />
+                         <YAxis 
+                           domain={[0, 100]}
+                           fontSize={11}
+                           tickLine={false}
+                           axisLine={false}
+                           tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                           tickFormatter={(value) => `${value}%`}
+                           width={35}
+                         />
+                         <defs>
+                           <linearGradient id="sentimentGradient" x1="0" y1="0" x2="0" y2="1">
+                             <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.1} />
+                             <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                           </linearGradient>
+                         </defs>
+                         <ChartTooltip 
+                           content={<ChartTooltipContent />}
+                           labelFormatter={(value, payload) => {
+                             if (payload && payload[0]) {
+                               return format(new Date(payload[0].payload.date), 'PPP');
+                             }
+                             return value;
+                           }}
+                         />
+                         <Line 
+                           type="monotone" 
+                           dataKey="score" 
+                           stroke="hsl(var(--primary))"
+                           strokeWidth={2}
+                           dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 3 }}
+                           activeDot={{ r: 4, fill: "hsl(var(--primary))" }}
+                           fill="url(#sentimentGradient)"
+                         />
+                       </LineChart>
+                     </ResponsiveContainer>
+                   </ChartContainer>
+                 </CardContent>
               </Card>
             </div>
           )}
