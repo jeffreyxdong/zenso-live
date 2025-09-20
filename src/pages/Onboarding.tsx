@@ -82,23 +82,36 @@ const Onboarding: React.FC = () => {
         return;
       }
 
-      const { error } = await supabase
-        .from("stores")
-        .insert([
-          { 
+      // Create both profile and store entries
+      const [profileResult, storeResult] = await Promise.allSettled([
+        supabase
+          .from("profiles")
+          .insert({
+            user_id: user.id,
+            company_name: companyName.trim(),
+            company_website: companyWebsite.trim()
+          }),
+        supabase
+          .from("stores")
+          .insert({
             user_id: user.id, 
             name: companyName.trim(), 
             website: companyWebsite.trim(),
             is_active: true
-          }
-        ]);
+          })
+      ]);
 
-      if (error) {
-        toast({ title: "Could not save company details", description: error.message });
-      } else {
-        toast({ title: "Setup complete", description: "Your company profile has been saved." });
-        navigate("/dashboard", { replace: true });
+      if (profileResult.status === 'rejected' || storeResult.status === 'rejected') {
+        const errors = [];
+        if (profileResult.status === 'rejected') errors.push(`Profile: ${profileResult.reason?.message}`);
+        if (storeResult.status === 'rejected') errors.push(`Store: ${storeResult.reason?.message}`);
+        throw new Error(errors.join(', '));
       }
+
+      toast({ title: "Setup complete", description: "Your company profile has been saved." });
+      navigate("/dashboard", { replace: true });
+    } catch (error: any) {
+      toast({ title: "Could not save company details", description: error.message });
     } finally {
       setLoading(false);
     }

@@ -114,11 +114,23 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
 
     setIsProcessing(true);
     try {
+      // Get company name for brand references
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("User not authenticated");
+
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("company_name")
+        .eq("user_id", userData.user.id)
+        .single();
+
+      const brandName = profileData?.company_name || activeStore.name;
+
       const responses = await fetchAIResponses(prompt);
       if (responses.length === 0) throw new Error("No AI responses received.");
 
-      const { avgVisibility, avgSentiment } = await scoreResponses(responses, activeStore.name);
-      await savePromptWithScores(avgVisibility, avgSentiment, responses);
+      const { avgVisibility, avgSentiment } = await scoreResponses(responses, brandName);
+      await savePromptWithScores(avgVisibility, avgSentiment, responses, brandName);
 
       toast({
         title: "Success",
@@ -135,7 +147,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
     }
   };
 
-  const savePromptWithScores = async (visibilityScore: number, sentimentScore: number, responses: any[]) => {
+  const savePromptWithScores = async (visibilityScore: number, sentimentScore: number, responses: any[], brandName: string) => {
     try {
       const { data: userData, error: userErr } = await supabase.auth.getUser();
       if (userErr || !userData?.user) throw new Error("Not signed in");
@@ -147,7 +159,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
           user_id: userData.user.id,
           store_id: activeStore.id,
           content: prompt.trim(),
-          brand_name: activeStore.name,
+          brand_name: brandName,
           status: "active",
           visibility_score: visibilityScore,
           sentiment_score: sentimentScore,
