@@ -376,7 +376,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
         ) : filteredPrompts.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-sm text-muted-foreground">
-              {savedPrompts.length === 0 ? "No prompts yet. Create one above." : "No prompts match your search."}
+              {savedPrompts.length === 0 ? "No prompts yet." : "No prompts match your search."}
             </p>
           </div>
         ) : (
