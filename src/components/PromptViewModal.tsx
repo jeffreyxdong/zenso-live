@@ -249,7 +249,7 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                   <div className="h-20 flex items-center justify-center">
                     <div className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
                   </div>
-                ) : promptScores.visibility_score !== null ? (
+                ) : promptScores.visibility_score !== null && promptScores.visibility_score !== undefined ? (
                   <div className="space-y-3">
                     <div className="flex items-baseline gap-2">
                       <div className="text-3xl font-bold text-primary">
@@ -293,7 +293,7 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                   <div className="h-20 flex items-center justify-center">
                     <div className="w-6 h-6 border-2 border-success/20 border-t-success rounded-full animate-spin" />
                   </div>
-                ) : promptScores.sentiment_score !== null ? (
+                ) : promptScores.sentiment_score !== null && promptScores.sentiment_score !== undefined ? (
                   <div className="space-y-3">
                     <div className="flex items-baseline gap-2">
                       <div className="text-3xl font-bold text-success">
