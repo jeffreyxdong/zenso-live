@@ -165,6 +165,36 @@ export type Database = {
         }
         Relationships: []
       }
+      prompt_daily_scores: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          prompt_id: string
+          sentiment_score: number | null
+          updated_at: string
+          visibility_score: number | null
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          prompt_id: string
+          sentiment_score?: number | null
+          updated_at?: string
+          visibility_score?: number | null
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          prompt_id?: string
+          sentiment_score?: number | null
+          updated_at?: string
+          visibility_score?: number | null
+        }
+        Relationships: []
+      }
       prompt_responses: {
         Row: {
           created_at: string

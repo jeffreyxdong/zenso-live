@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Target, Bot } from "lucide-react";
+import { Calendar, Target, Bot, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from "recharts";
 
 interface PromptViewModalProps {
   isOpen: boolean;
@@ -33,12 +35,25 @@ interface PromptResponse {
   created_at: string;
 }
 
+interface DailyScore {
+  date: string;
+  visibility_score: number | null;
+  sentiment_score: number | null;
+}
+
+interface ChartDataPoint {
+  date: string;
+  score: number;
+  formattedDate: string;
+}
+
 export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProps) => {
   const [responses, setResponses] = useState<PromptResponse[]>([]);
   const [promptScores, setPromptScores] = useState<PromptScores>({
     visibility_score: null,
     sentiment_score: null,
   });
+  const [dailyScores, setDailyScores] = useState<DailyScore[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -76,6 +91,19 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
         });
       }
 
+      // Fetch daily scores for time series
+      const { data: dailyScoresData, error: dailyScoresError } = await supabase
+        .from('prompt_daily_scores')
+        .select('date, visibility_score, sentiment_score')
+        .eq('prompt_id', prompt.id)
+        .order('date', { ascending: true });
+
+      if (dailyScoresError) {
+        console.warn('Could not fetch daily scores:', dailyScoresError);
+      } else {
+        setDailyScores(dailyScoresData || []);
+      }
+
       setResponses(responsesData || []);
     } catch (error: any) {
       console.error('Error fetching prompt data:', error);
@@ -87,6 +115,24 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Prepare chart data
+  const prepareChartData = (scoreType: 'visibility' | 'sentiment'): ChartDataPoint[] => {
+    return dailyScores
+      .filter(score => scoreType === 'visibility' ? score.visibility_score !== null : score.sentiment_score !== null)
+      .map(score => ({
+        date: score.date,
+        score: scoreType === 'visibility' ? score.visibility_score! : score.sentiment_score!,
+        formattedDate: format(new Date(score.date), 'MMM dd')
+      }));
+  };
+
+  const chartConfig = {
+    score: {
+      label: "Score",
+      color: "hsl(var(--primary))",
+    },
   };
 
 
@@ -176,6 +222,103 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
               </CardContent>
             </Card>
           </div>
+
+          {/* Time Series Charts */}
+          {dailyScores.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Visibility Score Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4" />
+                    Visibility Score Over Time
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ChartContainer config={chartConfig} className="h-32">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={prepareChartData('visibility')}>
+                        <XAxis 
+                          dataKey="formattedDate" 
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis 
+                          domain={[0, 100]}
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <ChartTooltip 
+                          content={<ChartTooltipContent />}
+                          labelFormatter={(value, payload) => {
+                            if (payload && payload[0]) {
+                              return format(new Date(payload[0].payload.date), 'PPP');
+                            }
+                            return value;
+                          }}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="score" 
+                          stroke="var(--color-score)"
+                          strokeWidth={2}
+                          dot={{ fill: "var(--color-score)", strokeWidth: 2, r: 4 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                </CardContent>
+              </Card>
+
+              {/* Sentiment Score Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4" />
+                    Sentiment Score Over Time
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ChartContainer config={chartConfig} className="h-32">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={prepareChartData('sentiment')}>
+                        <XAxis 
+                          dataKey="formattedDate" 
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis 
+                          domain={[0, 100]}
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <ChartTooltip 
+                          content={<ChartTooltipContent />}
+                          labelFormatter={(value, payload) => {
+                            if (payload && payload[0]) {
+                              return format(new Date(payload[0].payload.date), 'PPP');
+                            }
+                            return value;
+                          }}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="score" 
+                          stroke="var(--color-score)"
+                          strokeWidth={2}
+                          dot={{ fill: "var(--color-score)", strokeWidth: 2, r: 4 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           {/* Responses Section */}
           <Card>
