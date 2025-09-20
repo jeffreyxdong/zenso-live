@@ -17,7 +17,52 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [showAddStoreModal, setShowAddStoreModal] = useState(false);
   const [activeStore, setActiveStore] = useState<{ id: string; name: string; website: string; is_active: boolean } | null>(null);
+  const [companyName, setCompanyName] = useState("BrandRefs");
   const navigate = useNavigate();
+
+  // Load company profile data
+  useEffect(() => {
+    const loadProfile = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("company_name")
+          .eq("user_id", session.user.id)
+          .single();
+        
+        if (profileData?.company_name) {
+          setCompanyName(profileData.company_name);
+        }
+      }
+    };
+    
+    loadProfile();
+  }, []);
+
+  // Listen for profile updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('profile-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles'
+        },
+        (payload) => {
+          if (payload.new.company_name) {
+            setCompanyName(payload.new.company_name);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   // Protect route: redirect unauthenticated users and ensure onboarding complete
   useEffect(() => {
@@ -74,7 +119,7 @@ const Dashboard = () => {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold text-foreground">BrandRefs</h1>
+              <h1 className="text-2xl font-bold text-foreground">{companyName}</h1>
               <Badge variant="secondary" className="text-xs">
                 eCommerce Pro
               </Badge>
