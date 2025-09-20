@@ -337,10 +337,10 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                  <CardContent>
                    <ChartContainer config={chartConfig} className="h-64 w-full">
                      <ResponsiveContainer width="100%" height="100%">
-                       <LineChart 
-                         data={prepareChartData('visibility')} 
-                         margin={{ top: 10, right: 20, left: 10, bottom: 10 }}
-                       >
+                        <LineChart 
+                          data={prepareChartData('visibility')} 
+                          margin={{ top: 10, right: 20, left: 0, bottom: 10 }}
+                        >
                           <XAxis 
                             dataKey="formattedDate" 
                             fontSize={12}
@@ -366,20 +366,13 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                             orientation="left"
                           />
    
-                          <CartesianGrid 
-                            strokeDasharray="1 1" 
-                            stroke="hsl(var(--border))" 
-                            opacity={0.8}
-                            horizontal={true}
-                            vertical={false}
-                          />
-                          <CartesianGrid 
-                            strokeDasharray="1 1" 
-                            stroke="hsl(var(--border))" 
-                            opacity={0.8}
-                            horizontal={true}
-                            vertical={false}
-                          />
+                           <CartesianGrid 
+                             strokeDasharray="1 1" 
+                             stroke="hsl(var(--muted-foreground))" 
+                             opacity={0.3}
+                             horizontal={true}
+                             vertical={false}
+                           />
                           <defs>
                            <linearGradient id="visibilityGradient" x1="0" y1="0" x2="0" y2="1">
                              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.1} />
@@ -434,10 +427,10 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                  <CardContent>
                    <ChartContainer config={chartConfig} className="h-64 w-full">
                      <ResponsiveContainer width="100%" height="100%">
-                       <LineChart 
-                         data={prepareChartData('sentiment')} 
-                         margin={{ top: 10, right: 20, left: 10, bottom: 10 }}
-                       >
+                        <LineChart 
+                          data={prepareChartData('sentiment')} 
+                          margin={{ top: 10, right: 20, left: 0, bottom: 10 }}
+                        >
                           <XAxis 
                             dataKey="formattedDate" 
                             fontSize={12}
@@ -462,13 +455,13 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                             width={50} // may need to increase slightly so labels don't get cut off
                             orientation="left"
                           />
-                           <CartesianGrid 
-                             strokeDasharray="1 1" 
-                             stroke="hsl(var(--border))" 
-                             opacity={0.8}
-                             horizontal={true}
-                             vertical={false}
-                           />
+                            <CartesianGrid 
+                              strokeDasharray="1 1" 
+                              stroke="hsl(var(--muted-foreground))" 
+                              opacity={0.3}
+                              horizontal={true}
+                              vertical={false}
+                            />
                           <defs>
                             <linearGradient id="sentimentGradient" x1="0" y1="0" x2="0" y2="1">
                               <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.1} />
