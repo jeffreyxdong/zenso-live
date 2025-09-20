@@ -167,12 +167,25 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
 
         // Insert initial daily score entry
         const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-        await supabase.from("prompt_daily_scores").insert({
+        console.log('Inserting initial daily score:', {
           prompt_id: promptData.id,
           date: today,
           visibility_score: visibilityScore,
           sentiment_score: sentimentScore,
         });
+        
+        const { error: dailyScoreError } = await supabase.from("prompt_daily_scores").insert({
+          prompt_id: promptData.id,
+          date: today,
+          visibility_score: visibilityScore,
+          sentiment_score: sentimentScore,
+        });
+        
+        if (dailyScoreError) {
+          console.error('Error inserting daily score:', dailyScoreError);
+        } else {
+          console.log('Daily score entry created successfully');
+        }
       }
 
       fetchSavedPrompts();
