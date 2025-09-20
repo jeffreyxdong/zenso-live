@@ -159,9 +159,9 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
     // Create a map of existing dates for quick lookup
     const existingDates = new Set(historicalData.map(item => item.date));
     
-    // Create future data points (5 days from today)
+    // Create future data points (5 days starting from tomorrow)
     const futureData: ChartDataPoint[] = [];
-    for (let i = 0; i < 5; i++) {
+    for (let i = 1; i <= 5; i++) { // Start from 1 (tomorrow) instead of 0 (today)
       const futureDate = new Date(today);
       futureDate.setDate(today.getDate() + i);
       const dateString = format(futureDate, 'yyyy-MM-dd');
