@@ -381,15 +381,16 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                              <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                            </linearGradient>
                          </defs>
-                         <ChartTooltip 
-                           content={<ChartTooltipContent />}
-                           labelFormatter={(value, payload) => {
-                             if (payload && payload[0]) {
-                               return format(new Date(payload[0].payload.date), 'PPP');
-                             }
-                             return value;
-                           }}
-                         />
+                          <ChartTooltip 
+                            content={<ChartTooltipContent />}
+                            labelFormatter={(value, payload) => {
+                              if (payload && payload[0] && payload[0].payload.date) {
+                                const date = new Date(payload[0].payload.date + 'T00:00:00');
+                                return format(date, 'PPP');
+                              }
+                              return value;
+                            }}
+                          />
                           <Line 
                             type="monotone" 
                             dataKey="score" 
@@ -473,15 +474,16 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                               <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                             </linearGradient>
                           </defs>
-                         <ChartTooltip 
-                           content={<ChartTooltipContent />}
-                           labelFormatter={(value, payload) => {
-                             if (payload && payload[0]) {
-                               return format(new Date(payload[0].payload.date), 'PPP');
-                             }
-                             return value;
-                           }}
-                         />
+                          <ChartTooltip 
+                            content={<ChartTooltipContent />}
+                            labelFormatter={(value, payload) => {
+                              if (payload && payload[0] && payload[0].payload.date) {
+                                const date = new Date(payload[0].payload.date + 'T00:00:00');
+                                return format(date, 'PPP');
+                              }
+                              return value;
+                            }}
+                          />
                           <Line 
                             type="monotone" 
                             dataKey="score" 
