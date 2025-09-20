@@ -278,12 +278,12 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
               </CardContent>
             </Card>
 
-            <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-secondary/5 to-secondary/10">
+            <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-success/5 to-success/10">
               <div className="absolute inset-0 bg-grid-pattern opacity-5" />
               <CardHeader className="relative pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2 text-secondary-foreground">
-                  <div className="w-8 h-8 rounded-lg bg-secondary/20 flex items-center justify-center">
-                    <Bot className="w-4 h-4 text-secondary-foreground" />
+                <CardTitle className="text-sm font-medium flex items-center gap-2 text-success">
+                  <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
+                    <Bot className="w-4 h-4 text-success" />
                   </div>
                   Sentiment Score
                 </CardTitle>
@@ -291,19 +291,19 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
               <CardContent className="relative pt-2">
                 {isLoading ? (
                   <div className="h-20 flex items-center justify-center">
-                    <div className="w-6 h-6 border-2 border-secondary/20 border-t-secondary-foreground rounded-full animate-spin" />
+                    <div className="w-6 h-6 border-2 border-success/20 border-t-success rounded-full animate-spin" />
                   </div>
                 ) : promptScores.sentiment_score !== null ? (
                   <div className="space-y-3">
                     <div className="flex items-baseline gap-2">
-                      <div className="text-3xl font-bold text-secondary-foreground">
+                      <div className="text-3xl font-bold text-success">
                         {promptScores.sentiment_score}
                       </div>
-                      <div className="text-lg font-medium text-secondary-foreground/70">%</div>
+                      <div className="text-lg font-medium text-success/70">%</div>
                     </div>
-                    <div className="w-full bg-secondary/20 rounded-full h-2">
+                    <div className="w-full bg-success/10 rounded-full h-2">
                       <div 
-                        className="bg-gradient-to-r from-secondary-foreground to-secondary-foreground/80 h-2 rounded-full transition-all duration-1000 ease-out"
+                        className="bg-gradient-to-r from-success to-success/80 h-2 rounded-full transition-all duration-1000 ease-out"
                         style={{ width: `${promptScores.sentiment_score}%` }}
                       />
                     </div>
