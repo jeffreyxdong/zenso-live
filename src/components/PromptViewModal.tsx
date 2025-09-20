@@ -303,15 +303,16 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                            tick={{ fill: 'hsl(var(--muted-foreground))' }}
                            className="text-xs"
                          />
-                         <YAxis 
-                           domain={[0, 100]}
-                           fontSize={11}
-                           tickLine={false}
-                           axisLine={false}
-                           tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                           tickFormatter={(value) => `${value}%`}
-                           width={35}
-                         />
+                          <YAxis 
+                            domain={[0, 100]}
+                            fontSize={11}
+                            tickLine={false}
+                            axisLine={false}
+                            tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                            tickFormatter={(value) => `${value}%`}
+                            width={35}
+                            orientation="left"
+                          />
                           <CartesianGrid 
                             strokeDasharray="1 1" 
                             stroke="hsl(var(--border))" 
@@ -392,15 +393,16 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                            tick={{ fill: 'hsl(var(--muted-foreground))' }}
                            className="text-xs"
                          />
-                         <YAxis 
-                           domain={[0, 100]}
-                           fontSize={11}
-                           tickLine={false}
-                           axisLine={false}
-                           tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                           tickFormatter={(value) => `${value}%`}
-                           width={35}
-                         />
+                          <YAxis 
+                            domain={[0, 100]}
+                            fontSize={11}
+                            tickLine={false}
+                            axisLine={false}
+                            tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                            tickFormatter={(value) => `${value}%`}
+                            width={35}
+                            orientation="left"
+                          />
                          <defs>
                            <linearGradient id="sentimentGradient" x1="0" y1="0" x2="0" y2="1">
                              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.1} />
