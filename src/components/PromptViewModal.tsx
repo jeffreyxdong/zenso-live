@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from "recharts";
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, CartesianGrid } from "recharts";
 
 interface PromptViewModalProps {
   isOpen: boolean;
@@ -312,7 +312,21 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                            tickFormatter={(value) => `${value}%`}
                            width={35}
                          />
-                         <defs>
+                          <CartesianGrid 
+                            strokeDasharray="3 3" 
+                            stroke="hsl(var(--border))" 
+                            opacity={0.3}
+                            horizontal={true}
+                            vertical={false}
+                          />
+                          <CartesianGrid 
+                            strokeDasharray="3 3" 
+                            stroke="hsl(var(--border))" 
+                            opacity={0.3}
+                            horizontal={true}
+                            vertical={false}
+                          />
+                          <defs>
                            <linearGradient id="visibilityGradient" x1="0" y1="0" x2="0" y2="1">
                              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.1} />
                              <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
