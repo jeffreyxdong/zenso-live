@@ -159,9 +159,9 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
     // Create a map of existing dates for quick lookup
     const existingDates = new Set(historicalData.map(item => item.date));
     
-    // Create future data points (5 days starting from tomorrow)
+    // Create future data points (7 days starting from tomorrow)
     const futureData: ChartDataPoint[] = [];
-    for (let i = 1; i <= 5; i++) { // Start from 1 (tomorrow) instead of 0 (today)
+    for (let i = 1; i <= 7; i++) { // Start from 1 (tomorrow) instead of 0 (today)
       const futureDate = new Date(today);
       futureDate.setDate(today.getDate() + i);
       const dateString = format(futureDate, 'yyyy-MM-dd');
@@ -402,13 +402,20 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                             tickFormatter={(value) => `${value}%`}
                             width={35}
                             orientation="left"
-                          />
-                         <defs>
-                           <linearGradient id="sentimentGradient" x1="0" y1="0" x2="0" y2="1">
-                             <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.1} />
-                             <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                           </linearGradient>
-                         </defs>
+                           />
+                           <CartesianGrid 
+                             strokeDasharray="1 1" 
+                             stroke="hsl(var(--border))" 
+                             opacity={0.8}
+                             horizontal={true}
+                             vertical={false}
+                           />
+                          <defs>
+                            <linearGradient id="sentimentGradient" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.1} />
+                              <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
                          <ChartTooltip 
                            content={<ChartTooltipContent />}
                            labelFormatter={(value, payload) => {
