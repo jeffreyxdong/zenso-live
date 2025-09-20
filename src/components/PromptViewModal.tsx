@@ -6,6 +6,7 @@ import { Calendar, Target, Bot, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, CartesianGrid } from "recharts";
 
@@ -141,45 +142,74 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
     }
   };
 
-  // Prepare chart data with 5-day projection
+  // Prepare chart data with timezone-aware date handling
   const prepareChartData = (scoreType: 'visibility' | 'sentiment'): ChartDataPoint[] => {
+    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset time to start of day
     
+    // Get today's date in user's timezone as YYYY-MM-DD format for database comparison
+    const todayStr = formatInTimeZone(today, userTimeZone, 'yyyy-MM-dd');
+    
+    console.log('Chart Debug:', {
+      userTimeZone,
+      todayStr,
+      dailyScoresCount: dailyScores.length,
+      scoreType,
+      existingDates: dailyScores.map(s => s.date)
+    });
+
     // Get all historical data first
     const historicalData = dailyScores
       .filter(score => (scoreType === 'visibility' ? score.visibility_score !== null : score.sentiment_score !== null))
       .map(score => ({
         date: score.date,
         score: scoreType === 'visibility' ? score.visibility_score! : score.sentiment_score!,
-        formattedDate: format(new Date(score.date), 'MMM dd'),
+        formattedDate: formatInTimeZone(new Date(score.date + 'T12:00:00'), userTimeZone, 'MMM dd'),
         isProjected: false
       }));
 
     // Create a map of existing dates for quick lookup
     const existingDates = new Set(historicalData.map(item => item.date));
     
-    // Create future data points (7 days starting from tomorrow)
-    const futureData: ChartDataPoint[] = [];
-    for (let i = 1; i <= 7; i++) { // Start from 1 (tomorrow) instead of 0 (today)
-      const futureDate = new Date(today);
-      futureDate.setDate(today.getDate() + i);
-      const dateString = format(futureDate, 'yyyy-MM-dd');
+    // Generate 7 days starting from today
+    const chartData: ChartDataPoint[] = [];
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - (6 - i)); // Last 7 days including today
+      const dateStr = formatInTimeZone(date, userTimeZone, 'yyyy-MM-dd');
       
-      // Only add if not already in historical data
-      if (!existingDates.has(dateString)) {
-        futureData.push({
-          date: dateString,
-          score: null,
-          formattedDate: format(futureDate, 'MMM dd'),
+      // Check if we have historical data for this date
+      const existingScore = historicalData.find(item => item.date === dateStr);
+      
+      chartData.push({
+        date: dateStr,
+        score: existingScore ? existingScore.score : null,
+        formattedDate: formatInTimeZone(date, userTimeZone, 'MMM dd'),
+        isProjected: false
+      });
+    }
+    
+    // Add future projections (next 7 days) if we have historical data
+    if (historicalData.length > 0) {
+      const latestScore = historicalData[historicalData.length - 1].score;
+      
+      for (let i = 1; i <= 7; i++) {
+        const futureDate = new Date(today);
+        futureDate.setDate(today.getDate() + i);
+        const dateStr = formatInTimeZone(futureDate, userTimeZone, 'yyyy-MM-dd');
+        
+        chartData.push({
+          date: dateStr,
+          score: latestScore,
+          formattedDate: formatInTimeZone(futureDate, userTimeZone, 'MMM dd'),
           isProjected: true
         });
       }
     }
-    
-    // Combine and sort all data
-    const allData = [...historicalData, ...futureData];
-    return allData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    console.log('Generated chart data:', chartData);
+    return chartData;
   };
 
   const chartConfig = {
