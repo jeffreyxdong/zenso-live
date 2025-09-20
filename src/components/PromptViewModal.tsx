@@ -152,7 +152,7 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
     },
   };
 
-  // Prepare chart data to show rolling 7-day window from database
+  // Prepare chart data to always show 7 days on x-axis, filling gaps with null
   const prepareChartData = (
     scoreType: "visibility" | "sentiment"
   ): ChartDataPoint[] => {
@@ -165,23 +165,49 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
       existingDates: dailyScores.map((s) => s.date),
     });
 
-    const chartData: ChartDataPoint[] = [];
-    
-    // Use the actual dates from the rolling 7-day window
+    // Create a lookup map for existing scores
+    const scoreMap = new Map();
     dailyScores.forEach((score) => {
       const scoreValue = scoreType === "visibility" 
         ? score.visibility_score 
         : score.sentiment_score;
       
-      const date = new Date(score.date + 'T00:00:00');
+      if (scoreValue !== null) {
+        scoreMap.set(score.date, scoreValue);
+      }
+    });
+
+    const chartData: ChartDataPoint[] = [];
+    
+    // Always generate 7 days for x-axis
+    // If we have data, use the date range from our rolling window
+    // If we have less than 7 days, extend forward from the latest date
+    let startDate: Date;
+    if (dailyScores.length > 0) {
+      // Use the oldest date from our rolling window as the start
+      startDate = new Date(dailyScores[0].date + 'T00:00:00');
+    } else {
+      // If no data, start from today and go backwards
+      startDate = new Date();
+      startDate.setDate(startDate.getDate() - 6);
+    }
+
+    // Generate exactly 7 days
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + i);
+      const dateStr = formatInTimeZone(date, userTimeZone, "yyyy-MM-dd");
+      
+      // Check if we have data for this date
+      const existingScore = scoreMap.get(dateStr);
       
       chartData.push({
-        date: score.date,
-        score: scoreValue,
+        date: dateStr,
+        score: existingScore ?? null,
         formattedDate: formatInTimeZone(date, userTimeZone, "MMM dd"),
         isProjected: false,
       });
-    });
+    }
     
     console.log("Generated chart data:", chartData);
     return chartData;
