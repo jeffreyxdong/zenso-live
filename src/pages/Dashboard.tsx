@@ -16,7 +16,6 @@ import { toast } from "@/hooks/use-toast";
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [showAddStoreModal, setShowAddStoreModal] = useState(false);
-  const [refreshStores, setRefreshStores] = useState(0);
   const [activeStore, setActiveStore] = useState<{ id: string; name: string; website: string; is_active: boolean } | null>(null);
   const navigate = useNavigate();
 
@@ -278,10 +277,13 @@ const Dashboard = () => {
       <AddStoreModal 
         open={showAddStoreModal} 
         onOpenChange={setShowAddStoreModal}
-        onStoreAdded={() => {
-          setRefreshStores(prev => prev + 1);
-          // Refresh the page to reload all data with the new store
-          window.location.reload();
+        onStoreAdded={(newStore) => {
+          // Set the new store as active
+          setActiveStore(newStore);
+          toast({
+            title: "Success",
+            description: `Switched to ${newStore.name}. Loading store data...`,
+          });
         }}
       />
     </div>

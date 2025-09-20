@@ -16,7 +16,7 @@ import { toast } from "@/hooks/use-toast";
 interface AddStoreModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onStoreAdded?: () => void;
+  onStoreAdded?: (newStore: { id: string; name: string; website: string; is_active: boolean }) => void;
 }
 
 const AddStoreModal = ({ open, onOpenChange, onStoreAdded }: AddStoreModalProps) => {
@@ -52,23 +52,17 @@ const AddStoreModal = ({ open, onOpenChange, onStoreAdded }: AddStoreModalProps)
         return;
       }
 
-      // Check if this is the user's first store
-      const { data: existingStores } = await supabase
-        .from("stores")
-        .select("id")
-        .eq("user_id", user.id);
-
-      const isFirstStore = !existingStores || existingStores.length === 0;
-
-      // Create new store
-      const { error } = await supabase
+      // Create new store (always set as active)
+      const { data: newStore, error } = await supabase
         .from("stores")
         .insert({
           user_id: user.id,
           name: formData.storeName.trim(),
           website: formData.website.trim(),
-          is_active: isFirstStore, // First store is automatically active
-        });
+          is_active: true, // New store is always set as active
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
@@ -80,7 +74,7 @@ const AddStoreModal = ({ open, onOpenChange, onStoreAdded }: AddStoreModalProps)
       // Reset form and close modal
       setFormData({ storeName: "", website: "" });
       onOpenChange(false);
-      onStoreAdded?.();
+      onStoreAdded?.(newStore);
 
     } catch (error: any) {
       console.error("Error saving store:", error);
