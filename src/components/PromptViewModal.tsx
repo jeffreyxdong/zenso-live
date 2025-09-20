@@ -60,6 +60,29 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
   useEffect(() => {
     if (isOpen && prompt.id) {
       fetchPromptData();
+      
+      // Set up real-time subscription for daily scores
+      const subscription = supabase
+        .channel(`prompt_daily_scores_${prompt.id}`)
+        .on('postgres_changes', 
+          { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'prompt_daily_scores',
+            filter: `prompt_id=eq.${prompt.id}`
+          }, 
+          (payload) => {
+            console.log('New daily score added:', payload);
+            // Refresh the data when a new daily score is inserted
+            fetchPromptData();
+          }
+        )
+        .subscribe();
+
+      // Cleanup subscription on unmount or when prompt changes
+      return () => {
+        subscription.unsubscribe();
+      };
     }
   }, [isOpen, prompt.id]);
 
