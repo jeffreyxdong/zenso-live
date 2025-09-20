@@ -164,6 +164,15 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
             response_text: r.content,
           }))
         );
+
+        // Insert initial daily score entry
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+        await supabase.from("prompt_daily_scores").insert({
+          prompt_id: promptData.id,
+          date: today,
+          visibility_score: visibilityScore,
+          sentiment_score: sentimentScore,
+        });
       }
 
       fetchSavedPrompts();
