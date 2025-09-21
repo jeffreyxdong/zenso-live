@@ -77,15 +77,36 @@ const Settings = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      const { error } = await supabase
+      // First try to fetch existing profile
+      const { data: existingProfile } = await supabase
         .from("profiles")
-        .update({
-          company_name: profile.company_name,
-          company_website: profile.company_website
-        })
-        .eq("user_id", session.user.id);
+        .select("id")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
 
-      if (error) throw error;
+      if (existingProfile) {
+        // Update existing profile
+        const { error } = await supabase
+          .from("profiles")
+          .update({
+            company_name: profile.company_name,
+            company_website: profile.company_website
+          })
+          .eq("user_id", session.user.id);
+        
+        if (error) throw error;
+      } else {
+        // Create new profile
+        const { error } = await supabase
+          .from("profiles")
+          .insert({
+            user_id: session.user.id,
+            company_name: profile.company_name,
+            company_website: profile.company_website
+          });
+        
+        if (error) throw error;
+      }
 
       toast({
         title: "Account updated",
