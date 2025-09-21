@@ -42,26 +42,35 @@ const Dashboard = () => {
 
   // Listen for profile updates
   useEffect(() => {
-    const channel = supabase
-      .channel('profile-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'profiles'
-        },
-        (payload) => {
-          if (payload.new.company_name) {
-            setCompanyName(payload.new.company_name);
-          }
-        }
-      )
-      .subscribe();
+    const setupRealtimeSubscription = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
 
-    return () => {
-      supabase.removeChannel(channel);
+      const channel = supabase
+        .channel('profile-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'profiles',
+            filter: `user_id=eq.${session.user.id}`
+          },
+          (payload) => {
+            console.log('Profile updated:', payload.new);
+            if (payload.new.company_name) {
+              setCompanyName(payload.new.company_name);
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     };
+
+    setupRealtimeSubscription();
   }, []);
 
   // Protect route: redirect unauthenticated users and ensure onboarding complete
