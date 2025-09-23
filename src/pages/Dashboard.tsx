@@ -3,7 +3,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, TrendingUp, Globe, BarChart3, Plus, Settings, Store, Target, MessageCircle } from "lucide-react";
+import { Search, TrendingUp, Globe, BarChart3, Plus, Settings, Store, Target, MessageCircle, Eye, Heart, MapPin, FileText, Database, Cpu, Filter } from "lucide-react";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+  useSidebar,
+} from "@/components/ui/sidebar";
 import BrandMentions from "@/components/BrandMentions";
 import { PromptsTab } from "@/components/PromptsTab";
 import MyProducts from "@/components/MyProducts";
@@ -19,6 +32,66 @@ const Dashboard = () => {
   const [activeStore, setActiveStore] = useState<{ id: string; name: string; website: string; is_active: boolean } | null>(null);
   const [companyName, setCompanyName] = useState("BrandRefs");
   const navigate = useNavigate();
+
+  // Sidebar component
+  const DashboardSidebar = () => {
+    const { state } = useSidebar();
+
+    const sidebarItems = [
+      { title: "Overview", value: "overview", icon: BarChart3 },
+      { title: "Prompts", value: "prompts", icon: MessageCircle },
+      { title: "Sources", value: "sources", icon: Database },
+      { title: "Models", value: "models", icon: Cpu },
+      { title: "Settings", value: "settings", icon: Settings },
+    ];
+
+    return (
+      <Sidebar className={state === "collapsed" ? "w-14" : "w-60"} collapsible="icon">
+        <SidebarContent>
+          {/* Quick Actions Section */}
+          <SidebarGroup>
+            <SidebarGroupLabel>Quick Actions</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={() => setShowAddStoreModal(true)}>
+                    <Plus className="w-4 h-4" />
+                    {state !== "collapsed" && <span>Add Store</span>}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          {/* Pages Section */}
+          <SidebarGroup>
+            <SidebarGroupLabel>Pages</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {sidebarItems.map((item) => (
+                  <SidebarMenuItem key={item.value}>
+                    <SidebarMenuButton 
+                      onClick={() => {
+                        if (item.value === "settings") {
+                          navigate("/settings");
+                        } else {
+                          setActiveTab(item.value);
+                        }
+                      }}
+                      className={activeTab === item.value ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
+                    >
+                      <item.icon className="w-4 h-4" />
+                      {state !== "collapsed" && <span>{item.title}</span>}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+      </Sidebar>
+    );
+  };
 
   // Load company profile data
   useEffect(() => {
@@ -122,229 +195,291 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold text-foreground">{companyName}</h1>
-              <Badge variant="secondary" className="text-xs">
-                eCommerce Pro
-              </Badge>
-            </div>
-            <div className="flex items-center gap-3">
-              <StoreSelector onStoreChange={setActiveStore} onAddStore={() => setShowAddStoreModal(true)} />
-              <Button variant="outline" size="sm" onClick={() => navigate("/settings")}>
-                <Settings className="w-4 h-4" />
-                Settings
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
-                Logout
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-6 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="overview" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="my-products" className="flex items-center gap-2">
-              <Store className="w-4 h-4" />
-              My Products
-            </TabsTrigger>
-            <TabsTrigger value="prompts" className="flex items-center gap-2">
-              <MessageCircle className="w-4 h-4" />
-              My Prompts
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Stats Overview */}
-              <div className="lg:col-span-2 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm font-medium text-muted-foreground">
-                        Brand Visibility Score
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-primary">87</div>
-                      <div className="flex items-center gap-1 text-xs text-success">
-                        <TrendingUp className="w-3 h-3" />
-                        +12% from last month
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm font-medium text-muted-foreground">
-                        Product Mentions
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-foreground">156</div>
-                      <div className="text-xs text-muted-foreground">
-                        Across 3 AI platforms
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm font-medium text-muted-foreground">
-                        Store Traffic
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-foreground">2.4K</div>
-                      <div className="text-xs text-muted-foreground">
-                        From AI referrals
-                      </div>
-                    </CardContent>
-                  </Card>
+    <SidebarProvider>
+      <div className="min-h-screen bg-background flex w-full">
+        <DashboardSidebar />
+        
+        <div className="flex-1 flex flex-col">
+          {/* Header */}
+          <header className="border-b border-border bg-card">
+            <div className="px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <SidebarTrigger className="lg:hidden" />
+                  <h1 className="text-2xl font-bold text-foreground">{companyName}'s Dashboard</h1>
+                  <Badge variant="secondary" className="text-xs">
+                    eCommerce Pro
+                  </Badge>
                 </div>
-
-                {/* Recent Activity */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Store className="w-5 h-5" />
-                      Recent Product Queries
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {[
-                      {
-                        query: "best wireless headphones under $200",
-                        platform: "ChatGPT",
-                        mentioned: true,
-                        time: "2 hours ago"
-                      },
-                      {
-                        query: "top bluetooth speakers 2024",
-                        platform: "Perplexity",
-                        mentioned: false,
-                        time: "4 hours ago"
-                      },
-                      {
-                        query: "gaming accessories for PC setup",
-                        platform: "Gemini",
-                        mentioned: true,
-                        time: "6 hours ago"
-                      }
-                    ].map((search, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 rounded-lg border border-border">
-                        <div className="flex-1">
-                          <div className="font-medium text-sm text-foreground">
-                            "{search.query}"
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {search.platform} • {search.time}
-                          </div>
-                        </div>
-                        <Badge variant={search.mentioned ? "default" : "secondary"} className="text-xs">
-                          {search.mentioned ? "Product Mentioned" : "Not mentioned"}
-                        </Badge>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
+                
+                {/* Header filters */}
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm">
+                      <Filter className="w-4 h-4" />
+                      Last 7 days
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      All tags
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      All Models
+                    </Button>
+                  </div>
+                  
+                  <StoreSelector onStoreChange={setActiveStore} onAddStore={() => setShowAddStoreModal(true)} />
+                  <Button variant="outline" size="sm" onClick={handleLogout}>
+                    Logout
+                  </Button>
+                </div>
               </div>
-
-              {/* Sidebar */}
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Globe className="w-5 h-5" />
-                      AI Platform Performance
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {[
-                      { name: "ChatGPT", coverage: 92, color: "bg-green-500" },
-                      { name: "Perplexity", coverage: 68, color: "bg-orange-500" },
-                      { name: "Gemini", coverage: 76, color: "bg-purple-500" }
-                    ].map((platform, index) => (
-                      <div key={index} className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-foreground">{platform.name}</span>
-                          <span className="text-muted-foreground">{platform.coverage}%</span>
-                        </div>
-                        <div className="w-full bg-muted rounded-full h-2">
-                          <div 
-                            className={`${platform.color} h-2 rounded-full transition-all duration-300`}
-                            style={{ width: `${platform.coverage}%` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Store className="w-5 h-5" />
-                      eCommerce Actions
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <Button variant="outline" className="w-full justify-start">
-                      <Search className="w-4 h-4" />
-                      Track Keywords
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start">
-                      <TrendingUp className="w-4 h-4" />
-                      View Reports
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start">
-                      <Target className="w-4 h-4" />
-                      Monitor Competitors
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
+              
+              {/* Overview summary */}
+              {activeTab === "overview" && (
+                <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+                  <BarChart3 className="w-4 h-4" />
+                  Overview • {companyName}'s Visibility trending up by 5.2% this month
+                </div>
+              )}
             </div>
-          </TabsContent>
+          </header>
 
-          <TabsContent value="my-products">
-            <MyProducts activeStore={activeStore} />
-          </TabsContent>
+          {/* Main Content */}
+          <main className="flex-1 px-6 py-8">
+            <div className="space-y-6">
+              {/* Main tabs for different content */}
+              {activeTab === "overview" && (
+                <div className="space-y-6">
+                  {/* Top metrics tabs */}
+                  <Tabs defaultValue="visibility" className="space-y-6">
+                    <TabsList className="grid w-fit grid-cols-3">
+                      <TabsTrigger value="visibility" className="flex items-center gap-2">
+                        <Eye className="w-4 h-4" />
+                        Visibility
+                      </TabsTrigger>
+                      <TabsTrigger value="sentiment" className="flex items-center gap-2">
+                        <Heart className="w-4 h-4" />
+                        Sentiment
+                      </TabsTrigger>
+                      <TabsTrigger value="position" className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4" />
+                        Position
+                      </TabsTrigger>
+                    </TabsList>
 
-          <TabsContent value="prompts">
-            <PromptsTab activeStore={activeStore} />
-          </TabsContent>
-        </Tabs>
-      </main>
+                    <TabsContent value="visibility" className="space-y-6">
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* Main Chart Area */}
+                        <div className="lg:col-span-2 space-y-6">
+                          {/* Stats Overview */}
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <Card>
+                              <CardHeader className="pb-3">
+                                <CardTitle className="text-sm font-medium text-muted-foreground">
+                                  Brand Visibility Score
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="text-2xl font-bold text-primary">87</div>
+                                <div className="flex items-center gap-1 text-xs text-green-600">
+                                  <TrendingUp className="w-3 h-3" />
+                                  +12% from last month
+                                </div>
+                              </CardContent>
+                            </Card>
+
+                            <Card>
+                              <CardHeader className="pb-3">
+                                <CardTitle className="text-sm font-medium text-muted-foreground">
+                                  Product Mentions
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="text-2xl font-bold text-foreground">156</div>
+                                <div className="text-xs text-muted-foreground">
+                                  Across 3 AI platforms
+                                </div>
+                              </CardContent>
+                            </Card>
+
+                            <Card>
+                              <CardHeader className="pb-3">
+                                <CardTitle className="text-sm font-medium text-muted-foreground">
+                                  Store Traffic
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="text-2xl font-bold text-foreground">2.4K</div>
+                                <div className="text-xs text-muted-foreground">
+                                  From AI referrals
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </div>
+
+                          {/* Chart placeholder */}
+                          <Card>
+                            <CardHeader>
+                              <CardTitle>Visibility Trends</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="h-64 bg-muted/50 rounded-lg flex items-center justify-center">
+                                <div className="text-center">
+                                  <BarChart3 className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
+                                  <p className="text-muted-foreground">Chart visualization will go here</p>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          {/* Domains table */}
+                          <Card>
+                            <CardHeader>
+                              <CardTitle>Domains</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-4">
+                                {[
+                                  { domain: "reddit.com", type: "UGC", used: "32%", citations: "41%" },
+                                  { domain: "techradar.com", type: "Editorial", used: "43%", citations: "46%" },
+                                  { domain: "wikipedia.org", type: "Reference", used: "21%", citations: "40%" },
+                                ].map((item, index) => (
+                                  <div key={index} className="flex items-center justify-between p-3 rounded-lg border border-border">
+                                    <div className="flex items-center gap-3">
+                                      <span className="font-medium text-sm">{item.domain}</span>
+                                      <Badge variant="secondary" className="text-xs">{item.type}</Badge>
+                                    </div>
+                                    <div className="flex gap-6 text-sm">
+                                      <span>Used: {item.used}</span>
+                                      <span>Avg. Citations: {item.citations}</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+
+                        {/* Right Sidebar */}
+                        <div className="space-y-6">
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="flex items-center gap-2 text-base">
+                                <Target className="w-5 h-5" />
+                                {companyName}'s competitors
+                              </CardTitle>
+                              <p className="text-sm text-muted-foreground">Compare {companyName} with it's competitors</p>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                              {[
+                                { name: "HubSpot", visibility: "65%", sentiment: "86", position: "2.7" },
+                                { name: "Salesforce", visibility: "62%", sentiment: "62", position: "2.9" },
+                                { name: companyName, visibility: "47%", sentiment: "89", position: "3.6" },
+                                { name: "Pipedrive", visibility: "41%", sentiment: "76", position: "3.9" },
+                              ].map((competitor, index) => (
+                                <div key={index} className="flex items-center justify-between p-2 rounded">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-muted-foreground text-sm">{index + 1}</span>
+                                    <span className="font-medium text-sm">{competitor.name}</span>
+                                  </div>
+                                  <div className="flex gap-4 text-sm">
+                                    <span>{competitor.visibility}</span>
+                                    <span>{competitor.sentiment}</span>
+                                    <span>{competitor.position}</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </CardContent>
+                          </Card>
+
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="flex items-center gap-2 text-base">
+                                <Globe className="w-5 h-5" />
+                                Domains by Type
+                              </CardTitle>
+                              <p className="text-sm text-muted-foreground">Most used domains categorized by type</p>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="h-32 bg-muted/50 rounded-lg flex items-center justify-center">
+                                <p className="text-muted-foreground text-sm">Chart visualization</p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="sentiment">
+                      <Card>
+                        <CardContent className="pt-6">
+                          <div className="text-center py-8">
+                            <Heart className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
+                            <p className="text-muted-foreground">Sentiment analysis will be displayed here</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    
+                    <TabsContent value="position">
+                      <Card>
+                        <CardContent className="pt-6">
+                          <div className="text-center py-8">
+                            <MapPin className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
+                            <p className="text-muted-foreground">Position tracking will be displayed here</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                  </Tabs>
+                </div>
+              )}
+
+              {activeTab === "prompts" && (
+                <PromptsTab activeStore={activeStore} />
+              )}
+
+              {activeTab === "sources" && (
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-center py-8">
+                      <Database className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-muted-foreground">Sources management will be displayed here</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {activeTab === "models" && (
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-center py-8">
+                      <Cpu className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-muted-foreground">AI Models configuration will be displayed here</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </main>
+        </div>
+      </div>
 
       <AddStoreModal 
         open={showAddStoreModal} 
         onOpenChange={setShowAddStoreModal}
         onStoreAdded={(newStore) => {
-          // Set the new store as active and refresh page to load all data
           setActiveStore(newStore);
           toast({
             title: "Success",
             description: `Switched to ${newStore.name}. Loading store data...`,
           });
-          // Refresh the page to reload all data with the new active store
           setTimeout(() => {
             window.location.reload();
           }, 500);
         }}
       />
-    </div>
+    </SidebarProvider>
   );
 };
 
