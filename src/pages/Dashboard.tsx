@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, TrendingUp, Globe, BarChart3, Plus, Settings, Store, Target, MessageCircle, Eye, Heart, MapPin, FileText, Database, Cpu, Filter, Package } from "lucide-react";
+import { Search, TrendingUp, Globe, BarChart3, Plus, Settings, Store, Target, MessageCircle, Eye, Heart, MapPin, FileText, Database, Cpu, Filter, Package, ChevronDown } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -31,6 +31,7 @@ const Dashboard = () => {
   const [showAddStoreModal, setShowAddStoreModal] = useState(false);
   const [activeStore, setActiveStore] = useState<{ id: string; name: string; website: string; is_active: boolean } | null>(null);
   const [companyName, setCompanyName] = useState("BrandRefs");
+  const [productsExpanded, setProductsExpanded] = useState(true);
   const navigate = useNavigate();
 
   // Sidebar component
@@ -46,11 +47,13 @@ const Dashboard = () => {
     ];
 
     const productItems = [
-      { title: "Overview", value: "products-overview", icon: Package },
-      { title: "Metrics", value: "products-metrics", icon: TrendingUp },
-      { title: "Competitors", value: "products-competitors", icon: Target },
-      { title: "AI Optimizations", value: "products-ai", icon: Search },
+      { title: "Overview", value: "products-overview" },
+      { title: "Metrics", value: "products-metrics" },
+      { title: "Competitors", value: "products-competitors" },
+      { title: "AI Optimizations", value: "products-ai" },
     ];
+
+    const isProductsActive = activeTab.startsWith("products-");
 
     return (
       <Sidebar className={state === "collapsed" ? "w-14" : "w-60"} collapsible="icon">
@@ -92,26 +95,37 @@ const Dashboard = () => {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
 
-          {/* Products Section */}
-          <SidebarGroup>
-            <SidebarGroupLabel>Products</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {productItems.map((item) => (
-                  <SidebarMenuItem key={item.value}>
-                    <SidebarMenuButton 
-                      onClick={() => setActiveTab(item.value)}
-                      className={`${activeTab === item.value ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"} ${state !== "collapsed" ? "ml-4" : ""}`}
-                    >
-                      <item.icon className="w-4 h-4" />
-                      {state !== "collapsed" && <span>{item.title}</span>}
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {/* Products Collapsible Section */}
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    onClick={() => setProductsExpanded(!productsExpanded)}
+                    className={`${isProductsActive ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"} justify-between`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Package className="w-4 h-4" />
+                      {state !== "collapsed" && <span>Products</span>}
+                    </div>
+                    {state !== "collapsed" && (
+                      <ChevronDown className={`w-4 h-4 transition-transform ${productsExpanded ? "rotate-0" : "-rotate-90"}`} />
+                    )}
+                  </SidebarMenuButton>
+
+                  {/* Products Subsections */}
+                  {productsExpanded && state !== "collapsed" && (
+                    <div className="ml-6 mt-1">
+                      {productItems.map((item) => (
+                        <SidebarMenuButton 
+                          key={item.value}
+                          onClick={() => setActiveTab(item.value)}
+                          className={`${activeTab === item.value ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"} w-full justify-start text-sm py-1 mb-1`}
+                        >
+                          <span>{item.title}</span>
+                        </SidebarMenuButton>
+                      ))}
+                    </div>
+                  )}
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
