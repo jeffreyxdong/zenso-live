@@ -28,10 +28,11 @@ import { toast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
-  const [showAddStoreModal, setShowAddStoreModal] = useState(false);
+  const [showAddStoreModal, setShowAddStoreModal] = useState(false);  
   const [activeStore, setActiveStore] = useState<{ id: string; name: string; website: string; is_active: boolean } | null>(null);
   const [companyName, setCompanyName] = useState("BrandRefs");
   const [productsExpanded, setProductsExpanded] = useState(true);
+  const [brandExpanded, setBrandExpanded] = useState(true);
   const navigate = useNavigate();
 
   // Sidebar component
@@ -47,11 +48,16 @@ const Dashboard = () => {
     const productItems = [
       { title: "Overview", value: "products-overview" },
       { title: "Metrics", value: "products-metrics" },
-      { title: "Competitors", value: "products-competitors" },
       { title: "AI Optimizations", value: "products-ai" },
     ];
 
+    const brandItems = [
+      { title: "Overview", value: "brand-overview" },
+      { title: "Competitors", value: "brand-competitors" },
+    ];
+
     const isProductsActive = activeTab.startsWith("products-");
+    const isBrandActive = activeTab.startsWith("brand-");
 
     return (
       <Sidebar className={state === "collapsed" ? "w-14" : "w-60"} collapsible="icon">
@@ -106,6 +112,37 @@ const Dashboard = () => {
                   {productsExpanded && state !== "collapsed" && (
                     <div className="ml-6 mt-1">
                       {productItems.map((item) => (
+                        <SidebarMenuButton 
+                          key={item.value}
+                          onClick={() => setActiveTab(item.value)}
+                          className={`${activeTab === item.value ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"} w-full justify-start text-sm py-1 mb-1`}
+                        >
+                          <span>{item.title}</span>
+                        </SidebarMenuButton>
+                      ))}
+                    </div>
+                  )}
+                </SidebarMenuItem>
+
+                {/* Brand Collapsible Section */}
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    onClick={() => setBrandExpanded(!brandExpanded)}
+                    className={`${isBrandActive ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"} justify-between`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Target className="w-4 h-4" />
+                      {state !== "collapsed" && <span>Brand</span>}
+                    </div>
+                    {state !== "collapsed" && (
+                      <ChevronDown className={`w-4 h-4 transition-transform ${brandExpanded ? "rotate-0" : "-rotate-90"}`} />
+                    )}
+                  </SidebarMenuButton>
+
+                  {/* Brand Subsections */}
+                  {brandExpanded && state !== "collapsed" && (
+                    <div className="ml-6 mt-1">
+                      {brandItems.map((item) => (
                         <SidebarMenuButton 
                           key={item.value}
                           onClick={() => setActiveTab(item.value)}
@@ -314,6 +351,18 @@ const Dashboard = () => {
                 <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
                   <Search className="w-4 h-4" />
                   AI Optimizations • Optimize products for better AI visibility
+                </div>
+              )}
+              {activeTab === "brand-overview" && (
+                <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+                  <Target className="w-4 h-4" />
+                  Brand Overview • Track your brand's AI visibility performance
+                </div>
+              )}
+              {activeTab === "brand-competitors" && (
+                <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+                  <Target className="w-4 h-4" />
+                  Brand Competitors • Compare your brand with competitors
                 </div>
               )}
             </div>
@@ -650,6 +699,164 @@ const Dashboard = () => {
                           </div>
                           <h4 className="font-medium mb-1">{optimization.title}</h4>
                           <p className="text-sm text-muted-foreground">{optimization.description}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {activeTab === "brand-overview" && (
+                <div className="space-y-6">
+                  {/* Brand AI Visibility Stats */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                          Brand Mention Rate
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold text-primary">73%</div>
+                        <div className="flex items-center gap-1 text-xs text-green-600">
+                          <TrendingUp className="w-3 h-3" />
+                          +8% from last month
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                          Average Position
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold text-foreground">2.4</div>
+                        <div className="text-xs text-muted-foreground">
+                          In AI recommendations
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                          Sentiment Score
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold text-foreground">8.6/10</div>
+                        <div className="text-xs text-green-600">
+                          Positive sentiment
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Brand Visibility Chart */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Brand AI Visibility Trends</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-64 bg-muted/50 rounded-lg flex items-center justify-center">
+                        <div className="text-center">
+                          <TrendingUp className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
+                          <p className="text-muted-foreground">Brand visibility chart will go here</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Recent Brand Mentions */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Recent Brand Mentions</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {[
+                          {
+                            platform: "ChatGPT",
+                            query: "best ecommerce tools for small business",
+                            position: 2,
+                            sentiment: "Positive",
+                            date: "2 hours ago"
+                          },
+                          {
+                            platform: "Claude",
+                            query: "reliable online store solutions",
+                            position: 1,
+                            sentiment: "Very Positive", 
+                            date: "5 hours ago"
+                          },
+                          {
+                            platform: "Gemini",
+                            query: "ecommerce platform comparison",
+                            position: 3,
+                            sentiment: "Neutral",
+                            date: "1 day ago"
+                          }
+                        ].map((mention, index) => (
+                          <div key={index} className="flex items-center justify-between p-4 rounded-lg border border-border">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Badge variant="outline">{mention.platform}</Badge>
+                                <span className="text-sm text-muted-foreground">Position #{mention.position}</span>
+                              </div>
+                              <p className="text-sm font-medium mb-1">{mention.query}</p>
+                              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                <span>Sentiment: <span className={mention.sentiment === "Very Positive" || mention.sentiment === "Positive" ? "text-green-600" : "text-muted-foreground"}>{mention.sentiment}</span></span>
+                                <span>{mention.date}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {activeTab === "brand-competitors" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Brand Competitor Analysis</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {[
+                        { name: "Your Brand", visibility: "73%", avgPosition: "2.4", sentiment: "8.6", mentions: "342" },
+                        { name: "Competitor Alpha", visibility: "81%", avgPosition: "1.8", sentiment: "8.2", mentions: "456" },
+                        { name: "Competitor Beta", visibility: "68%", avgPosition: "2.9", sentiment: "7.8", mentions: "298" },
+                        { name: "Competitor Gamma", visibility: "52%", avgPosition: "3.5", sentiment: "7.2", mentions: "201" },
+                      ].map((competitor, index) => (
+                        <div key={index} className="flex items-center justify-between p-4 rounded-lg border border-border">
+                          <div className="flex items-center gap-3">
+                            <span className="text-muted-foreground text-sm">{index + 1}</span>
+                            <span className={`font-medium ${competitor.name === "Your Brand" ? "text-primary" : ""}`}>
+                              {competitor.name}
+                            </span>
+                          </div>
+                          <div className="flex gap-6 text-sm">
+                            <div className="text-center">
+                              <div className="text-muted-foreground text-xs">Visibility</div>
+                              <div className="font-medium">{competitor.visibility}</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-muted-foreground text-xs">Avg Position</div>
+                              <div className="font-medium">{competitor.avgPosition}</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-muted-foreground text-xs">Sentiment</div>
+                              <div className="font-medium">{competitor.sentiment}/10</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-muted-foreground text-xs">Mentions</div>
+                              <div className="font-medium">{competitor.mentions}</div>
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
