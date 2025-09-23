@@ -28,6 +28,7 @@ import { toast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
+  const [activeProductsTab, setActiveProductsTab] = useState("overview");
   const [showAddStoreModal, setShowAddStoreModal] = useState(false);
   const [activeStore, setActiveStore] = useState<{ id: string; name: string; website: string; is_active: boolean } | null>(null);
   const [companyName, setCompanyName] = useState("BrandRefs");
@@ -242,10 +243,13 @@ const Dashboard = () => {
                   Overview • {companyName}'s Visibility trending up by 5.2% this month
                 </div>
               )}
-              {activeTab === "products" && (
+{activeTab === "products" && (
                 <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
                   <Package className="w-4 h-4" />
-                  Products • Manage your product catalog and AI visibility
+                  Products • {activeProductsTab === "overview" ? "Manage your product catalog and AI visibility" :
+                    activeProductsTab === "metrics" ? "Track product performance and AI impact" :
+                    activeProductsTab === "competitors" ? "Compare your products with competitors" :
+                    "Optimize products for better AI visibility"}
                 </div>
               )}
             </div>
@@ -442,8 +446,176 @@ const Dashboard = () => {
                 </div>
               )}
 
-              {activeTab === "products" && (
-                <MyProducts activeStore={activeStore} />
+{activeTab === "products" && (
+                <div className="space-y-6">
+                  <Tabs value={activeProductsTab} onValueChange={setActiveProductsTab} className="space-y-6">
+                    <TabsList className="grid w-fit grid-cols-4">
+                      <TabsTrigger value="overview" className="flex items-center gap-2">
+                        <BarChart3 className="w-4 h-4" />
+                        Overview
+                      </TabsTrigger>
+                      <TabsTrigger value="metrics" className="flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4" />
+                        Metrics
+                      </TabsTrigger>
+                      <TabsTrigger value="competitors" className="flex items-center gap-2">
+                        <Target className="w-4 h-4" />
+                        Competitors
+                      </TabsTrigger>
+                      <TabsTrigger value="ai-optimizations" className="flex items-center gap-2">
+                        <Search className="w-4 h-4" />
+                        AI Optimizations
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="overview" className="space-y-6">
+                      <MyProducts activeStore={activeStore} />
+                    </TabsContent>
+
+                    <TabsContent value="metrics" className="space-y-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Product Performance Metrics</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <Card>
+                              <CardHeader className="pb-3">
+                                <CardTitle className="text-sm font-medium text-muted-foreground">
+                                  AI Mentions
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="text-2xl font-bold text-primary">234</div>
+                                <div className="flex items-center gap-1 text-xs text-green-600">
+                                  <TrendingUp className="w-3 h-3" />
+                                  +18% from last week
+                                </div>
+                              </CardContent>
+                            </Card>
+                            
+                            <Card>
+                              <CardHeader className="pb-3">
+                                <CardTitle className="text-sm font-medium text-muted-foreground">
+                                  Conversion Rate
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="text-2xl font-bold text-foreground">3.2%</div>
+                                <div className="text-xs text-muted-foreground">
+                                  From AI referrals
+                                </div>
+                              </CardContent>
+                            </Card>
+
+                            <Card>
+                              <CardHeader className="pb-3">
+                                <CardTitle className="text-sm font-medium text-muted-foreground">
+                                  Revenue Impact
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="text-2xl font-bold text-foreground">$12.4K</div>
+                                <div className="text-xs text-muted-foreground">
+                                  This month
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </div>
+                          
+                          <div className="h-64 bg-muted/50 rounded-lg flex items-center justify-center">
+                            <div className="text-center">
+                              <TrendingUp className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
+                              <p className="text-muted-foreground">Product metrics visualization will go here</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+
+                    <TabsContent value="competitors" className="space-y-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Competitor Analysis</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            {[
+                              { name: "Competitor A", visibility: "78%", mentions: "342", avgPosition: "2.1" },
+                              { name: "Competitor B", visibility: "65%", mentions: "287", avgPosition: "2.8" },
+                              { name: "Your Products", visibility: "62%", mentions: "234", avgPosition: "3.2" },
+                              { name: "Competitor C", visibility: "45%", mentions: "189", avgPosition: "4.1" },
+                            ].map((competitor, index) => (
+                              <div key={index} className="flex items-center justify-between p-4 rounded-lg border border-border">
+                                <div className="flex items-center gap-3">
+                                  <span className="text-muted-foreground text-sm">{index + 1}</span>
+                                  <span className="font-medium">{competitor.name}</span>
+                                </div>
+                                <div className="flex gap-6 text-sm">
+                                  <div className="text-center">
+                                    <div className="text-muted-foreground text-xs">Visibility</div>
+                                    <div className="font-medium">{competitor.visibility}</div>
+                                  </div>
+                                  <div className="text-center">
+                                    <div className="text-muted-foreground text-xs">Mentions</div>
+                                    <div className="font-medium">{competitor.mentions}</div>
+                                  </div>
+                                  <div className="text-center">
+                                    <div className="text-muted-foreground text-xs">Avg Position</div>
+                                    <div className="font-medium">{competitor.avgPosition}</div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+
+                    <TabsContent value="ai-optimizations" className="space-y-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>AI Optimization Recommendations</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            {[
+                              {
+                                type: "High Priority",
+                                title: "Optimize product descriptions for AI queries",
+                                description: "Add specific keywords that AI models commonly search for",
+                                impact: "Potential +25% visibility increase"
+                              },
+                              {
+                                type: "Medium Priority",
+                                title: "Improve product categorization",
+                                description: "Better categorize products to match AI understanding",
+                                impact: "Potential +15% visibility increase"
+                              },
+                              {
+                                type: "Low Priority",
+                                title: "Add structured data markup",
+                                description: "Include schema markup for better AI comprehension",
+                                impact: "Potential +8% visibility increase"
+                              }
+                            ].map((optimization, index) => (
+                              <div key={index} className="p-4 rounded-lg border border-border">
+                                <div className="flex items-center justify-between mb-2">
+                                  <Badge variant={optimization.type === "High Priority" ? "destructive" : optimization.type === "Medium Priority" ? "default" : "secondary"}>
+                                    {optimization.type}
+                                  </Badge>
+                                  <span className="text-sm text-green-600">{optimization.impact}</span>
+                                </div>
+                                <h4 className="font-medium mb-1">{optimization.title}</h4>
+                                <p className="text-sm text-muted-foreground">{optimization.description}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                  </Tabs>
+                </div>
               )}
 
               {activeTab === "prompts" && (
