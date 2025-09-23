@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, TrendingUp, Globe, BarChart3, Plus, Settings, Store, Target, MessageCircle, Eye, Heart, MapPin, FileText, Database, Cpu, Filter } from "lucide-react";
+import { Search, TrendingUp, Globe, BarChart3, Plus, Settings, Store, Target, MessageCircle, Eye, Heart, MapPin, FileText, Database, Cpu, Filter, Package } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -39,6 +39,7 @@ const Dashboard = () => {
 
     const sidebarItems = [
       { title: "Overview", value: "overview", icon: BarChart3 },
+      { title: "Products", value: "products", icon: Package },
       { title: "Prompts", value: "prompts", icon: MessageCircle },
       { title: "Sources", value: "sources", icon: Database },
       { title: "Models", value: "models", icon: Cpu },
@@ -234,11 +235,17 @@ const Dashboard = () => {
                 </div>
               </div>
               
-              {/* Overview summary */}
+              {/* Tab-specific summary */}
               {activeTab === "overview" && (
                 <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
                   <BarChart3 className="w-4 h-4" />
                   Overview • {companyName}'s Visibility trending up by 5.2% this month
+                </div>
+              )}
+              {activeTab === "products" && (
+                <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+                  <Package className="w-4 h-4" />
+                  Products • Manage your product catalog and AI visibility
                 </div>
               )}
             </div>
@@ -433,6 +440,10 @@ const Dashboard = () => {
                     </TabsContent>
                   </Tabs>
                 </div>
+              )}
+
+              {activeTab === "products" && (
+                <MyProducts activeStore={activeStore} />
               )}
 
               {activeTab === "prompts" && (
