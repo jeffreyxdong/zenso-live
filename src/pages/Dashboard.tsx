@@ -41,8 +41,6 @@ const Dashboard = () => {
     const mainItems = [
       { title: "Overview", value: "overview", icon: BarChart3 },
       { title: "Prompts", value: "prompts", icon: MessageCircle },
-      { title: "Sources", value: "sources", icon: Database },
-      { title: "Models", value: "models", icon: Cpu },
       { title: "Settings", value: "settings", icon: Settings },
     ];
 
@@ -78,23 +76,16 @@ const Dashboard = () => {
             <SidebarGroupLabel>Pages</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {mainItems.map((item) => (
-                  <SidebarMenuItem key={item.value}>
-                    <SidebarMenuButton 
-                      onClick={() => {
-                        if (item.value === "settings") {
-                          navigate("/settings");
-                        } else {
-                          setActiveTab(item.value);
-                        }
-                      }}
-                      className={activeTab === item.value ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
-                    >
-                      <item.icon className="w-4 h-4" />
-                      {state !== "collapsed" && <span>{item.title}</span>}
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {/* Overview */}
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    onClick={() => setActiveTab("overview")}
+                    className={activeTab === "overview" ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                    {state !== "collapsed" && <span>Overview</span>}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
 
                 {/* Products Collapsible Section */}
                 <SidebarMenuItem>
@@ -126,6 +117,25 @@ const Dashboard = () => {
                     </div>
                   )}
                 </SidebarMenuItem>
+
+                {/* Other main items */}
+                {mainItems.slice(1).map((item) => (
+                  <SidebarMenuItem key={item.value}>
+                    <SidebarMenuButton 
+                      onClick={() => {
+                        if (item.value === "settings") {
+                          navigate("/settings");
+                        } else {
+                          setActiveTab(item.value);
+                        }
+                      }}
+                      className={activeTab === item.value ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
+                    >
+                      <item.icon className="w-4 h-4" />
+                      {state !== "collapsed" && <span>{item.title}</span>}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -651,27 +661,6 @@ const Dashboard = () => {
                 <PromptsTab activeStore={activeStore} />
               )}
 
-              {activeTab === "sources" && (
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-center py-8">
-                      <Database className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
-                      <p className="text-muted-foreground">Sources management will be displayed here</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {activeTab === "models" && (
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-center py-8">
-                      <Cpu className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
-                      <p className="text-muted-foreground">AI Models configuration will be displayed here</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
             </div>
           </main>
         </div>
