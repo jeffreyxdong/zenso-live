@@ -37,16 +37,19 @@ const Dashboard = () => {
   const DashboardSidebar = () => {
     const { state } = useSidebar();
 
-    const sidebarItems = [
+    const mainItems = [
       { title: "Overview", value: "overview", icon: BarChart3 },
-      { title: "Products", value: "products-overview", icon: Package },
-      { title: "Metrics", value: "products-metrics", icon: TrendingUp },
-      { title: "Competitors", value: "products-competitors", icon: Target },
-      { title: "AI Optimizations", value: "products-ai", icon: Search },
       { title: "Prompts", value: "prompts", icon: MessageCircle },
       { title: "Sources", value: "sources", icon: Database },
       { title: "Models", value: "models", icon: Cpu },
       { title: "Settings", value: "settings", icon: Settings },
+    ];
+
+    const productItems = [
+      { title: "Overview", value: "products-overview", icon: Package },
+      { title: "Metrics", value: "products-metrics", icon: TrendingUp },
+      { title: "Competitors", value: "products-competitors", icon: Target },
+      { title: "AI Optimizations", value: "products-ai", icon: Search },
     ];
 
     return (
@@ -67,12 +70,12 @@ const Dashboard = () => {
             </SidebarGroupContent>
           </SidebarGroup>
 
-          {/* Pages Section */}
+          {/* Main Pages Section */}
           <SidebarGroup>
             <SidebarGroupLabel>Pages</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {sidebarItems.map((item) => (
+                {mainItems.map((item) => (
                   <SidebarMenuItem key={item.value}>
                     <SidebarMenuButton 
                       onClick={() => {
@@ -83,6 +86,26 @@ const Dashboard = () => {
                         }
                       }}
                       className={activeTab === item.value ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
+                    >
+                      <item.icon className="w-4 h-4" />
+                      {state !== "collapsed" && <span>{item.title}</span>}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          {/* Products Section */}
+          <SidebarGroup>
+            <SidebarGroupLabel>Products</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {productItems.map((item) => (
+                  <SidebarMenuItem key={item.value}>
+                    <SidebarMenuButton 
+                      onClick={() => setActiveTab(item.value)}
+                      className={`${activeTab === item.value ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"} ${state !== "collapsed" ? "ml-4" : ""}`}
                     >
                       <item.icon className="w-4 h-4" />
                       {state !== "collapsed" && <span>{item.title}</span>}
