@@ -54,6 +54,7 @@ interface Store {
 
 interface MyProductsProps {
   activeStore: Store | null;
+  onProductClick?: (productId: string) => void;
 }
 
 const productSchema = z.object({
@@ -71,7 +72,7 @@ const productSchema = z.object({
 
 type ProductFormData = z.infer<typeof productSchema>;
 
-const MyProducts = ({ activeStore }: MyProductsProps) => {
+const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -513,8 +514,12 @@ const MyProducts = ({ activeStore }: MyProductsProps) => {
   };
 
   const handleProductClick = (product: Product) => {
-    setSelectedProduct(product);
-    setShowProductDetail(true);
+    if (onProductClick) {
+      onProductClick(product.id);
+    } else {
+      setSelectedProduct(product);
+      setShowProductDetail(true);
+    }
   };
 
   const fetchProducts = async () => {

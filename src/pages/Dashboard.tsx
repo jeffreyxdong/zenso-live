@@ -560,7 +560,10 @@ const Dashboard = () => {
               )}
 
 {activeTab === "products-overview" && (
-                <MyProducts activeStore={activeStore} />
+                <MyProducts 
+                  activeStore={activeStore} 
+                  onProductClick={(productId) => navigate(`/product/${productId}`)}
+                />
               )}
 
               {activeTab === "products-metrics" && (

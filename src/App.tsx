@@ -11,6 +11,7 @@ import Onboarding from "./pages/Onboarding";
 import ShopifyCallback from "./pages/ShopifyCallback";
 import Auth from "./pages/Auth";
 import WelcomeBack from "./pages/WelcomeBack";
+import ProductOverview from "./pages/ProductOverview";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/product/:productId" element={<ProductOverview />} />
           <Route path="/auth/shopify/callback" element={<ShopifyCallback />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
