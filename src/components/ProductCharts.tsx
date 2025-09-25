@@ -49,7 +49,7 @@ const ProductCharts = ({ visibilityData, sentimentData, positionData }: ProductC
                   labelFormatter={(date) => new Date(date).toLocaleDateString()}
                 />
                 <Line 
-                  type="monotone" 
+                  type="basis" 
                   dataKey="value" 
                   stroke="hsl(var(--primary))" 
                   strokeWidth={2}
@@ -98,7 +98,7 @@ const ProductCharts = ({ visibilityData, sentimentData, positionData }: ProductC
                   labelFormatter={(date) => new Date(date).toLocaleDateString()}
                 />
                 <Line 
-                  type="monotone" 
+                  type="basis" 
                   dataKey="value" 
                   stroke="hsl(var(--success))" 
                   strokeWidth={2}
@@ -148,7 +148,7 @@ const ProductCharts = ({ visibilityData, sentimentData, positionData }: ProductC
                   labelFormatter={(date) => new Date(date).toLocaleDateString()}
                 />
                 <Line 
-                  type="monotone" 
+                  type="basis" 
                   dataKey="value" 
                   stroke="hsl(var(--primary))" 
                   strokeWidth={2}
