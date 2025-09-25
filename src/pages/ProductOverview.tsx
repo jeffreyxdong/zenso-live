@@ -8,13 +8,20 @@ import ProductMetrics from "@/components/ProductMetrics";
 import ProductCharts from "@/components/ProductCharts";
 import SuggestionsList from "@/components/SuggestionsList";
 import PreviewModal from "@/components/PreviewModal";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
-// Mock data types
+// Data types
 interface Product {
   id: string;
-  name: string;
-  slug: string;
+  title: string;
+  handle: string;
   status: "active" | "draft" | "archived";
+  shopify_id: string;
+  product_type?: string;
+  vendor?: string;
+  tags?: string[];
+  created_at: string;
   visibilityHistory: { date: string; value: number }[];
   sentimentHistory: { date: string; value: number }[];
   positionHistory: { date: string; value: number }[];
@@ -43,156 +50,78 @@ interface Competitor {
   visibilityScore: number;
 }
 
-// Mock product data mapping
-const mockProducts: Record<string, Product> = {
-  "3a3b17c4-b668-4990-a9bb-0e00346ec454": {
-    id: "3a3b17c4-b668-4990-a9bb-0e00346ec454",
-    name: "Organic Cotton T-Shirt - Sustainable Fashion",
-    slug: "organic-cotton-t-shirt-sustainable",
-    status: "active",
-    currentMetrics: {
-      visibility: "Medium",
-      sentiment: "Positive", 
-      position: 7
-    },
-    visibilityHistory: [
-      { date: "2024-01-01", value: 45 },
-      { date: "2024-01-02", value: 52 },
-      { date: "2024-01-03", value: 48 },
-      { date: "2024-01-04", value: 65 },
-      { date: "2024-01-05", value: 58 },
-      { date: "2024-01-06", value: 62 },
-      { date: "2024-01-07", value: 68 }
-    ],
-    sentimentHistory: [
-      { date: "2024-01-01", value: 8.1 },
-      { date: "2024-01-02", value: 8.3 },
-      { date: "2024-01-03", value: 7.9 },
-      { date: "2024-01-04", value: 8.5 },
-      { date: "2024-01-05", value: 8.2 },
-      { date: "2024-01-06", value: 8.7 },
-      { date: "2024-01-07", value: 8.9 }
-    ],
-    positionHistory: [
-      { date: "2024-01-01", value: 12 },
-      { date: "2024-01-02", value: 10 },
-      { date: "2024-01-03", value: 11 },
-      { date: "2024-01-04", value: 8 },
-      { date: "2024-01-05", value: 9 },
-      { date: "2024-01-06", value: 7 },
-      { date: "2024-01-07", value: 7 }
-    ],
-    suggestions: [
-      {
-        id: "s1",
-        title: "Highlight Sustainability Certifications",
-        description: "Add GOTS and OEKO-TEX certifications to product description for better eco-conscious visibility",
-        type: "description",
-        estimatedImpact: "High",
-        status: "pending"
-      },
-      {
-        id: "s2", 
-        title: "Generate Care Instructions FAQ",
-        description: "Create detailed care guide FAQ to reduce returns and improve customer satisfaction",
-        type: "faq",
-        estimatedImpact: "Medium",
-        status: "pending"
-      },
-      {
-        id: "s3",
-        title: "Add Sustainable Product Schema",
-        description: "Implement sustainability-focused structured data to improve visibility in eco searches",
-        type: "schema", 
-        estimatedImpact: "High",
-        status: "pending"
-      }
-    ],
-    competitors: [
-      { id: "c1", name: "Patagonia Basic Tee", position: 1, visibilityScore: 92 },
-      { id: "c2", name: "Everlane Organic Cotton Crew", position: 3, visibilityScore: 85 },
-      { id: "c3", name: "Pact Organic Cotton Tee", position: 5, visibilityScore: 78 }
-    ]
-  },
-  "default": {
-    id: "1",
-    name: "Wireless Bluetooth Headphones - Premium Sound Quality",
-    slug: "wireless-bluetooth-headphones-premium",
-    status: "active",
-    currentMetrics: {
-      visibility: "High",
-      sentiment: "Positive", 
-      position: 3
-    },
-    visibilityHistory: [
-      { date: "2024-01-01", value: 65 },
-      { date: "2024-01-02", value: 72 },
-      { date: "2024-01-03", value: 68 },
-      { date: "2024-01-04", value: 85 },
-      { date: "2024-01-05", value: 78 },
-      { date: "2024-01-06", value: 82 },
-      { date: "2024-01-07", value: 88 }
-    ],
-    sentimentHistory: [
-      { date: "2024-01-01", value: 7.2 },
-      { date: "2024-01-02", value: 7.8 },
-      { date: "2024-01-03", value: 7.5 },
-      { date: "2024-01-04", value: 8.1 },
-      { date: "2024-01-05", value: 7.9 },
-      { date: "2024-01-06", value: 8.3 },
-      { date: "2024-01-07", value: 8.5 }
-    ],
-    positionHistory: [
-      { date: "2024-01-01", value: 8 },
-      { date: "2024-01-02", value: 6 },
-      { date: "2024-01-03", value: 7 },
-      { date: "2024-01-04", value: 4 },
-      { date: "2024-01-05", value: 5 },
-      { date: "2024-01-06", value: 3 },
-      { date: "2024-01-07", value: 3 }
-    ],
-    suggestions: [
-      {
-        id: "s1",
-        title: "Optimize Product Description with Key Features",
-        description: "Add structured bullet points highlighting battery life, sound quality, and comfort features to improve AI visibility",
-        type: "description",
-        estimatedImpact: "High",
-        status: "pending"
-      },
-      {
-        id: "s2", 
-        title: "Generate FAQ Section",
-        description: "Create comprehensive FAQ covering shipping, warranty, and compatibility questions",
-        type: "faq",
-        estimatedImpact: "Medium",
-        status: "pending"
-      },
-      {
-        id: "s3",
-        title: "Add Product Review Schema",
-        description: "Implement structured data markup to enhance visibility in AI search results",
-        type: "schema", 
-        estimatedImpact: "High",
-        status: "pending"
-      },
-      {
-        id: "s4",
-        title: "Enhance Content with Use Cases",
-        description: "Add specific use case scenarios (gaming, commuting, fitness) to improve search relevance",
-        type: "content",
-        estimatedImpact: "Medium",
-        status: "pending"
-      }
-    ],
-    competitors: [
-      { id: "c1", name: "Sony WH-1000XM4", position: 1, visibilityScore: 95 },
-      { id: "c2", name: "Bose QuietComfort 35", position: 2, visibilityScore: 89 },
-      { id: "c3", name: "Apple AirPods Max", position: 4, visibilityScore: 82 },
-      { id: "c4", name: "Sennheiser Momentum 4", position: 5, visibilityScore: 76 }
-    ]
+// Mock historical data generator
+const generateMockHistoricalData = (baseValue: number, variance: number = 10) => {
+  const data = [];
+  const today = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const value = baseValue + (Math.random() - 0.5) * variance;
+    data.push({
+      date: date.toISOString().split('T')[0],
+      value: Math.max(0, Math.round(value))
+    });
   }
+  return data;
 };
+
+// Mock suggestions generator
+const generateMockSuggestions = (productTitle: string): Suggestion[] => {
+  const baseTitle = productTitle.toLowerCase();
+  const suggestions: Suggestion[] = [];
+  
+  if (baseTitle.includes('headphones') || baseTitle.includes('audio')) {
+    suggestions.push({
+      id: "s1",
+      title: "Highlight Audio Features",
+      description: "Add technical specifications like frequency response, driver size, and audio codec support",
+      type: "description",
+      estimatedImpact: "High",
+      status: "pending"
+    });
+  }
+  
+  if (baseTitle.includes('organic') || baseTitle.includes('eco') || baseTitle.includes('sustainable')) {
+    suggestions.push({
+      id: "s2",
+      title: "Add Sustainability Certifications",
+      description: "Include eco-certifications and sustainable material information",
+      type: "description",
+      estimatedImpact: "High",
+      status: "pending"
+    });
+  }
+  
+  suggestions.push(
+    {
+      id: "s3",
+      title: "Generate FAQ Section",
+      description: "Create comprehensive FAQ covering shipping, warranty, and compatibility questions",
+      type: "faq",
+      estimatedImpact: "Medium",
+      status: "pending"
+    },
+    {
+      id: "s4",
+      title: "Add Product Schema Markup",
+      description: "Implement structured data markup to enhance visibility in search results",
+      type: "schema",
+      estimatedImpact: "High",
+      status: "pending"
+    }
+  );
+  
+  return suggestions;
+};
+
+// Mock competitors generator
+const generateMockCompetitors = (): Competitor[] => [
+  { id: "c1", name: "Top Competitor Product", position: 1, visibilityScore: 95 },
+  { id: "c2", name: "Second Place Product", position: 2, visibilityScore: 89 },
+  { id: "c3", name: "Third Place Product", position: 3, visibilityScore: 82 },
+  { id: "c4", name: "Fourth Place Product", position: 4, visibilityScore: 76 }
+];
 
 const ProductOverview = () => {
   const { productId } = useParams();
@@ -204,15 +133,57 @@ const ProductOverview = () => {
   const [previewType, setPreviewType] = useState<string>("");
 
   useEffect(() => {
-    // Simulate API call to fetch product data
     const fetchProduct = async () => {
+      if (!productId) {
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
-      // Mock API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      // Get product based on productId, fallback to default
-      const selectedProduct = mockProducts[productId || ""] || mockProducts["default"];
-      setProduct(selectedProduct);
-      setLoading(false);
+      try {
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+
+        // Fetch the actual product from Supabase
+        const { data: productData, error: productError } = await supabase
+          .from("products")
+          .select("*")
+          .eq("id", productId)
+          .eq("user_id", userData.user.id)
+          .single();
+
+        if (productError) throw productError;
+
+        // Generate mock analytics data based on the real product
+        const mockProduct: Product = {
+          ...productData,
+          status: (productData.status as "active" | "draft" | "archived") || "active",
+          visibilityHistory: generateMockHistoricalData(70, 15),
+          sentimentHistory: generateMockHistoricalData(8, 1).map(item => ({
+            ...item,
+            value: Math.round(item.value * 10) / 10 // Round to 1 decimal
+          })),
+          positionHistory: generateMockHistoricalData(5, 3),
+          suggestions: generateMockSuggestions(productData.title),
+          competitors: generateMockCompetitors(),
+          currentMetrics: {
+            visibility: Math.random() > 0.5 ? "High" : Math.random() > 0.5 ? "Medium" : "Low",
+            sentiment: Math.random() > 0.5 ? "Positive" : Math.random() > 0.5 ? "Neutral" : "Negative",
+            position: Math.floor(Math.random() * 10) + 1
+          }
+        };
+
+        setProduct(mockProduct);
+      } catch (error: any) {
+        console.error("Error fetching product:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch product data",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchProduct();
@@ -342,8 +313,8 @@ Stay focused during calls with noise cancellation and enjoy music during breaks 
 
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">{product.name}</h1>
-            <p className="text-muted-foreground mt-1">Product slug: {product.slug}</p>
+            <h1 className="text-3xl font-bold text-foreground">{product.title}</h1>
+            <p className="text-muted-foreground mt-1">Product handle: {product.handle}</p>
           </div>
           <Badge 
             variant={product.status === "active" ? "default" : "secondary"}
