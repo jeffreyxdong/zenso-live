@@ -41,7 +41,7 @@ serve(async (req) => {
     // Check for brand mention with multiple approaches
     const exactMatch = contentLower.includes(brandLower);
     const wordBoundaryMatch = new RegExp(`\\b${brandLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(content);
-    const partialMatch = brandLower.split(' ').some(word => word.length > 2 && contentLower.includes(word));
+    const partialMatch = brandLower.split(' ').some((word: string) => word.length > 2 && contentLower.includes(word));
     
     const brandMentioned = exactMatch || wordBoundaryMatch || partialMatch;
     
@@ -100,7 +100,8 @@ ${content}`;
     });
   } catch (error) {
     console.error('Error in score-brand-visibility function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

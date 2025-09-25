@@ -9,7 +9,7 @@ interface ShopifyOAuthParams {
   shop?: string;
   code?: string;
   state?: string;
-  action?: 'exchange-and-import' | 'get-api-key' | 'callback';
+  action?: 'exchange-and-import' | 'get-api-key' | 'callback' | 'check-existing-shop' | 'import-with-existing-token';
 }
 
 Deno.serve(async (req) => {

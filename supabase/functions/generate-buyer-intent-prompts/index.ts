@@ -100,10 +100,10 @@ Return ONLY a JSON array of 15 strings, no additional formatting or explanation.
         } else {
           // If no array found, try to split by lines and create array
           const lines = cleanedContent.split('\n')
-            .map(line => line.trim())
-            .filter(line => line && !line.startsWith('//') && !line.startsWith('#'))
-            .map(line => line.replace(/^["']|["']$/g, '').replace(/^-\s*/, '').replace(/^\d+\.\s*/, ''))
-            .filter(line => line.length > 0);
+            .map((line: string) => line.trim())
+            .filter((line: string) => line && !line.startsWith('//') && !line.startsWith('#'))
+            .map((line: string) => line.replace(/^["']|["']$/g, '').replace(/^-\s*/, '').replace(/^\d+\.\s*/, ''))
+            .filter((line: string) => line.length > 0);
           
           if (lines.length >= 10) {
             prompts = lines.slice(0, 15);
@@ -337,7 +337,8 @@ ${allResponsesText}`;
     });
   } catch (error) {
     console.error('Error in generate-buyer-intent-prompts function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
