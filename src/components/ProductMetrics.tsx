@@ -7,6 +7,9 @@ interface Metrics {
   visibility: "High" | "Medium" | "Low";
   sentiment: "Positive" | "Neutral" | "Negative";
   position: number;
+  visibilityScore: number;
+  sentimentScore: number;
+  positionScore: number;
 }
 
 interface ProductMetricsProps {
@@ -48,7 +51,10 @@ const ProductMetrics = ({ metrics }: ProductMetricsProps) => {
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
-            <div className="text-2xl font-bold">{metrics.visibility}</div>
+            <div className="space-y-1">
+              <div className="text-2xl font-bold">{metrics.visibility}</div>
+              <div className="text-sm text-muted-foreground">Score: {metrics.visibilityScore}/100</div>
+            </div>
             <Badge className={getVisibilityColor(metrics.visibility)}>
               {metrics.visibility}
             </Badge>
@@ -67,7 +73,10 @@ const ProductMetrics = ({ metrics }: ProductMetricsProps) => {
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
-            <div className="text-2xl font-bold">{metrics.sentiment}</div>
+            <div className="space-y-1">
+              <div className="text-2xl font-bold">{metrics.sentiment}</div>
+              <div className="text-sm text-muted-foreground">Score: {metrics.sentimentScore}/100</div>
+            </div>
             <Badge className={getSentimentColor(metrics.sentiment)}>
               {metrics.sentiment}
             </Badge>
@@ -86,7 +95,10 @@ const ProductMetrics = ({ metrics }: ProductMetricsProps) => {
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
-            <div className="text-2xl font-bold">#{metrics.position}</div>
+            <div className="space-y-1">
+              <div className="text-2xl font-bold">#{metrics.position}</div>
+              <div className="text-sm text-muted-foreground">Score: {metrics.positionScore}/100</div>
+            </div>
             <Badge className={getPositionColor(metrics.position)}>
               Rank {metrics.position}
             </Badge>

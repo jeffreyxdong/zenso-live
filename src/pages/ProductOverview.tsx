@@ -34,6 +34,9 @@ interface Product {
     visibility: "High" | "Medium" | "Low";
     sentiment: "Positive" | "Neutral" | "Negative";
     position: number;
+    visibilityScore: number;
+    sentimentScore: number;
+    positionScore: number;
   };
 }
 
@@ -325,7 +328,10 @@ const ProductOverview = () => {
           currentMetrics: {
             visibility: getVisibilityLevel(visibilityScore),
             sentiment: getSentimentLevel(sentimentScore),
-            position: positionScore || 5
+            position: positionScore || 5,
+            visibilityScore: visibilityScore,
+            sentimentScore: sentimentScore,
+            positionScore: positionScore || 5
           }
         };
 
