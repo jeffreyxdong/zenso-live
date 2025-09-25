@@ -54,10 +54,38 @@ interface Competitor {
 }
 
 // Generate historical data based on actual scores
-const generateHistoricalData = (currentScore: number | null, type: 'visibility' | 'sentiment' | 'position') => {
+const generateHistoricalData = (currentScore: number | null, type: 'visibility' | 'sentiment' | 'position', createdAt: string) => {
   const data = [];
   const today = new Date();
+  const createdDate = new Date(createdAt);
+  const daysSinceCreated = Math.floor((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
   
+  // If product was created within the last 2 days, show only single data point
+  if (daysSinceCreated <= 2) {
+    // For new products, show only today's data point with actual score
+    const actualScore = currentScore || 0;
+    let value: number;
+    
+    // Apply constraints based on type
+    if (type === 'visibility') {
+      value = Math.max(0, Math.min(100, actualScore));
+    } else if (type === 'sentiment') {
+      value = Math.max(0, Math.min(10, actualScore));
+    } else if (type === 'position') {
+      value = Math.max(1, Math.min(20, actualScore || 5));
+    } else {
+      value = actualScore;
+    }
+    
+    data.push({
+      date: today.toISOString().split('T')[0],
+      value: value
+    });
+    
+    return data;
+  }
+  
+  // For older products, generate historical data
   // If no current score, use default values
   let baseValue = currentScore || 0;
   if (!currentScore) {
@@ -206,9 +234,9 @@ const ProductOverview = () => {
         const enhancedProduct: Product = {
           ...productData,
           status: (productData.status as "active" | "draft" | "archived") || "active",
-          visibilityHistory: generateHistoricalData(visibilityScore, 'visibility'),
-          sentimentHistory: generateHistoricalData(sentimentScore, 'sentiment'),
-          positionHistory: generateHistoricalData(positionScore, 'position'),
+          visibilityHistory: generateHistoricalData(visibilityScore, 'visibility', productData.created_at),
+          sentimentHistory: generateHistoricalData(sentimentScore, 'sentiment', productData.created_at),
+          positionHistory: generateHistoricalData(positionScore, 'position', productData.created_at),
           suggestions: generateMockSuggestions(productData.title),
           competitors: generateMockCompetitors(),
           currentMetrics: {
