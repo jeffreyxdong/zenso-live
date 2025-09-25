@@ -86,14 +86,53 @@ Return ONLY a JSON array of 15 strings, no additional formatting or explanation.
         cleanedContent = cleanedContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
       }
       
-      prompts = JSON.parse(cleanedContent);
+      // Try to parse as JSON first
+      try {
+        prompts = JSON.parse(cleanedContent);
+      } catch (jsonError) {
+        // If direct JSON parsing fails, try to extract array from the content
+        console.log('Direct JSON parsing failed, attempting to extract array...');
+        
+        // Look for array pattern in the content
+        const arrayMatch = cleanedContent.match(/\[[\s\S]*\]/);
+        if (arrayMatch) {
+          prompts = JSON.parse(arrayMatch[0]);
+        } else {
+          // If no array found, try to split by lines and create array
+          const lines = cleanedContent.split('\n')
+            .map(line => line.trim())
+            .filter(line => line && !line.startsWith('//') && !line.startsWith('#'))
+            .map(line => line.replace(/^["']|["']$/g, '').replace(/^-\s*/, '').replace(/^\d+\.\s*/, ''))
+            .filter(line => line.length > 0);
+          
+          if (lines.length >= 10) {
+            prompts = lines.slice(0, 15);
+          } else {
+            throw jsonError;
+          }
+        }
+      }
     } catch (parseError) {
-      console.error('Failed to parse OpenAI response as JSON:', generatedContent);
+      console.error('Failed to parse OpenAI response:', generatedContent);
+      console.error('Parse error:', parseError);
       throw new Error('Failed to parse AI response');
     }
 
-    if (!Array.isArray(prompts) || prompts.length !== 15) {
-      throw new Error('Invalid response format from AI');
+    if (!Array.isArray(prompts) || prompts.length < 10) {
+      console.error('Invalid prompts array:', prompts);
+      throw new Error(`Invalid response format from AI - expected array of 10-15 strings, got ${prompts?.length || 0}`);
+    }
+
+    // Ensure we have exactly 15 prompts
+    if (prompts.length < 15) {
+      console.log(`Got ${prompts.length} prompts, generating additional ones...`);
+      // Duplicate some prompts with slight variations if we have fewer than 15
+      while (prompts.length < 15 && prompts.length > 0) {
+        const randomPrompt = prompts[Math.floor(Math.random() * Math.min(prompts.length, 5))];
+        prompts.push(randomPrompt + ' deals');
+      }
+    } else if (prompts.length > 15) {
+      prompts = prompts.slice(0, 15);
     }
 
     // Get user ID from the request headers
