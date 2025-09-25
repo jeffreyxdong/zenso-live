@@ -544,7 +544,26 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setProducts(productsData || []);
+
+      // Fetch the latest scores for each product from product_scores table
+      const productsWithScores = await Promise.all((productsData || []).map(async (product) => {
+        const { data: latestScore } = await supabase
+          .from("product_scores")
+          .select("visibility_score, sentiment_score, position_score")
+          .eq("product_id", product.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        return {
+          ...product,
+          visibility_score: latestScore?.visibility_score || product.visibility_score,
+          sentiment_score: latestScore?.sentiment_score || product.sentiment_score,
+          position_score: latestScore?.position_score || product.position_score,
+        };
+      }));
+
+      setProducts(productsWithScores);
     } catch (error: any) {
       console.error("Error fetching products:", error);
       toast({
