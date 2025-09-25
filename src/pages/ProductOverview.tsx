@@ -60,61 +60,57 @@ const generateHistoricalData = (currentScore: number | null, type: 'visibility' 
   const createdDate = new Date(createdAt);
   const daysSinceCreated = Math.floor((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
   
-  // If product was created within the last 2 days, show only single data point
-  if (daysSinceCreated <= 2) {
-    // For new products, show only today's data point with actual score
-    const actualScore = currentScore || 0;
-    let value: number;
-    
-    // Apply constraints based on type
-    if (type === 'visibility') {
-      value = Math.max(0, Math.min(100, actualScore));
-    } else if (type === 'sentiment') {
-      value = Math.max(0, Math.min(10, actualScore));
-    } else if (type === 'position') {
-      value = Math.max(1, Math.min(20, actualScore || 5));
-    } else {
-      value = actualScore;
-    }
-    
-    data.push({
-      date: today.toISOString().split('T')[0],
-      value: value
-    });
-    
-    return data;
-  }
-  
-  // For older products, generate historical data
-  // If no current score, use default values
-  let baseValue = currentScore || 0;
-  if (!currentScore) {
-    baseValue = type === 'visibility' ? 50 : type === 'sentiment' ? 5 : 5;
-  }
-  
-  let variance = type === 'visibility' ? 15 : type === 'sentiment' ? 1 : 2;
-  
+  // Always generate 7 days of x-axis data
   for (let i = 6; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
     
-    let value: number;
-    if (i === 0) {
-      // Use actual score for today
-      value = baseValue;
-    } else {
-      // Generate realistic historical variation
-      const variation = (Math.random() - 0.5) * variance;
-      value = baseValue + variation;
-    }
+    let value: number | null = null;
     
-    // Apply constraints based on type
-    if (type === 'visibility') {
-      value = Math.max(0, Math.min(100, Math.round(value)));
-    } else if (type === 'sentiment') {
-      value = Math.max(0, Math.min(10, Math.round(value * 10) / 10));
-    } else if (type === 'position') {
-      value = Math.max(1, Math.min(20, Math.round(value)));
+    // If product was created within the last 2 days, only show current day's data
+    if (daysSinceCreated <= 2) {
+      if (i === 0) {
+        // Only show today's actual score for new products
+        const actualScore = currentScore || 0;
+        
+        // Apply constraints based on type
+        if (type === 'visibility') {
+          value = Math.max(0, Math.min(100, actualScore));
+        } else if (type === 'sentiment') {
+          value = Math.max(0, Math.min(10, actualScore));
+        } else if (type === 'position') {
+          value = Math.max(1, Math.min(20, actualScore || 5));
+        } else {
+          value = actualScore;
+        }
+      }
+      // Other days remain null for new products
+    } else {
+      // For older products, generate historical data
+      let baseValue = currentScore || 0;
+      if (!currentScore) {
+        baseValue = type === 'visibility' ? 50 : type === 'sentiment' ? 5 : 5;
+      }
+      
+      let variance = type === 'visibility' ? 15 : type === 'sentiment' ? 1 : 2;
+      
+      if (i === 0) {
+        // Use actual score for today
+        value = baseValue;
+      } else {
+        // Generate realistic historical variation
+        const variation = (Math.random() - 0.5) * variance;
+        value = baseValue + variation;
+      }
+      
+      // Apply constraints based on type
+      if (type === 'visibility') {
+        value = Math.max(0, Math.min(100, Math.round(value)));
+      } else if (type === 'sentiment') {
+        value = Math.max(0, Math.min(10, Math.round(value * 10) / 10));
+      } else if (type === 'position') {
+        value = Math.max(1, Math.min(20, Math.round(value)));
+      }
     }
     
     data.push({
@@ -122,6 +118,7 @@ const generateHistoricalData = (currentScore: number | null, type: 'visibility' 
       value: value
     });
   }
+  
   return data;
 };
 
