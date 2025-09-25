@@ -388,7 +388,7 @@ Stay focused during calls with noise cancellation and enjoy music during breaks 
           <Button 
             variant="ghost" 
             size="sm"
-            onClick={() => navigate("/dashboard")}
+            onClick={() => navigate("/dashboard?tab=products-overview")}
             className="hover:bg-muted"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />

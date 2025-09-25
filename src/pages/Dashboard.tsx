@@ -27,7 +27,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get("tab") || "overview";
+  });
   const [showAddStoreModal, setShowAddStoreModal] = useState(false);  
   const [activeStore, setActiveStore] = useState<{ id: string; name: string; website: string; is_active: boolean } | null>(null);
   const [companyName, setCompanyName] = useState("BrandRefs");
