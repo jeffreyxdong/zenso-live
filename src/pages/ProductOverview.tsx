@@ -289,18 +289,30 @@ const ProductOverview = () => {
           return "Negative";
         };
 
-        // Generate history data from actual scores or fallback to mock data
-        const visibilityHistory = scoresData && scoresData.length > 0 
-          ? generateScoreHistoryFromData(scoresData, 'visibility_score')
-          : generateHistoricalData(visibilityScore, 'visibility', productData.created_at);
+        // For newly created products (within 2 days), always show progression from 0
+        const createdDate = new Date(productData.created_at);
+        const today = new Date();
+        const daysSinceCreated = Math.floor((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+        const isNewProduct = daysSinceCreated <= 2;
+
+        // Generate history data - for new products, show progression even with real data
+        const visibilityHistory = isNewProduct 
+          ? generateHistoricalData(visibilityScore, 'visibility', productData.created_at)
+          : (scoresData && scoresData.length > 0 
+              ? generateScoreHistoryFromData(scoresData, 'visibility_score')
+              : generateHistoricalData(visibilityScore, 'visibility', productData.created_at));
           
-        const sentimentHistory = scoresData && scoresData.length > 0
-          ? generateScoreHistoryFromData(scoresData, 'sentiment_score') 
-          : generateHistoricalData(sentimentScore, 'sentiment', productData.created_at);
+        const sentimentHistory = isNewProduct
+          ? generateHistoricalData(sentimentScore, 'sentiment', productData.created_at) 
+          : (scoresData && scoresData.length > 0
+              ? generateScoreHistoryFromData(scoresData, 'sentiment_score') 
+              : generateHistoricalData(sentimentScore, 'sentiment', productData.created_at));
           
-        const positionHistory = scoresData && scoresData.length > 0
-          ? generateScoreHistoryFromData(scoresData, 'position_score')
-          : generateHistoricalData(positionScore, 'position', productData.created_at);
+        const positionHistory = isNewProduct
+          ? generateHistoricalData(positionScore, 'position', productData.created_at)
+          : (scoresData && scoresData.length > 0
+              ? generateScoreHistoryFromData(scoresData, 'position_score')
+              : generateHistoricalData(positionScore, 'position', productData.created_at));
         
         const enhancedProduct: Product = {
           ...productData,
