@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, TrendingUp, MapPin, Heart } from "lucide-react";
+import { ArrowLeft, TrendingUp, MapPin, Heart, Globe } from "lucide-react";
 import ProductMetrics from "@/components/ProductMetrics";
 import ProductCharts from "@/components/ProductCharts";
 import SuggestionsList from "@/components/SuggestionsList";
@@ -424,6 +424,106 @@ Stay focused during calls with noise cancellation and enjoy music during breaks 
           suggestions={product.suggestions}
           onGenerateContent={handleGenerateContent}
         />
+
+        {/* Sources Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="h-5 w-5 text-primary" />
+              Sources
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-lg border">
+              <div className="grid grid-cols-4 gap-4 p-4 bg-muted/50 border-b font-medium text-sm">
+                <div>Domain</div>
+                <div>Used</div>
+                <div>Avg. Citations</div>
+                <div>Type</div>
+              </div>
+              <div className="divide-y">
+                <div className="grid grid-cols-4 gap-4 p-4 items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded bg-orange-500 flex items-center justify-center">
+                      <div className="w-3 h-3 bg-white rounded-full"></div>
+                    </div>
+                    <span className="font-medium">reddit.com</span>
+                  </div>
+                  <div>100%</div>
+                  <div>2.0</div>
+                  <div>
+                    <Badge variant="secondary">Other</Badge>
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 gap-4 p-4 items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded bg-red-600 flex items-center justify-center">
+                      <div className="w-3 h-3 bg-white rounded-sm"></div>
+                    </div>
+                    <span className="font-medium">youtube.com</span>
+                  </div>
+                  <div>100%</div>
+                  <div>0.0</div>
+                  <div>
+                    <Badge variant="secondary">Other</Badge>
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 gap-4 p-4 items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded bg-gray-400 flex items-center justify-center">
+                      <div className="w-3 h-3 bg-white rounded-full"></div>
+                    </div>
+                    <span className="font-medium">blendjet.com</span>
+                  </div>
+                  <div>50%</div>
+                  <div>3.0</div>
+                  <div>
+                    <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100">You</Badge>
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 gap-4 p-4 items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded bg-green-600 flex items-center justify-center text-white text-xs font-bold">
+                      CR
+                    </div>
+                    <span className="font-medium">consumerreports.org</span>
+                  </div>
+                  <div>50%</div>
+                  <div>3.0</div>
+                  <div>
+                    <Badge variant="secondary">Other</Badge>
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 gap-4 p-4 items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded bg-green-500 flex items-center justify-center">
+                      <div className="w-3 h-3 bg-white rounded-full"></div>
+                    </div>
+                    <span className="font-medium">realfoodtraveler.com</span>
+                  </div>
+                  <div>50%</div>
+                  <div>1.0</div>
+                  <div>
+                    <Badge variant="secondary">Other</Badge>
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 gap-4 p-4 items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded bg-red-500 flex items-center justify-center text-white text-xs font-bold">
+                      R
+                    </div>
+                    <span className="font-medium">rtings.com</span>
+                  </div>
+                  <div>50%</div>
+                  <div>2.0</div>
+                  <div>
+                    <Badge variant="secondary">Other</Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Competitors Section */}
         <Card>
