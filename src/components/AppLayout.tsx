@@ -34,7 +34,6 @@ const AppLayout = () => {
   const [productsExpanded, setProductsExpanded] = useState(true);
   const [brandExpanded, setBrandExpanded] = useState(true);
 
-  // Update activeTab based on current route
   useEffect(() => {
     if (location.pathname === "/dashboard") {
       const urlParams = new URLSearchParams(location.search);
@@ -42,7 +41,7 @@ const AppLayout = () => {
     }
   }, [location]);
 
-  // Load company profile data
+  // Load company profile data and set up store subscription
   useEffect(() => {
     const loadProfile = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -269,9 +268,9 @@ const AppLayout = () => {
                   </Badge>
                 </div>
                 
-                {/* Header filters - only show on dashboard */}
-                {location.pathname === "/dashboard" && (
-                  <div className="flex items-center gap-3">
+                {/* Header filters and store selector */}
+                <div className="flex items-center gap-3">
+                  {location.pathname === "/dashboard" && (
                     <div className="flex items-center gap-2">
                       <Button variant="outline" size="sm">
                         <Filter className="w-4 h-4" />
@@ -284,13 +283,13 @@ const AppLayout = () => {
                         All Models
                       </Button>
                     </div>
-                    
-                    <StoreSelector onStoreChange={setActiveStore} onAddStore={() => setShowAddStoreModal(true)} />
-                    <Button variant="outline" size="sm" onClick={handleLogout}>
-                      Logout
-                    </Button>
-                  </div>
-                )}
+                  )}
+                  
+                  <StoreSelector onStoreChange={setActiveStore} onAddStore={() => setShowAddStoreModal(true)} />
+                  <Button variant="outline" size="sm" onClick={handleLogout}>
+                    Logout
+                  </Button>
+                </div>
               </div>
               
               {/* Tab-specific summary - only show on dashboard */}
@@ -327,7 +326,7 @@ const AppLayout = () => {
 
           {/* Main Content */}
           <main className="flex-1 px-6 py-8">
-            <Outlet />
+            <Outlet context={{ activeStore, setActiveStore }} />
           </main>
         </div>
       </div>
