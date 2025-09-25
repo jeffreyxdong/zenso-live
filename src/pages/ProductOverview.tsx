@@ -22,6 +22,9 @@ interface Product {
   vendor?: string;
   tags?: string[];
   created_at: string;
+  visibility_score?: number;
+  sentiment_score?: number;
+  position_score?: number;
   visibilityHistory: { date: string; value: number }[];
   sentimentHistory: { date: string; value: number }[];
   positionHistory: { date: string; value: number }[];
@@ -50,17 +53,45 @@ interface Competitor {
   visibilityScore: number;
 }
 
-// Mock historical data generator
-const generateMockHistoricalData = (baseValue: number, variance: number = 10) => {
+// Generate historical data based on actual scores
+const generateHistoricalData = (currentScore: number | null, type: 'visibility' | 'sentiment' | 'position') => {
   const data = [];
   const today = new Date();
+  
+  // If no current score, use default values
+  let baseValue = currentScore || 0;
+  if (!currentScore) {
+    baseValue = type === 'visibility' ? 50 : type === 'sentiment' ? 5 : 5;
+  }
+  
+  let variance = type === 'visibility' ? 15 : type === 'sentiment' ? 1 : 2;
+  
   for (let i = 6; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
-    const value = baseValue + (Math.random() - 0.5) * variance;
+    
+    let value: number;
+    if (i === 0) {
+      // Use actual score for today
+      value = baseValue;
+    } else {
+      // Generate realistic historical variation
+      const variation = (Math.random() - 0.5) * variance;
+      value = baseValue + variation;
+    }
+    
+    // Apply constraints based on type
+    if (type === 'visibility') {
+      value = Math.max(0, Math.min(100, Math.round(value)));
+    } else if (type === 'sentiment') {
+      value = Math.max(0, Math.min(10, Math.round(value * 10) / 10));
+    } else if (type === 'position') {
+      value = Math.max(1, Math.min(20, Math.round(value)));
+    }
+    
     data.push({
       date: date.toISOString().split('T')[0],
-      value: Math.max(0, Math.round(value))
+      value: value
     });
   }
   return data;
@@ -154,26 +185,40 @@ const ProductOverview = () => {
 
         if (productError) throw productError;
 
-        // Generate mock analytics data based on the real product
-        const mockProduct: Product = {
+        // Generate analytics data based on actual product scores
+        const visibilityScore = productData.visibility_score || 0;
+        const sentimentScore = productData.sentiment_score || 0;
+        const positionScore = productData.position_score || 0;
+        
+        // Convert scores to display formats
+        const getVisibilityLevel = (score: number): "High" | "Medium" | "Low" => {
+          if (score >= 70) return "High";
+          if (score >= 40) return "Medium";
+          return "Low";
+        };
+        
+        const getSentimentLevel = (score: number): "Positive" | "Neutral" | "Negative" => {
+          if (score >= 7) return "Positive";
+          if (score >= 4) return "Neutral";
+          return "Negative";
+        };
+        
+        const enhancedProduct: Product = {
           ...productData,
           status: (productData.status as "active" | "draft" | "archived") || "active",
-          visibilityHistory: generateMockHistoricalData(70, 15),
-          sentimentHistory: generateMockHistoricalData(8, 1).map(item => ({
-            ...item,
-            value: Math.round(item.value * 10) / 10 // Round to 1 decimal
-          })),
-          positionHistory: generateMockHistoricalData(5, 3),
+          visibilityHistory: generateHistoricalData(visibilityScore, 'visibility'),
+          sentimentHistory: generateHistoricalData(sentimentScore, 'sentiment'),
+          positionHistory: generateHistoricalData(positionScore, 'position'),
           suggestions: generateMockSuggestions(productData.title),
           competitors: generateMockCompetitors(),
           currentMetrics: {
-            visibility: Math.random() > 0.5 ? "High" : Math.random() > 0.5 ? "Medium" : "Low",
-            sentiment: Math.random() > 0.5 ? "Positive" : Math.random() > 0.5 ? "Neutral" : "Negative",
-            position: Math.floor(Math.random() * 10) + 1
+            visibility: getVisibilityLevel(visibilityScore),
+            sentiment: getSentimentLevel(sentimentScore),
+            position: positionScore || 5
           }
         };
 
-        setProduct(mockProduct);
+        setProduct(enhancedProduct);
       } catch (error: any) {
         console.error("Error fetching product:", error);
         toast({
@@ -307,7 +352,7 @@ Stay focused during calls with noise cancellation and enjoy music during breaks 
             className="hover:bg-muted"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
+            Back to Products
           </Button>
         </div>
 
