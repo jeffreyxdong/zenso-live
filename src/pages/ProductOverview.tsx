@@ -43,84 +43,155 @@ interface Competitor {
   visibilityScore: number;
 }
 
-// Mock product data
-const mockProduct: Product = {
-  id: "1",
-  name: "Wireless Bluetooth Headphones - Premium Sound Quality",
-  slug: "wireless-bluetooth-headphones-premium",
-  status: "active",
-  currentMetrics: {
-    visibility: "High",
-    sentiment: "Positive", 
-    position: 3
+// Mock product data mapping
+const mockProducts: Record<string, Product> = {
+  "3a3b17c4-b668-4990-a9bb-0e00346ec454": {
+    id: "3a3b17c4-b668-4990-a9bb-0e00346ec454",
+    name: "Organic Cotton T-Shirt - Sustainable Fashion",
+    slug: "organic-cotton-t-shirt-sustainable",
+    status: "active",
+    currentMetrics: {
+      visibility: "Medium",
+      sentiment: "Positive", 
+      position: 7
+    },
+    visibilityHistory: [
+      { date: "2024-01-01", value: 45 },
+      { date: "2024-01-02", value: 52 },
+      { date: "2024-01-03", value: 48 },
+      { date: "2024-01-04", value: 65 },
+      { date: "2024-01-05", value: 58 },
+      { date: "2024-01-06", value: 62 },
+      { date: "2024-01-07", value: 68 }
+    ],
+    sentimentHistory: [
+      { date: "2024-01-01", value: 8.1 },
+      { date: "2024-01-02", value: 8.3 },
+      { date: "2024-01-03", value: 7.9 },
+      { date: "2024-01-04", value: 8.5 },
+      { date: "2024-01-05", value: 8.2 },
+      { date: "2024-01-06", value: 8.7 },
+      { date: "2024-01-07", value: 8.9 }
+    ],
+    positionHistory: [
+      { date: "2024-01-01", value: 12 },
+      { date: "2024-01-02", value: 10 },
+      { date: "2024-01-03", value: 11 },
+      { date: "2024-01-04", value: 8 },
+      { date: "2024-01-05", value: 9 },
+      { date: "2024-01-06", value: 7 },
+      { date: "2024-01-07", value: 7 }
+    ],
+    suggestions: [
+      {
+        id: "s1",
+        title: "Highlight Sustainability Certifications",
+        description: "Add GOTS and OEKO-TEX certifications to product description for better eco-conscious visibility",
+        type: "description",
+        estimatedImpact: "High",
+        status: "pending"
+      },
+      {
+        id: "s2", 
+        title: "Generate Care Instructions FAQ",
+        description: "Create detailed care guide FAQ to reduce returns and improve customer satisfaction",
+        type: "faq",
+        estimatedImpact: "Medium",
+        status: "pending"
+      },
+      {
+        id: "s3",
+        title: "Add Sustainable Product Schema",
+        description: "Implement sustainability-focused structured data to improve visibility in eco searches",
+        type: "schema", 
+        estimatedImpact: "High",
+        status: "pending"
+      }
+    ],
+    competitors: [
+      { id: "c1", name: "Patagonia Basic Tee", position: 1, visibilityScore: 92 },
+      { id: "c2", name: "Everlane Organic Cotton Crew", position: 3, visibilityScore: 85 },
+      { id: "c3", name: "Pact Organic Cotton Tee", position: 5, visibilityScore: 78 }
+    ]
   },
-  visibilityHistory: [
-    { date: "2024-01-01", value: 65 },
-    { date: "2024-01-02", value: 72 },
-    { date: "2024-01-03", value: 68 },
-    { date: "2024-01-04", value: 85 },
-    { date: "2024-01-05", value: 78 },
-    { date: "2024-01-06", value: 82 },
-    { date: "2024-01-07", value: 88 }
-  ],
-  sentimentHistory: [
-    { date: "2024-01-01", value: 7.2 },
-    { date: "2024-01-02", value: 7.8 },
-    { date: "2024-01-03", value: 7.5 },
-    { date: "2024-01-04", value: 8.1 },
-    { date: "2024-01-05", value: 7.9 },
-    { date: "2024-01-06", value: 8.3 },
-    { date: "2024-01-07", value: 8.5 }
-  ],
-  positionHistory: [
-    { date: "2024-01-01", value: 8 },
-    { date: "2024-01-02", value: 6 },
-    { date: "2024-01-03", value: 7 },
-    { date: "2024-01-04", value: 4 },
-    { date: "2024-01-05", value: 5 },
-    { date: "2024-01-06", value: 3 },
-    { date: "2024-01-07", value: 3 }
-  ],
-  suggestions: [
-    {
-      id: "s1",
-      title: "Optimize Product Description with Key Features",
-      description: "Add structured bullet points highlighting battery life, sound quality, and comfort features to improve AI visibility",
-      type: "description",
-      estimatedImpact: "High",
-      status: "pending"
+  "default": {
+    id: "1",
+    name: "Wireless Bluetooth Headphones - Premium Sound Quality",
+    slug: "wireless-bluetooth-headphones-premium",
+    status: "active",
+    currentMetrics: {
+      visibility: "High",
+      sentiment: "Positive", 
+      position: 3
     },
-    {
-      id: "s2", 
-      title: "Generate FAQ Section",
-      description: "Create comprehensive FAQ covering shipping, warranty, and compatibility questions",
-      type: "faq",
-      estimatedImpact: "Medium",
-      status: "pending"
-    },
-    {
-      id: "s3",
-      title: "Add Product Review Schema",
-      description: "Implement structured data markup to enhance visibility in AI search results",
-      type: "schema", 
-      estimatedImpact: "High",
-      status: "pending"
-    },
-    {
-      id: "s4",
-      title: "Enhance Content with Use Cases",
-      description: "Add specific use case scenarios (gaming, commuting, fitness) to improve search relevance",
-      type: "content",
-      estimatedImpact: "Medium",
-      status: "pending"
-    }
-  ],
-  competitors: [
-    { id: "c1", name: "Sony WH-1000XM4", position: 1, visibilityScore: 95 },
-    { id: "c2", name: "Bose QuietComfort 35", position: 2, visibilityScore: 89 },
-    { id: "c3", name: "Apple AirPods Max", position: 4, visibilityScore: 82 },
-    { id: "c4", name: "Sennheiser Momentum 4", position: 5, visibilityScore: 76 }
-  ]
+    visibilityHistory: [
+      { date: "2024-01-01", value: 65 },
+      { date: "2024-01-02", value: 72 },
+      { date: "2024-01-03", value: 68 },
+      { date: "2024-01-04", value: 85 },
+      { date: "2024-01-05", value: 78 },
+      { date: "2024-01-06", value: 82 },
+      { date: "2024-01-07", value: 88 }
+    ],
+    sentimentHistory: [
+      { date: "2024-01-01", value: 7.2 },
+      { date: "2024-01-02", value: 7.8 },
+      { date: "2024-01-03", value: 7.5 },
+      { date: "2024-01-04", value: 8.1 },
+      { date: "2024-01-05", value: 7.9 },
+      { date: "2024-01-06", value: 8.3 },
+      { date: "2024-01-07", value: 8.5 }
+    ],
+    positionHistory: [
+      { date: "2024-01-01", value: 8 },
+      { date: "2024-01-02", value: 6 },
+      { date: "2024-01-03", value: 7 },
+      { date: "2024-01-04", value: 4 },
+      { date: "2024-01-05", value: 5 },
+      { date: "2024-01-06", value: 3 },
+      { date: "2024-01-07", value: 3 }
+    ],
+    suggestions: [
+      {
+        id: "s1",
+        title: "Optimize Product Description with Key Features",
+        description: "Add structured bullet points highlighting battery life, sound quality, and comfort features to improve AI visibility",
+        type: "description",
+        estimatedImpact: "High",
+        status: "pending"
+      },
+      {
+        id: "s2", 
+        title: "Generate FAQ Section",
+        description: "Create comprehensive FAQ covering shipping, warranty, and compatibility questions",
+        type: "faq",
+        estimatedImpact: "Medium",
+        status: "pending"
+      },
+      {
+        id: "s3",
+        title: "Add Product Review Schema",
+        description: "Implement structured data markup to enhance visibility in AI search results",
+        type: "schema", 
+        estimatedImpact: "High",
+        status: "pending"
+      },
+      {
+        id: "s4",
+        title: "Enhance Content with Use Cases",
+        description: "Add specific use case scenarios (gaming, commuting, fitness) to improve search relevance",
+        type: "content",
+        estimatedImpact: "Medium",
+        status: "pending"
+      }
+    ],
+    competitors: [
+      { id: "c1", name: "Sony WH-1000XM4", position: 1, visibilityScore: 95 },
+      { id: "c2", name: "Bose QuietComfort 35", position: 2, visibilityScore: 89 },
+      { id: "c3", name: "Apple AirPods Max", position: 4, visibilityScore: 82 },
+      { id: "c4", name: "Sennheiser Momentum 4", position: 5, visibilityScore: 76 }
+    ]
+  }
 };
 
 const ProductOverview = () => {
@@ -138,7 +209,9 @@ const ProductOverview = () => {
       setLoading(true);
       // Mock API delay
       await new Promise(resolve => setTimeout(resolve, 500));
-      setProduct(mockProduct);
+      // Get product based on productId, fallback to default
+      const selectedProduct = mockProducts[productId || ""] || mockProducts["default"];
+      setProduct(selectedProduct);
       setLoading(false);
     };
 
