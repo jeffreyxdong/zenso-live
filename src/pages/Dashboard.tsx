@@ -17,7 +17,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import BrandMentions from "@/components/BrandMentions";
+
 import { PromptsTab } from "@/components/PromptsTab";
 import MyProducts from "@/components/MyProducts";
 import AddStoreModal from "@/components/AddStoreModal";
