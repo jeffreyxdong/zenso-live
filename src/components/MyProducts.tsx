@@ -11,6 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Store, Package, Download, Plus, Search, CheckCircle, AlertCircle, Image, Trash2, MoreVertical, Eye, TrendingUp, MapPin, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -662,7 +663,21 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                   onCheckedChange={handleSelectAll}
                 />
               </TableHead>
-              <TableHead>Product</TableHead>
+              <TableHead>
+                <div className="flex items-center gap-2">
+                  Product
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Eye className="w-3 h-3 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Click any product row to view detailed analytics</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              </TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Visibility</TableHead>
               <TableHead>Sentiment</TableHead>
@@ -672,82 +687,93 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
           </TableHeader>
           <TableBody>
             {filteredProducts.map((product) => (
-              <TableRow 
-                key={product.id} 
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleProductClick(product)}
-              >
-                <TableCell onClick={(e) => e.stopPropagation()}>
-                  <Checkbox
-                    checked={selectedProducts.includes(product.id)}
-                    onCheckedChange={(checked) => handleSelectProduct(product.id, !!checked)}
-                  />
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
-                      {product.images && product.images[0] ? (
-                        <img
-                          src={product.images[0].src}
-                          alt={product.title}
-                          className="w-10 h-10 object-cover rounded"
+              <TooltipProvider key={product.id}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <TableRow 
+                      className="cursor-pointer hover:bg-muted/50 hover:shadow-md transition-all duration-200 group"
+                      onClick={() => handleProductClick(product)}
+                    >
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={selectedProducts.includes(product.id)}
+                          onCheckedChange={(checked) => handleSelectProduct(product.id, !!checked)}
                         />
-                      ) : (
-                        <Package className="w-5 h-5 text-muted-foreground" />
-                      )}
-                    </div>
-                    <div>
-                      <div className="font-medium">{product.title}</div>
-                      <div className="text-sm text-muted-foreground">{product.handle}</div>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      product.status === "active" 
-                        ? "default" 
-                        : product.status === "draft" 
-                        ? "secondary" 
-                        : "outline"
-                    }
-                  >
-                    {product.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {getVisibilityBadge(product.visibility_score)}
-                </TableCell>
-                <TableCell>
-                  {getSentimentBadge(product.sentiment_score)}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1">
-                    <MapPin className="w-3 h-3 text-muted-foreground" />
-                    <span className="text-sm font-medium">
-                      {product.position_score ? `#${product.position_score}` : 'No Data'}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => handleDeleteSingle(product.id)}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Delete Product
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
+                            {product.images && product.images[0] ? (
+                              <img
+                                src={product.images[0].src}
+                                alt={product.title}
+                                className="w-10 h-10 object-cover rounded"
+                              />
+                            ) : (
+                              <Package className="w-5 h-5 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{product.title}</span>
+                              <Eye className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                            <div className="text-sm text-muted-foreground">{product.handle}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            product.status === "active" 
+                              ? "default" 
+                              : product.status === "draft" 
+                              ? "secondary" 
+                              : "outline"
+                          }
+                        >
+                          {product.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {getVisibilityBadge(product.visibility_score)}
+                      </TableCell>
+                      <TableCell>
+                        {getSentimentBadge(product.sentiment_score)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-sm font-medium">
+                            {product.position_score ? `#${product.position_score}` : 'No Data'}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteSingle(product.id)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete Product
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>Click to view detailed analytics and performance metrics</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             ))}
           </TableBody>
         </Table>
