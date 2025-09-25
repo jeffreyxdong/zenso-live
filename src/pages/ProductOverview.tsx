@@ -53,6 +53,35 @@ interface Competitor {
   visibilityScore: number;
 }
 
+// Generate historical data from actual product scores database records
+const generateScoreHistoryFromData = (scoresData: any[], scoreField: 'visibility_score' | 'sentiment_score' | 'position_score') => {
+  const data = [];
+  const today = new Date();
+  
+  // Create a map of dates to scores for easy lookup
+  const scoreMap = new Map();
+  scoresData.forEach(score => {
+    const dateKey = new Date(score.created_at).toDateString();
+    scoreMap.set(dateKey, score[scoreField] || 0);
+  });
+  
+  // Generate 7 days of data
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const dateKey = date.toDateString();
+    
+    const value = scoreMap.get(dateKey) || (i === 0 && scoresData.length > 0 ? scoresData[scoresData.length - 1][scoreField] : null);
+    
+    data.push({
+      date: date.toISOString().split('T')[0],
+      value: value
+    });
+  }
+  
+  return data;
+};
+
 // Generate historical data based on actual scores
 const generateHistoricalData = (currentScore: number | null, type: 'visibility' | 'sentiment' | 'position', createdAt: string) => {
   const data = [];
@@ -226,10 +255,26 @@ const ProductOverview = () => {
 
         if (productError) throw productError;
 
-        // Generate analytics data based on actual product scores
-        const visibilityScore = productData.visibility_score || 0;
-        const sentimentScore = productData.sentiment_score || 0;
-        const positionScore = productData.position_score || 0;
+        // Fetch the most recent 7 days of product scores
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+        const { data: scoresData, error: scoresError } = await supabase
+          .from("product_scores")
+          .select("*")
+          .eq("product_id", productId)
+          .gte("created_at", sevenDaysAgo.toISOString())
+          .order("created_at", { ascending: true });
+
+        if (scoresError) {
+          console.error("Error fetching scores:", scoresError);
+        }
+
+        // Use the latest scores or fallback to product table scores
+        const latestScore = scoresData && scoresData.length > 0 ? scoresData[scoresData.length - 1] : null;
+        const visibilityScore = latestScore?.visibility_score || productData.visibility_score || 0;
+        const sentimentScore = latestScore?.sentiment_score || productData.sentiment_score || 0;
+        const positionScore = latestScore?.position_score || productData.position_score || 0;
         
         // Convert scores to display formats
         const getVisibilityLevel = (score: number): "High" | "Medium" | "Low" => {
@@ -243,13 +288,26 @@ const ProductOverview = () => {
           if (score >= 4) return "Neutral";
           return "Negative";
         };
+
+        // Generate history data from actual scores or fallback to mock data
+        const visibilityHistory = scoresData && scoresData.length > 0 
+          ? generateScoreHistoryFromData(scoresData, 'visibility_score')
+          : generateHistoricalData(visibilityScore, 'visibility', productData.created_at);
+          
+        const sentimentHistory = scoresData && scoresData.length > 0
+          ? generateScoreHistoryFromData(scoresData, 'sentiment_score') 
+          : generateHistoricalData(sentimentScore, 'sentiment', productData.created_at);
+          
+        const positionHistory = scoresData && scoresData.length > 0
+          ? generateScoreHistoryFromData(scoresData, 'position_score')
+          : generateHistoricalData(positionScore, 'position', productData.created_at);
         
         const enhancedProduct: Product = {
           ...productData,
           status: (productData.status as "active" | "draft" | "archived") || "active",
-          visibilityHistory: generateHistoricalData(visibilityScore, 'visibility', productData.created_at),
-          sentimentHistory: generateHistoricalData(sentimentScore, 'sentiment', productData.created_at),
-          positionHistory: generateHistoricalData(positionScore, 'position', productData.created_at),
+          visibilityHistory,
+          sentimentHistory, 
+          positionHistory,
           suggestions: generateMockSuggestions(productData.title),
           competitors: generateMockCompetitors(),
           currentMetrics: {

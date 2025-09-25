@@ -177,6 +177,20 @@ Deno.serve(async (req) => {
           }
         }
 
+        // Create initial product score entry
+        const { error: scoreError } = await supabaseAdmin
+          .from('product_scores')
+          .insert({
+            product_id: product.id,
+            visibility_score: Math.floor(Math.random() * 100) + 1,
+            sentiment_score: Math.floor(Math.random() * 100) + 1,
+            position_score: Math.floor(Math.random() * 100) + 1
+          });
+
+        if (scoreError) {
+          console.error(`Error creating initial score for ${item.title}:`, scoreError);
+        }
+
         importedCount++;
       } catch (error) {
         console.error(`Error processing product ${item.title}:`, error);

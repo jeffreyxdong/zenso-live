@@ -277,6 +277,20 @@ Deno.serve(async (req) => {
           }
         }
 
+        // Create initial product score entry
+        const { error: scoreError } = await supabase
+          .from('product_scores')
+          .insert({
+            product_id: productData.id,
+            visibility_score: Math.floor(Math.random() * 100) + 1,
+            sentiment_score: Math.floor(Math.random() * 100) + 1,
+            position_score: Math.floor(Math.random() * 100) + 1
+          });
+
+        if (scoreError) {
+          console.error(`Error creating initial score for ${shopifyProduct.title}:`, scoreError);
+        }
+
         importedCount++;
       } catch (error) {
         console.error(`Error processing product ${shopifyProduct.title}:`, error);

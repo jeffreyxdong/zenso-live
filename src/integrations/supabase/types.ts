@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      product_scores: {
+        Row: {
+          created_at: string
+          id: string
+          position_score: number | null
+          product_id: string
+          sentiment_score: number | null
+          updated_at: string
+          visibility_score: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          position_score?: number | null
+          product_id: string
+          sentiment_score?: number | null
+          updated_at?: string
+          visibility_score?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          position_score?: number | null
+          product_id?: string
+          sentiment_score?: number | null
+          updated_at?: string
+          visibility_score?: number | null
+        }
+        Relationships: []
+      }
       product_variants: {
         Row: {
           compare_at_price: number | null
