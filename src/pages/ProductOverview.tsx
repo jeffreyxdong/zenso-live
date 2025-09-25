@@ -83,18 +83,22 @@ const generateHistoricalData = (currentScore: number | null, type: 'visibility' 
         finalValue = actualScore;
       }
       
-      if (i === 0) {
-        // Today shows the actual score
-        value = finalValue;
-      } else {
-        // Previous days show a gradual rise from 0 to the final value
-        const progress = (7 - i) / 7; // Progress from 0 to 1
+      // Calculate how many days ago the product was created relative to current loop date
+      const daysSinceCreatedFromCurrentDate = Math.floor((date.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysSinceCreatedFromCurrentDate < -1) {
+        // Days before the day prior to creation - no data
+        value = null;
+      } else if (daysSinceCreatedFromCurrentDate === -1) {
+        // Day before creation - start from 0 (or baseline for position)
         if (type === 'position') {
-          // For position, start from a higher baseline since position 0 doesn't make sense
-          value = Math.round(10 - (10 - finalValue) * progress);
+          value = 20; // High baseline for position since lower is better
         } else {
-          value = Math.round(finalValue * progress);
+          value = 0;
         }
+      } else if (daysSinceCreatedFromCurrentDate >= 0) {
+        // Creation day onwards - show actual score
+        value = finalValue;
       }
     } else {
       // For older products, generate historical data
