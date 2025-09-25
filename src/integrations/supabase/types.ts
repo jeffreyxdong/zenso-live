@@ -390,7 +390,28 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      product_scores_with_titles: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          position_score: number | null
+          product_handle: string | null
+          product_id: string | null
+          product_title: string | null
+          sentiment_score: number | null
+          updated_at: string | null
+          visibility_score: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_product_scores_product_id"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       [_ in never]: never
