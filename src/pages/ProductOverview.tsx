@@ -381,181 +381,153 @@ Stay focused during calls with noise cancellation and enjoy music during breaks 
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => navigate("/dashboard?tab=products-overview")}
-            className="hover:bg-muted"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Products
-          </Button>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">{product.title}</h1>
-            <p className="text-muted-foreground mt-1">Product handle: {product.handle}</p>
-          </div>
-          <Badge 
-            variant={product.status === "active" ? "default" : "secondary"}
-            className="capitalize"
-          >
-            {product.status}
-          </Badge>
-        </div>
-
-        {/* Metrics Cards */}
-        <ProductMetrics metrics={product.currentMetrics} />
-
-        {/* Charts */}
-        <ProductCharts 
-          visibilityData={product.visibilityHistory}
-          sentimentData={product.sentimentHistory}
-          positionData={product.positionHistory}
-        />
-
-        {/* Suggestions */}
-        <SuggestionsList 
-          suggestions={product.suggestions}
-          onGenerateContent={handleGenerateContent}
-        />
-
-        {/* Sources Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Globe className="h-5 w-5 text-primary" />
-              Sources
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-lg border">
-              <div className="grid grid-cols-4 gap-4 p-4 bg-muted/50 border-b font-medium text-sm">
-                <div>Domain</div>
-                <div>Used</div>
-                <div>Avg. Citations</div>
-                <div>Type</div>
-              </div>
-              <div className="divide-y">
-                <div className="grid grid-cols-4 gap-4 p-4 items-center">
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded bg-orange-500 flex items-center justify-center">
-                      <div className="w-3 h-3 bg-white rounded-full"></div>
-                    </div>
-                    <span className="font-medium">reddit.com</span>
-                  </div>
-                  <div>100%</div>
-                  <div>2.0</div>
-                  <div>
-                    <Badge variant="secondary">Other</Badge>
-                  </div>
-                </div>
-                <div className="grid grid-cols-4 gap-4 p-4 items-center">
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded bg-red-600 flex items-center justify-center">
-                      <div className="w-3 h-3 bg-white rounded-sm"></div>
-                    </div>
-                    <span className="font-medium">youtube.com</span>
-                  </div>
-                  <div>100%</div>
-                  <div>0.0</div>
-                  <div>
-                    <Badge variant="secondary">Other</Badge>
-                  </div>
-                </div>
-                <div className="grid grid-cols-4 gap-4 p-4 items-center">
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded bg-gray-400 flex items-center justify-center">
-                      <div className="w-3 h-3 bg-white rounded-full"></div>
-                    </div>
-                    <span className="font-medium">blendjet.com</span>
-                  </div>
-                  <div>50%</div>
-                  <div>3.0</div>
-                  <div>
-                    <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100">You</Badge>
-                  </div>
-                </div>
-                <div className="grid grid-cols-4 gap-4 p-4 items-center">
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded bg-green-600 flex items-center justify-center text-white text-xs font-bold">
-                      CR
-                    </div>
-                    <span className="font-medium">consumerreports.org</span>
-                  </div>
-                  <div>50%</div>
-                  <div>3.0</div>
-                  <div>
-                    <Badge variant="secondary">Other</Badge>
-                  </div>
-                </div>
-                <div className="grid grid-cols-4 gap-4 p-4 items-center">
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded bg-green-500 flex items-center justify-center">
-                      <div className="w-3 h-3 bg-white rounded-full"></div>
-                    </div>
-                    <span className="font-medium">realfoodtraveler.com</span>
-                  </div>
-                  <div>50%</div>
-                  <div>1.0</div>
-                  <div>
-                    <Badge variant="secondary">Other</Badge>
-                  </div>
-                </div>
-                <div className="grid grid-cols-4 gap-4 p-4 items-center">
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded bg-red-500 flex items-center justify-center text-white text-xs font-bold">
-                      R
-                    </div>
-                    <span className="font-medium">rtings.com</span>
-                  </div>
-                  <div>50%</div>
-                  <div>2.0</div>
-                  <div>
-                    <Badge variant="secondary">Other</Badge>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Competitors Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              Top Competitors
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {product.competitors.map((competitor, index) => (
-                <div key={competitor.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium">
-                      #{competitor.position}
-                    </div>
-                    <div>
-                      <h3 className="font-medium">{competitor.name}</h3>
-                      <p className="text-sm text-muted-foreground">Position #{competitor.position}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-medium">{competitor.visibilityScore}%</div>
-                    <div className="text-sm text-muted-foreground">Visibility Score</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={() => navigate("/dashboard?tab=products-overview")}
+          className="hover:bg-muted"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Products
+        </Button>
       </div>
+
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">{product.title}</h1>
+          <p className="text-muted-foreground mt-1">Product handle: {product.handle}</p>
+        </div>
+        <Badge 
+          variant={product.status === "active" ? "default" : "secondary"}
+          className="capitalize"
+        >
+          {product.status}
+        </Badge>
+      </div>
+
+      {/* Metrics Cards */}
+      <ProductMetrics metrics={product.currentMetrics} />
+
+      {/* Charts */}
+      <ProductCharts 
+        visibilityData={product.visibilityHistory}
+        sentimentData={product.sentimentHistory}
+        positionData={product.positionHistory}
+      />
+
+      {/* Suggestions */}
+      <SuggestionsList 
+        suggestions={product.suggestions}
+        onGenerateContent={handleGenerateContent}
+      />
+
+      {/* Sources Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Globe className="h-5 w-5 text-primary" />
+            Sources
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border">
+            <div className="grid grid-cols-4 gap-4 p-4 bg-muted/50 border-b font-medium text-sm">
+              <div>Domain</div>
+              <div>Used</div>
+              <div>Avg. Citations</div>
+              <div>Type</div>
+            </div>
+            <div className="divide-y">
+              <div className="grid grid-cols-4 gap-4 p-4 items-center">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded bg-orange-500 flex items-center justify-center">
+                    <div className="w-3 h-3 bg-white rounded-full"></div>
+                  </div>
+                  <span className="font-medium">reddit.com</span>
+                </div>
+                <div>100%</div>
+                <div>2.0</div>
+                <div>
+                  <Badge variant="secondary">Other</Badge>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 gap-4 p-4 items-center">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded bg-red-600 flex items-center justify-center">
+                    <div className="w-3 h-3 bg-white rounded-sm"></div>
+                  </div>
+                  <span className="font-medium">youtube.com</span>
+                </div>
+                <div>100%</div>
+                <div>0.0</div>
+                <div>
+                  <Badge variant="secondary">Other</Badge>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 gap-4 p-4 items-center">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded bg-gray-400 flex items-center justify-center">
+                    <div className="w-3 h-3 bg-white rounded-full"></div>
+                  </div>
+                  <span className="font-medium">blendjet.com</span>
+                </div>
+                <div>50%</div>
+                <div>3.0</div>
+                <div>
+                  <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100">You</Badge>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 gap-4 p-4 items-center">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded bg-green-600 flex items-center justify-center text-white text-xs font-bold">
+                    CR
+                  </div>
+                  <span className="font-medium">consumerreports.org</span>
+                </div>
+                <div>50%</div>
+                <div>3.0</div>
+                <div>
+                  <Badge variant="secondary">Other</Badge>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Competitors Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            Top Competitors
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {product.competitors.map((competitor, index) => (
+              <div key={competitor.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium">
+                    #{competitor.position}
+                  </div>
+                  <div>
+                    <h3 className="font-medium">{competitor.name}</h3>
+                    <p className="text-sm text-muted-foreground">Position #{competitor.position}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-medium">{competitor.visibilityScore}%</div>
+                  <div className="text-sm text-muted-foreground">Visibility Score</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Preview Modal */}
       <PreviewModal 
