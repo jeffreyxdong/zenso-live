@@ -67,24 +67,35 @@ const generateHistoricalData = (currentScore: number | null, type: 'visibility' 
     
     let value: number | null = null;
     
-    // If product was created within the last 2 days, only show current day's data
+    // If product was created within the last 2 days, show rise from 0
     if (daysSinceCreated <= 2) {
+      const actualScore = currentScore || 0;
+      let finalValue: number;
+      
+      // Apply constraints based on type to get the final target value
+      if (type === 'visibility') {
+        finalValue = Math.max(0, Math.min(100, actualScore));
+      } else if (type === 'sentiment') {
+        finalValue = Math.max(0, Math.min(10, actualScore));
+      } else if (type === 'position') {
+        finalValue = Math.max(1, Math.min(20, actualScore || 5));
+      } else {
+        finalValue = actualScore;
+      }
+      
       if (i === 0) {
-        // Only show today's actual score for new products
-        const actualScore = currentScore || 0;
-        
-        // Apply constraints based on type
-        if (type === 'visibility') {
-          value = Math.max(0, Math.min(100, actualScore));
-        } else if (type === 'sentiment') {
-          value = Math.max(0, Math.min(10, actualScore));
-        } else if (type === 'position') {
-          value = Math.max(1, Math.min(20, actualScore || 5));
+        // Today shows the actual score
+        value = finalValue;
+      } else {
+        // Previous days show a gradual rise from 0 to the final value
+        const progress = (7 - i) / 7; // Progress from 0 to 1
+        if (type === 'position') {
+          // For position, start from a higher baseline since position 0 doesn't make sense
+          value = Math.round(10 - (10 - finalValue) * progress);
         } else {
-          value = actualScore;
+          value = Math.round(finalValue * progress);
         }
       }
-      // Other days remain null for new products
     } else {
       // For older products, generate historical data
       let baseValue = currentScore || 0;
