@@ -301,21 +301,20 @@ ${allResponsesText}`;
           console.log(`Calculated scores for product: ${productTitle}`);
           console.log(`Visibility: ${visibilityScore}, Position: ${positionScore}, Sentiment: ${sentimentScore}`);
     
-          // Update the product with all three scores
-          const { data: updatedProduct, error: updateError } = await supabase
-            .from('products')
-            .update({ 
+          // Insert scores into product_scores table
+          const { error: scoreError } = await supabase
+            .from('product_scores')
+            .insert({
+              product_id: productId,
               visibility_score: visibilityScore,
               position_score: positionScore,
               sentiment_score: sentimentScore
-            })
-            .eq('id', productId)
-            .select();
+            });
     
-          if (updateError) {
-            console.error('Failed to update product scores:', updateError);
+          if (scoreError) {
+            console.error('Failed to insert product scores:', scoreError);
           } else {
-            console.log(`Updated product ${productId} with comprehensive scores`);
+            console.log(`Inserted scores for product ${productId} into product_scores table`);
           }
         } catch (parseError) {
           console.error('Failed to parse scoring response:', scoresText);
