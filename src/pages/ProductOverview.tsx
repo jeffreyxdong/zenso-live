@@ -279,16 +279,16 @@ const ProductOverview = () => {
         const sentimentScore = latestScore?.sentiment_score || productData.sentiment_score || 0;
         const positionScore = latestScore?.position_score || productData.position_score || 0;
         
-        // Convert scores to display formats
+        // Convert scores to display formats using consistent thresholds
         const getVisibilityLevel = (score: number): "High" | "Medium" | "Low" => {
-          if (score >= 70) return "High";
-          if (score >= 40) return "Medium";
+          if (score >= 80) return "High";
+          if (score >= 60) return "Medium";
           return "Low";
         };
         
         const getSentimentLevel = (score: number): "Positive" | "Neutral" | "Negative" => {
-          if (score >= 7) return "Positive";
-          if (score >= 4) return "Neutral";
+          if (score >= 70) return "Positive";
+          if (score >= 30) return "Neutral";
           return "Negative";
         };
 
