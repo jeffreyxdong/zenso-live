@@ -55,6 +55,7 @@ const ProductCharts = ({ visibilityData, sentimentData, positionData }: ProductC
                   strokeWidth={2}
                   dot={{ fill: 'hsl(var(--primary))', strokeWidth: 0, r: 4 }}
                   activeDot={{ r: 6 }}
+                  connectNulls={true}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -104,6 +105,7 @@ const ProductCharts = ({ visibilityData, sentimentData, positionData }: ProductC
                   strokeWidth={2}
                   dot={{ fill: 'hsl(var(--success))', strokeWidth: 0, r: 4 }}
                   activeDot={{ r: 6 }}
+                  connectNulls={true}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -154,6 +156,7 @@ const ProductCharts = ({ visibilityData, sentimentData, positionData }: ProductC
                   strokeWidth={2}
                   dot={{ fill: 'hsl(var(--primary))', strokeWidth: 0, r: 4 }}
                   activeDot={{ r: 6 }}
+                  connectNulls={true}
                 />
               </LineChart>
             </ResponsiveContainer>
