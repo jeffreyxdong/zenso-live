@@ -405,11 +405,11 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                             }}
                           />
                           <Line 
-                            type="monotone" 
+                            type="basis" 
                             dataKey="score" 
                             stroke="hsl(var(--primary))"
                             strokeWidth={2}
-                            connectNulls={false}
+                            connectNulls={true}
                             dot={(props) => {
                               const { payload } = props;
                               if (payload && payload.score !== null) {
@@ -498,11 +498,11 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
                             }}
                           />
                           <Line 
-                            type="monotone" 
+                            type="basis" 
                             dataKey="score" 
                             stroke="hsl(var(--primary))"
                             strokeWidth={2}
-                            connectNulls={false}
+                            connectNulls={true}
                             dot={(props) => {
                               const { payload } = props;
                               if (payload && payload.score !== null) {
