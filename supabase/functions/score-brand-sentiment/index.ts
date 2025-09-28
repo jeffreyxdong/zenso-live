@@ -8,35 +8,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Reuse existing assistant ID for sentiment scoring
+const SENTIMENT_ASSISTANT_ID = 'asst_sentiment_scorer_001'; // You would create this once and store the real ID
+
 // Helper function for Assistants API workflow
 async function scoreSentimentWithAssistant(content: string, brandName: string): Promise<number> {
-  // Create assistant for sentiment scoring
-  const assistantResponse = await fetch('https://api.openai.com/v1/assistants', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-      'OpenAI-Beta': 'assistants=v2',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      name: 'Sentiment Scoring Assistant',
-      instructions: `You are an expert sentiment analysis tool. Analyze the sentiment towards a brand and provide a score of 1-100 where:
-- 90-100: Extremely positive sentiment (highly recommended, praised, top choice)
-- 70-89: Positive sentiment (recommended, good option, mentioned favorably) 
-- 30-69: Neutral sentiment (mentioned factually without strong opinion)
-- 10-29: Negative sentiment (not recommended, criticized, poor option)
-- 1-9: Very negative sentiment (strongly criticized, warned against)
-
-Respond with ONLY a number between 1-100, nothing else.`,
-    }),
-  });
-
-  if (!assistantResponse.ok) {
-    throw new Error(`Failed to create assistant: ${assistantResponse.status}`);
-  }
-
-  const assistant = await assistantResponse.json();
+  // Use existing assistant ID instead of creating new one
 
   // Create thread
   const threadResponse = await fetch('https://api.openai.com/v1/threads', {
@@ -80,7 +57,7 @@ ${content}`,
       'OpenAI-Beta': 'assistants=v2',
     },
     body: JSON.stringify({
-      assistant_id: assistant.id,
+      assistant_id: SENTIMENT_ASSISTANT_ID,
     }),
   });
 

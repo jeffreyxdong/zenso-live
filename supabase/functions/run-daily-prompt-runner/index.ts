@@ -14,28 +14,12 @@ const geminiApiKey = Deno.env.get('GEMINI_API_KEY')!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// Reuse existing assistant ID for daily prompt responses
+const DAILY_PROMPT_ASSISTANT_ID = 'asst_daily_prompt_001'; // You would create this once and store the real ID
+
 // Helper function for OpenAI Assistants API workflow
 async function generateWithAssistant(prompt: string): Promise<string> {
-  // Create assistant for prompt responses
-  const assistantResponse = await fetch('https://api.openai.com/v1/assistants', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-      'OpenAI-Beta': 'assistants=v2',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      name: 'Daily Prompt Response Assistant',
-      instructions: 'You are a helpful assistant that provides informative responses.',
-    }),
-  });
-
-  if (!assistantResponse.ok) {
-    throw new Error(`Failed to create assistant: ${assistantResponse.status}`);
-  }
-
-  const assistant = await assistantResponse.json();
+  // Use existing assistant ID instead of creating new one
 
   // Create thread
   const threadResponse = await fetch('https://api.openai.com/v1/threads', {
@@ -77,7 +61,7 @@ async function generateWithAssistant(prompt: string): Promise<string> {
       'OpenAI-Beta': 'assistants=v2',
     },
     body: JSON.stringify({
-      assistant_id: assistant.id,
+      assistant_id: DAILY_PROMPT_ASSISTANT_ID,
     }),
   });
 
