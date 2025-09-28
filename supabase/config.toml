@@ -150,6 +150,15 @@ verify_jwt = false
 [functions.get-shopify-config]
 verify_jwt = false
 
+[functions.generate-buyer-intent-prompts]
+verify_jwt = false
+
+[functions.generate-buyer-intent-outputs]
+verify_jwt = false
+
+[functions.score-buyer-intent-outputs]
+verify_jwt = false
+
 [storage]
 enabled = true
 port = 54322
