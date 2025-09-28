@@ -475,7 +475,6 @@ Stay focused during calls with noise cancellation and enjoy music during breaks 
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">{product.title}</h1>
-          <p className="text-muted-foreground mt-1">Product handle: {product.handle}</p>
         </div>
         <Badge 
           variant={product.status === "active" ? "default" : "secondary"}
