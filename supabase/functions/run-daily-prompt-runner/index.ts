@@ -14,119 +14,6 @@ const geminiApiKey = Deno.env.get('GEMINI_API_KEY')!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Helper function for OpenAI Assistants API workflow
-async function generateWithAssistant(prompt: string): Promise<string> {
-  // Create assistant for this request
-  const assistantResponse = await fetch('https://api.openai.com/v1/assistants', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-      'OpenAI-Beta': 'assistants=v2',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      instructions: 'You are a helpful assistant that provides informative responses.',
-    }),
-  });
-
-  if (!assistantResponse.ok) {
-    throw new Error(`Failed to create assistant: ${assistantResponse.status}`);
-  }
-
-  const assistant = await assistantResponse.json();
-
-  // Create thread
-  const threadResponse = await fetch('https://api.openai.com/v1/threads', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-      'OpenAI-Beta': 'assistants=v2',
-    },
-    body: JSON.stringify({}),
-  });
-
-  if (!threadResponse.ok) {
-    throw new Error(`Failed to create thread: ${threadResponse.status}`);
-  }
-
-  const thread = await threadResponse.json();
-
-  // Add message to thread
-  await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-      'OpenAI-Beta': 'assistants=v2',
-    },
-    body: JSON.stringify({
-      role: 'user',
-      content: prompt,
-    }),
-  });
-
-  // Start run
-  const runResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-      'OpenAI-Beta': 'assistants=v2',
-    },
-    body: JSON.stringify({
-      assistant_id: assistant.id,
-    }),
-  });
-
-  if (!runResponse.ok) {
-    throw new Error(`Failed to start run: ${runResponse.status}`);
-  }
-
-  const run = await runResponse.json();
-
-  // Poll for completion
-  let runStatus = run;
-  while (runStatus.status === 'in_progress' || runStatus.status === 'queued') {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const statusResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs/${run.id}`, {
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'OpenAI-Beta': 'assistants=v2',
-      },
-    });
-
-    if (!statusResponse.ok) {
-      throw new Error(`Failed to check run status: ${statusResponse.status}`);
-    }
-
-    runStatus = await statusResponse.json();
-  }
-
-  if (runStatus.status === 'failed') {
-    throw new Error(`Run failed: ${runStatus.last_error?.message}`);
-  }
-
-  // Get messages
-  const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'OpenAI-Beta': 'assistants=v2',
-    },
-  });
-
-  if (!messagesResponse.ok) {
-    throw new Error(`Failed to get messages: ${messagesResponse.status}`);
-  }
-
-  const messages = await messagesResponse.json();
-  const lastMessage = messages.data[0];
-  
-  return lastMessage.content[0].text.value;
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -156,15 +43,34 @@ serve(async (req) => {
         // Run prompt through both AI models
         const responses = [];
         
-        // OpenAI using Assistants API
+        // OpenAI
         try {
-          const responseText = await generateWithAssistant(prompt.content);
-          responses.push({
-            model: 'openai',
-            text: responseText,
-            sources: extractSources(responseText)
+          const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openAIApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o-mini',
+              messages: [
+                { role: 'system', content: 'You are a helpful assistant that provides informative responses.' },
+                { role: 'user', content: prompt.content }
+              ],
+              max_tokens: 1000
+            }),
           });
-          console.log('OpenAI response generated successfully');
+
+          if (openaiResponse.ok) {
+            const data = await openaiResponse.json();
+            const responseText = data.choices[0].message.content;
+            responses.push({
+              model: 'openai',
+              text: responseText,
+              sources: extractSources(responseText)
+            });
+            console.log('OpenAI response generated successfully');
+          }
         } catch (error) {
           console.error('OpenAI API error:', error);
         }

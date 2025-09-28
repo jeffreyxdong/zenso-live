@@ -11,119 +11,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Helper function for OpenAI Assistants API workflow
-async function generateWithAssistant(prompt: string, instructions: string, model = 'gpt-4o-mini'): Promise<string> {
-  // Create assistant for this request
-  const assistantResponse = await fetch('https://api.openai.com/v1/assistants', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-      'OpenAI-Beta': 'assistants=v2',
-    },
-    body: JSON.stringify({
-      model,
-      instructions,
-    }),
-  });
-
-  if (!assistantResponse.ok) {
-    throw new Error(`Failed to create assistant: ${assistantResponse.status}`);
-  }
-
-  const assistant = await assistantResponse.json();
-
-  // Create thread
-  const threadResponse = await fetch('https://api.openai.com/v1/threads', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-      'OpenAI-Beta': 'assistants=v2',
-    },
-    body: JSON.stringify({}),
-  });
-
-  if (!threadResponse.ok) {
-    throw new Error(`Failed to create thread: ${threadResponse.status}`);
-  }
-
-  const thread = await threadResponse.json();
-
-  // Add message to thread
-  await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-      'OpenAI-Beta': 'assistants=v2',
-    },
-    body: JSON.stringify({
-      role: 'user',
-      content: prompt,
-    }),
-  });
-
-  // Start run
-  const runResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-      'OpenAI-Beta': 'assistants=v2',
-    },
-    body: JSON.stringify({
-      assistant_id: assistant.id,
-    }),
-  });
-
-  if (!runResponse.ok) {
-    throw new Error(`Failed to start run: ${runResponse.status}`);
-  }
-
-  const run = await runResponse.json();
-
-  // Poll for completion
-  let runStatus = run;
-  while (runStatus.status === 'in_progress' || runStatus.status === 'queued') {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const statusResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs/${run.id}`, {
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'OpenAI-Beta': 'assistants=v2',
-      },
-    });
-
-    if (!statusResponse.ok) {
-      throw new Error(`Failed to check run status: ${statusResponse.status}`);
-    }
-
-    runStatus = await statusResponse.json();
-  }
-
-  if (runStatus.status === 'failed') {
-    throw new Error(`Run failed: ${runStatus.last_error?.message}`);
-  }
-
-  // Get messages
-  const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'OpenAI-Beta': 'assistants=v2',
-    },
-  });
-
-  if (!messagesResponse.ok) {
-    throw new Error(`Failed to get messages: ${messagesResponse.status}`);
-  }
-
-  const messages = await messagesResponse.json();
-  const lastMessage = messages.data[0];
-  
-  return lastMessage.content[0].text.value;
-}
-
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -162,10 +49,29 @@ Requirements:
 
 Return ONLY a JSON array of 15 strings, no additional formatting or explanation.`;
 
-    const generatedContent = await generateWithAssistant(
-      systemPrompt,
-      'You are an expert e-commerce copywriter specializing in buyer-intent keywords. Generate exactly 15 specific buyer-intent prompts as a JSON array of strings.'
-    );
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt }
+        ],
+        max_tokens: 800,
+        temperature: 0.7,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('OpenAI API error:', response.status, await response.text());
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const generatedContent = data.choices[0].message.content;
 
     console.log('Generated content:', generatedContent);
 
@@ -270,36 +176,48 @@ Return ONLY a JSON array of 15 strings, no additional formatting or explanation.
     
     console.log(`Successfully generated and saved ${insertedPrompts.length} buyer-intent prompts`);
     
-    // STEP 2: Generate responses for each prompt using Assistants API
+    // STEP 2: Generate responses for each prompt (sequentially)
     const responses = [];
     
     for (const prompt of insertedPrompts) {
       console.log(`Generating response for prompt ${prompt.id}...`);
-      
-      try {
-        const responseText = await generateWithAssistant(
-          prompt.content,
-          'You are a helpful assistant that provides informative responses to user queries.'
-        );
+      const promptResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: prompt.content }],
+          max_tokens: 500,
+          temperature: 0.7,
+        }),
+      });
     
-        // Save each response
-        const { data: storedResponse, error: responseError } = await supabase
-          .from('prompt_responses')
-          .insert({
-            prompt_id: prompt.id,
-            response_text: responseText,
-            model_name: 'gpt-4o-mini'
-          })
-          .select()
-          .single();
+      if (!promptResponse.ok) {
+        console.error(`Failed to get response for prompt ${prompt.id}:`, promptResponse.status);
+        continue;
+      }
     
-        if (responseError) {
-          console.error(`Failed to store response for prompt ${prompt.id}:`, responseError);
-        } else {
-          responses.push(storedResponse);
-        }
-      } catch (error) {
-        console.error(`Failed to generate response for prompt ${prompt.id}:`, error);
+      const promptData = await promptResponse.json();
+      const responseText = promptData.choices[0].message.content;
+    
+      // Save each response
+      const { data: storedResponse, error: responseError } = await supabase
+        .from('prompt_responses')
+        .insert({
+          prompt_id: prompt.id,
+          response_text: responseText,
+          model_name: 'gpt-4o-mini'
+        })
+        .select()
+        .single();
+    
+      if (responseError) {
+        console.error(`Failed to store response for prompt ${prompt.id}:`, responseError);
+      } else {
+        responses.push(storedResponse);
       }
     }
     
@@ -347,46 +265,63 @@ Return ONLY a JSON object with this format:
 
 Responses to analyze:
 ${allResponsesText}`;
-      
-      try {
-        const scoresText = await generateWithAssistant(
-          comprehensiveScoringPrompt,
-          'You are a scoring analyst that returns JSON objects with numeric scores.'
-        );
+    
+      const scoringResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: comprehensiveScoringPrompt }],
+          max_tokens: 100,
+          temperature: 0.1,
+        }),
+      });
+    
+      if (scoringResponse.ok) {
+        const scoringData = await scoringResponse.json();
+        const scoresText = scoringData.choices[0].message.content.trim();
         
-        // Parse the JSON response
-        let cleanedScores = scoresText.trim();
-        if (cleanedScores.startsWith('```json')) {
-          cleanedScores = cleanedScores.replace(/^```json\s*/i, '').replace(/\s*```$/, '');
-        } else if (cleanedScores.startsWith('```')) {
-          cleanedScores = cleanedScores.replace(/^```\s*/, '').replace(/\s*```$/, '');
+        try {
+          // Parse the JSON response
+          let cleanedScores = scoresText;
+          if (cleanedScores.startsWith('```json')) {
+            cleanedScores = cleanedScores.replace(/^```json\s*/i, '').replace(/\s*```$/, '');
+          } else if (cleanedScores.startsWith('```')) {
+            cleanedScores = cleanedScores.replace(/^```\s*/, '').replace(/\s*```$/, '');
+          }
+          
+          const scores = JSON.parse(cleanedScores);
+          const visibilityScore = parseInt(scores.visibility_score) || 0;
+          const positionScore = parseInt(scores.position_score) || 0;
+          const sentimentScore = parseInt(scores.sentiment_score) || 0;
+    
+          console.log(`Calculated scores for product: ${productTitle}`);
+          console.log(`Visibility: ${visibilityScore}, Position: ${positionScore}, Sentiment: ${sentimentScore}`);
+    
+          // Insert scores into product_scores table
+          const { error: scoreError } = await supabase
+            .from('product_scores')
+            .insert({
+              product_id: productId,
+              visibility_score: visibilityScore,
+              position_score: positionScore,
+              sentiment_score: sentimentScore
+            });
+    
+          if (scoreError) {
+            console.error('Failed to insert product scores:', scoreError);
+          } else {
+            console.log(`Inserted scores for product ${productId} into product_scores table`);
+          }
+        } catch (parseError) {
+          console.error('Failed to parse scoring response:', scoresText);
+          console.error('Parse error:', parseError);
         }
-        
-        const scores = JSON.parse(cleanedScores);
-        const visibilityScore = parseInt(scores.visibility_score) || 0;
-        const positionScore = parseInt(scores.position_score) || 0;
-        const sentimentScore = parseInt(scores.sentiment_score) || 0;
-  
-        console.log(`Calculated scores for product: ${productTitle}`);
-        console.log(`Visibility: ${visibilityScore}, Position: ${positionScore}, Sentiment: ${sentimentScore}`);
-  
-        // Insert scores into product_scores table
-        const { error: scoreError } = await supabase
-          .from('product_scores')
-          .insert({
-            product_id: productId,
-            visibility_score: visibilityScore,
-            position_score: positionScore,
-            sentiment_score: sentimentScore
-          });
-  
-        if (scoreError) {
-          console.error('Failed to insert product scores:', scoreError);
-        } else {
-          console.log(`Inserted scores for product ${productId} into product_scores table`);
-        }
-      } catch (parseError) {
-        console.error('Failed to parse scoring response or generate scores:', parseError);
+      } else {
+        console.error('Failed to calculate comprehensive scores:', scoringResponse.status);
       }
     }
     
