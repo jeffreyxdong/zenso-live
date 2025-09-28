@@ -55,20 +55,40 @@ serve(async (req) => {
         'OpenAI-Beta': 'assistants=v2',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        name: 'Buyer Intent Prompt Generator',
-        instructions: `You are an expert e-commerce copywriter specializing in buyer-intent keywords. Generate 15 specific, actionable buyer-intent prompts that potential customers would use when they're ready to purchase products.
+        model: 'gpt-5-2025-08-07',
+        name: 'Advanced Buyer Intent Prompt Generator',
+        instructions: `You are an expert e-commerce researcher and copywriter specializing in high-converting buyer-intent search queries. Your task is to generate 15 highly specific, actionable buyer-intent prompts that capture real customer search behavior when they're ready to make a purchase.
 
-Requirements:
-1. Each prompt should be 3-15 words long
-2. Focus on buyer-intent keywords (buy, purchase, best, reviews, deals, where to buy, etc.)
-3. Include variations with and without brand names
-4. Include price-focused queries
-5. Include comparison queries
-6. Include urgent/immediate purchase intent
-7. Make them specific to the product type and features
+CRITICAL REQUIREMENTS:
+1. Length: Each prompt must be 4-20 words to match real search patterns
+2. Intent Focus: All prompts must show clear purchase intent using power words like:
+   - Transaction: buy, purchase, order, get, shop for
+   - Comparison: best, top, vs, compare, alternative to
+   - Reviews/Social Proof: reviews, ratings, testimonials, recommended
+   - Location/Availability: where to buy, near me, in stock, available
+   - Price/Deals: cheap, discount, sale, price, cost, deals
+   - Urgency: now, today, immediate, fast shipping
 
-Return ONLY a JSON array of 15 strings, no additional formatting or explanation.`,
+3. Specificity Levels:
+   - 5 prompts with exact brand/product name
+   - 5 prompts with product category + features
+   - 5 prompts with comparative or generic terms
+
+4. Real Search Patterns:
+   - Include natural language variations
+   - Mix question formats ("where can I buy...") with statement formats ("buy X online")
+   - Include mobile-friendly shorter queries
+   - Add location-based and urgency modifiers
+
+5. Buyer Journey Stages:
+   - Research phase: "best X reviews 2024"
+   - Comparison phase: "X vs Y which is better"
+   - Purchase phase: "buy X with free shipping"
+   - Immediate need: "X in stock near me"
+
+RESPONSE FORMAT: Return ONLY a clean JSON array of exactly 15 strings. No markdown, no explanations, no additional text.
+
+Example format: ["buy [product] online with warranty", "best [category] deals this month", ...]`,
       }),
     });
 
