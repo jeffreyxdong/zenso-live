@@ -11,14 +11,27 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Reuse existing assistant IDs 
-const BUYER_INTENT_ASSISTANT_ID = 'asst_buyer_intent_001'; // For generating prompts
-const RESPONSE_ASSISTANT_ID = 'asst_response_gen_001'; // For generating responses 
-const SCORING_ASSISTANT_ID = 'asst_scoring_001'; // For scoring
-
 // Helper function for OpenAI Assistants API workflow
-async function generateWithAssistant(prompt: string, assistantId: string): Promise<string> {
-  // Use existing assistant ID instead of creating new one
+async function generateWithAssistant(prompt: string, instructions: string, model = 'gpt-4o-mini'): Promise<string> {
+  // Create assistant for this request
+  const assistantResponse = await fetch('https://api.openai.com/v1/assistants', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAIApiKey}`,
+      'Content-Type': 'application/json',
+      'OpenAI-Beta': 'assistants=v2',
+    },
+    body: JSON.stringify({
+      model,
+      instructions,
+    }),
+  });
+
+  if (!assistantResponse.ok) {
+    throw new Error(`Failed to create assistant: ${assistantResponse.status}`);
+  }
+
+  const assistant = await assistantResponse.json();
 
   // Create thread
   const threadResponse = await fetch('https://api.openai.com/v1/threads', {
@@ -60,7 +73,7 @@ async function generateWithAssistant(prompt: string, assistantId: string): Promi
       'OpenAI-Beta': 'assistants=v2',
     },
     body: JSON.stringify({
-      assistant_id: assistantId,
+      assistant_id: assistant.id,
     }),
   });
 
@@ -151,7 +164,7 @@ Return ONLY a JSON array of 15 strings, no additional formatting or explanation.
 
     const generatedContent = await generateWithAssistant(
       systemPrompt,
-      BUYER_INTENT_ASSISTANT_ID
+      'You are an expert e-commerce copywriter specializing in buyer-intent keywords. Generate exactly 15 specific buyer-intent prompts as a JSON array of strings.'
     );
 
     console.log('Generated content:', generatedContent);
@@ -266,7 +279,7 @@ Return ONLY a JSON array of 15 strings, no additional formatting or explanation.
       try {
         const responseText = await generateWithAssistant(
           prompt.content,
-          RESPONSE_ASSISTANT_ID
+          'You are a helpful assistant that provides informative responses to user queries.'
         );
     
         // Save each response
@@ -338,7 +351,7 @@ ${allResponsesText}`;
       try {
         const scoresText = await generateWithAssistant(
           comprehensiveScoringPrompt,
-          SCORING_ASSISTANT_ID
+          'You are a scoring analyst that returns JSON objects with numeric scores.'
         );
         
         // Parse the JSON response

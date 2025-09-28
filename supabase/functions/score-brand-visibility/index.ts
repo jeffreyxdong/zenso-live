@@ -8,12 +8,33 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Reuse existing assistant ID for visibility scoring
-const VISIBILITY_ASSISTANT_ID = 'asst_visibility_scorer_001'; // You would create this once and store the real ID
-
 // Helper function for Assistants API workflow
 async function scoreVisibilityWithAssistant(content: string, brandName: string): Promise<number> {
-  // Use existing assistant ID instead of creating new one
+  // Create assistant for visibility scoring
+  const assistantResponse = await fetch('https://api.openai.com/v1/assistants', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAIApiKey}`,
+      'Content-Type': 'application/json',
+      'OpenAI-Beta': 'assistants=v2',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      instructions: `You are an expert research analyst. Provide a visibility score of 1-100 based on how prominently and visibly a brand is featured. Consider factors like:
+- Position in the content (earlier mentions score higher)
+- Context of the mention (positive context, recommendations score higher)
+- Frequency of mentions
+- Overall prominence in the response
+
+Respond with ONLY a number between 1-100, nothing else.`,
+    }),
+  });
+
+  if (!assistantResponse.ok) {
+    throw new Error(`Failed to create assistant: ${assistantResponse.status}`);
+  }
+
+  const assistant = await assistantResponse.json();
 
   // Create thread
   const threadResponse = await fetch('https://api.openai.com/v1/threads', {
@@ -57,7 +78,7 @@ ${content}`,
       'OpenAI-Beta': 'assistants=v2',
     },
     body: JSON.stringify({
-      assistant_id: VISIBILITY_ASSISTANT_ID,
+      assistant_id: assistant.id,
     }),
   });
 

@@ -8,12 +8,27 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Reuse existing assistant ID (created once, stored here)
-const ASSISTANT_ID = 'asst_chat_assistant_001'; // You would create this once and store the real ID
-
 // Helper function for Assistants API workflow
 async function generateWithAssistant(prompt: string): Promise<string> {
-  // Use existing assistant ID instead of creating new one
+  // Create assistant for this request
+  const assistantResponse = await fetch('https://api.openai.com/v1/assistants', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAIApiKey}`,
+      'Content-Type': 'application/json',
+      'OpenAI-Beta': 'assistants=v2',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      instructions: 'You are a helpful assistant that generates content based on user prompts.',
+    }),
+  });
+
+  if (!assistantResponse.ok) {
+    throw new Error(`Failed to create assistant: ${assistantResponse.status}`);
+  }
+
+  const assistant = await assistantResponse.json();
 
   // Create thread
   const threadResponse = await fetch('https://api.openai.com/v1/threads', {
@@ -55,7 +70,7 @@ async function generateWithAssistant(prompt: string): Promise<string> {
       'OpenAI-Beta': 'assistants=v2',
     },
     body: JSON.stringify({
-      assistant_id: ASSISTANT_ID,
+      assistant_id: assistant.id,
     }),
   });
 

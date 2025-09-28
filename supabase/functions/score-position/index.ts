@@ -8,12 +8,36 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Reuse existing assistant ID for position scoring
-const POSITION_ASSISTANT_ID = 'asst_position_scorer_001'; // You would create this once and store the real ID
-
 // Helper function for Assistants API workflow
 async function scorePositionWithAssistant(content: string, brandName: string): Promise<number> {
-  // Use existing assistant ID instead of creating new one
+  // Create assistant for position scoring
+  const assistantResponse = await fetch('https://api.openai.com/v1/assistants', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAIApiKey}`,
+      'Content-Type': 'application/json',
+      'OpenAI-Beta': 'assistants=v2',
+    },
+    body: JSON.stringify({
+      model: 'gpt-5-2025-08-07',
+      instructions: `You are an expert at analyzing brand positioning in AI responses. Determine ranking position when brands appear in lists, recommendations, or comparisons.
+
+Rules for scoring:
+- If the brand appears in a numbered list, return that number (e.g., if it's #3 in a list, return 3)
+- If the brand appears in an unnumbered list, count its position from the top (1st mention = 1, 2nd mention = 2, etc.)  
+- If the brand is mentioned as "the best" or "top choice" without a list, return 1
+- If the brand is mentioned alongside others but not in a clear ranking, estimate position based on context
+- If the brand is mentioned negatively or as a poor option, return a higher number (8-10)
+
+Respond with ONLY a number (1-10), nothing else.`,
+    }),
+  });
+
+  if (!assistantResponse.ok) {
+    throw new Error(`Failed to create assistant: ${assistantResponse.status}`);
+  }
+
+  const assistant = await assistantResponse.json();
 
   // Create thread
   const threadResponse = await fetch('https://api.openai.com/v1/threads', {
@@ -57,7 +81,7 @@ ${content}`,
       'OpenAI-Beta': 'assistants=v2',
     },
     body: JSON.stringify({
-      assistant_id: POSITION_ASSISTANT_ID,
+      assistant_id: assistant.id,
     }),
   });
 
