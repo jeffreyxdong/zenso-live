@@ -160,10 +160,16 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
 
       if (variantError) throw variantError;
 
-      // Generate buyer-intent prompts for the new product
+      // Generate buyer-intent prompts and responses for the new product
       try {
         const { data: session } = await supabase.auth.getSession();
         if (session?.session) {
+          const authHeaders = {
+            Authorization: `Bearer ${session.session.access_token}`,
+          };
+
+          // Step 1: Generate buyer-intent prompts
+          console.log('Generating buyer-intent prompts...');
           await supabase.functions.invoke('generate-buyer-intent-prompts', {
             body: {
               productId: productData.id,
@@ -173,14 +179,33 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
               vendor: data.vendor,
               tags: tags
             },
-            headers: {
-              Authorization: `Bearer ${session.session.access_token}`,
-            },
+            headers: authHeaders,
           });
+
+          // Step 2: Generate responses for the prompts
+          console.log('Generating responses for prompts...');
+          await supabase.functions.invoke('generate-buyer-intent-outputs', {
+            body: {
+              productId: productData.id,
+            },
+            headers: authHeaders,
+          });
+
+          // Step 3: Score the responses
+          console.log('Scoring the generated responses...');
+          await supabase.functions.invoke('score-buyer-intent-outputs', {
+            body: {
+              productId: productData.id,
+              productTitle: data.title,
+            },
+            headers: authHeaders,
+          });
+
+          console.log('Buyer-intent analysis pipeline completed successfully');
         }
       } catch (promptError) {
-        console.error('Error generating prompts:', promptError);
-        // Don't block product creation if prompt generation fails
+        console.error('Error in buyer-intent analysis pipeline:', promptError);
+        // Don't block product creation if analysis pipeline fails
       }
 
       toast({
