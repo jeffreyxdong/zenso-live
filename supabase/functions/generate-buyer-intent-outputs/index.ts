@@ -86,20 +86,22 @@ serve(async (req) => {
             "Authorization": `Bearer ${openAIApiKey}`,
             "Content-Type": "application/json",
           },
-          
           body: JSON.stringify({
             model: "gpt-4o",
+            tools: [{ type: "web_search" }],
+            tool_choice: { type: "web_search" }, // force search every time
             input: [
               {
                 role: "system",
-                content: "You are ChatGPT, a helpful assistant. Respond in a natural, conversational way — the same as ChatGPT would in chat.openai.com."
+                content:
+                  "You are ChatGPT, a helpful assistant. Always run a web search before answering. When recommending products, cite sources and base recommendations on up-to-date information."
               },
               {
                 role: "user",
                 content: prompt.content
               }
-            ]
-          }),    
+            ],
+          }),
         });
 
         if (!resp.ok) {
