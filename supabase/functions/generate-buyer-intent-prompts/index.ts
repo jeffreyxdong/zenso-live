@@ -46,124 +46,54 @@ serve(async (req) => {
       throw new Error('Invalid user token');
     }
 
-    // Create assistant
-    const assistantResponse = await fetch('https://api.openai.com/v1/assistants', {
+        // --------------------
+    // Responses API (replaces assistants + threads + runs)
+    // --------------------
+    const messageContent = `Generate buyer-intent prompts for this product:
+    - Title: ${productTitle}
+    - Type: ${productType || 'Not specified'}
+    - Vendor: ${vendor || 'Not specified'}
+    - Tags: ${tags?.join(', ') || 'Not specified'}`;
+    
+    const resp = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
-        name: 'Buyer Intent Prompt Generator',
+        // Same instructions you previously embedded in the assistant:
         instructions: `You are an expert e-commerce copywriter specializing in buyer-intent keywords. Generate 15 specific, actionable buyer-intent prompts that potential customers would use when they're ready to purchase products.
-
-Requirements:
-1. Each prompt should be 3-15 words long
-2. Focus on buyer-intent keywords (buy, purchase, best, reviews, deals, where to buy, etc.)
-3. Include variations with and without brand names
-4. Include price-focused queries
-5. Include comparison queries
-6. Include urgent/immediate purchase intent
-7. Make them specific to the product type and features
-
-Return ONLY a JSON array of 15 strings, no additional formatting or explanation.`,
-      }),
+    
+    Requirements:
+    1. Each prompt should be 3-15 words long
+    2. Focus on buyer-intent keywords (buy, purchase, best, reviews, deals, where to buy, etc.)
+    3. Include variations with and without brand names
+    4. Include price-focused queries
+    5. Include comparison queries
+    6. Include urgent/immediate purchase intent
+    7. Make them specific to the product type and features
+    
+    Return ONLY a JSON array of 15 strings, no additional formatting or explanation.`,
+        input: [
+          { role: 'user', content: messageContent }
+        ]
+      })
     });
-
-    if (!assistantResponse.ok) {
-      throw new Error(`Failed to create assistant: ${assistantResponse.status}`);
+    
+    if (!resp.ok) {
+      throw new Error(`OpenAI Responses API error: ${resp.status}`);
     }
+    
+    const respData = await resp.json();
+    // Prefer the convenience field if present; otherwise fall back to the raw structure.
+    const generatedContent =
+      respData.output_text ??
+      respData.output?.[0]?.content?.[0]?.text ??
+      '';
 
-    const assistant = await assistantResponse.json();
-
-    // Create thread
-    const threadResponse = await fetch('https://api.openai.com/v1/threads', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2',
-      },
-      body: JSON.stringify({}),
-    });
-
-    if (!threadResponse.ok) {
-      throw new Error(`Failed to create thread: ${threadResponse.status}`);
-    }
-
-    const thread = await threadResponse.json();
-
-    // Add message to thread
-    const messageContent = `Generate buyer-intent prompts for this product:
-- Title: ${productTitle}
-- Type: ${productType || 'Not specified'}
-- Vendor: ${vendor || 'Not specified'}
-- Tags: ${tags?.join(', ') || 'Not specified'}`;
-
-    await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2',
-      },
-      body: JSON.stringify({
-        role: 'user',
-        content: messageContent,
-      }),
-    });
-
-    // Start run
-    const runResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2',
-      },
-      body: JSON.stringify({
-        assistant_id: assistant.id,
-      }),
-    });
-
-    if (!runResponse.ok) {
-      throw new Error(`Failed to start run: ${runResponse.status}`);
-    }
-
-    const run = await runResponse.json();
-
-    // Poll for completion
-    let runStatus = run.status;
-    while (runStatus === 'queued' || runStatus === 'in_progress') {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const statusResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs/${run.id}`, {
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'OpenAI-Beta': 'assistants=v2',
-        },
-      });
-      
-      const statusData = await statusResponse.json();
-      runStatus = statusData.status;
-    }
-
-    if (runStatus !== 'completed') {
-      throw new Error(`Run failed with status: ${runStatus}`);
-    }
-
-    // Get messages
-    const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'OpenAI-Beta': 'assistants=v2',
-      },
-    });
-
-    const messagesData = await messagesResponse.json();
-    const generatedContent = messagesData.data[0].content[0].text.value;
+     
 
     console.log('Generated content:', generatedContent);
 
