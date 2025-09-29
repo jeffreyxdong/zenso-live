@@ -147,11 +147,7 @@ serve(async (req) => {
       throw new Error('Failed to parse AI response');
     }
 
-    if (!Array.isArray(prompts) || prompts.length < 10) {
-      console.error('Invalid prompts array:', prompts);
-      throw new Error(`Invalid response format from AI - expected array of 10-15 strings, got ${prompts?.length || 0}`);
-    }
-
+  
     console.log('Inserting prompts into database for user:', userData.user.id);
 
     // Insert prompts into database
