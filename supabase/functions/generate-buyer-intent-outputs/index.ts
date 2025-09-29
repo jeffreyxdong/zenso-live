@@ -73,14 +73,12 @@ serve(async (req) => {
     // Generate responses for each prompt (sequentially)
     const responses = [];
     
-    const responses = [];
-
     for (const prompt of prompts) {
       console.log(`Generating response for prompt ${prompt.id}...`);
       
       try {
         // --------------------
-        // Responses API with forced web_search
+        // Responses API (replaces assistants + threads + runs)
         // --------------------
         const resp = await fetch("https://api.openai.com/v1/responses", {
           method: "POST",
@@ -88,24 +86,21 @@ serve(async (req) => {
             "Authorization": `Bearer ${openAIApiKey}`,
             "Content-Type": "application/json",
           },
+          
           body: JSON.stringify({
             model: "gpt-4o",
-            tools: [{ type: "web_search" }],
-            tool_choice: { type: "web_search" }, // force search every time
             input: [
               {
                 role: "system",
-                content:
-                  "You are ChatGPT, a helpful assistant. Always run a web search before answering. Respond in a natural, conversational way — the same as ChatGPT would in chat.openai.com. Include clear sources for every recommendation."
+                content: "You are ChatGPT, a helpful assistant. Respond in a natural, conversational way — the same as ChatGPT would in chat.openai.com."
               },
               {
                 role: "user",
                 content: prompt.content
               }
             ]
-          }),
+          }),    
         });
-
 
         if (!resp.ok) {
           console.error(`Failed to generate response for prompt ${prompt.id}: ${resp.status}`);
