@@ -144,7 +144,7 @@ serve(async (req) => {
     console.log('Inserting prompts into database for user:', userData.user.id);
 
     // Insert prompts into database
-    const promptsToInsert = prompts.map(promptText => ({
+    const promptsToInsert = prompts.map((promptText: string) => ({
       user_id: userData.user.id,
       store_id: storeId,
       product_id: productId,
