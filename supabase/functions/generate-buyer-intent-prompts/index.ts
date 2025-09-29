@@ -55,37 +55,30 @@ serve(async (req) => {
     - Vendor: ${vendor || 'Not specified'}
     - Tags: ${tags?.join(', ') || 'Not specified'}`;
     
-    const resp = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
+        const resp = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json'
+        "Authorization": `Bearer ${openAIApiKey}`,
+        "Content-Type": "application/json",
       },
-          body: JSON.stringify({
-      model: 'gpt-4o',
-      input: [
-        { role: 'system', content: `You are an expert e-commerce copywriter specializing in buyer-intent keywords. 
-        Generate 5 specific, actionable buyer-intent search queries that potential customers would use when they're ready to purchase a product like this.
+      body: JSON.stringify({
+        model: "gpt-4o",
+        input: `You are an expert e-commerce copywriter. 
+    Generate 5 specific, actionable buyer-intent search queries that potential customers would use when they're ready to purchase a product like this.
     
-        Product Details:
-        - Title: ${productTitle}
-        - Type: ${productType || 'Not specified'}
-        - Vendor: ${vendor || 'Not specified'}
-        - Tags: ${tags?.join(', ') || 'Not specified'}
+    Product Details:
+    - Title: ${productTitle}
+    - Type: ${productType || "Not specified"}
+    - Vendor: ${vendor || "Not specified"}
+    - Tags: ${tags?.join(", ") || "Not specified"}
     
-        Requirements:
-        1. Each query should be 3–25 words.
-        2. Cover a wide range of buyer intents.
-        3. DO NOT mention the product in the query, but at least one must clearly allude to this specific product in a natural way.
-        4. Keep outputs diverse. Avoid repeating the same structure or intent.
-        5. Make them realistic queries real customers would type into Google.
-        6. Every prompt should be structured such that a product can be recommended in the output
-    
-        Return ONLY a JSON array of 5 strings, no additional formatting or explanation.` },
-        { role: 'user', content: messageContent }
-      ]
-    })
-
+    Requirements:
+    1. Each query should be 3–25 words.
+    2. Cover a wide range of buyer intents.
+    3. Do NOT explicitly mention the product title, but at least one query must allude to it naturally.
+    4. Keep outputs diverse and realistic.
+    5. Return ONLY a JSON array of 5 strings, no extra text.`
+      }),
     });
     
     if (!resp.ok) {
@@ -93,11 +86,12 @@ serve(async (req) => {
     }
     
     const respData = await resp.json();
-    // Prefer the convenience field if present; otherwise fall back to the raw structure.
+    console.log("Full response:", JSON.stringify(respData, null, 2));
+    
     const generatedContent =
       respData.output_text ??
       respData.output?.[0]?.content?.[0]?.text ??
-      '';
+      "";
 
      
 
