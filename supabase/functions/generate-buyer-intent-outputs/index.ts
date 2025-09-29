@@ -93,7 +93,7 @@ Respond directly to this prompt:
 
 ${prompt.content}
 
-Return a concise, relevant answer.`
+Return an answer.`
           }),
         });
 
