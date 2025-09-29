@@ -88,8 +88,7 @@ serve(async (req) => {
           },
           body: JSON.stringify({
             model: "gpt-4o",
-            input: `You are a helpful assistant that provides informative responses to product-related queries.
-Respond directly to this prompt:
+            input: `"You are ChatGPT, a helpful assistant. Respond in a natural, conversational way — the same as ChatGPT would in chat.openai.com."
 
 ${prompt.content}
 
