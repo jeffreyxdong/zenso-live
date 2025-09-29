@@ -70,26 +70,11 @@ serve(async (req) => {
 
     console.log(`Found ${prompts.length} prompts to generate responses for`);
 
-    // Create assistant for generating responses
-    const assistantResponse = await fetch('https://api.openai.com/v1/assistants', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        name: 'Response Generator',
-        instructions: 'You are a helpful assistant that provides informative responses to user queries about products and shopping.',
-      }),
-    });
-
-    if (!assistantResponse.ok) {
-      throw new Error(`Failed to create assistant: ${assistantResponse.status}`);
+    // Get assistant ID from environment variable
+    const assistantId = Deno.env.get('ASSISTANT_ID');
+    if (!assistantId) {
+      throw new Error('ASSISTANT_ID environment variable is not set');
     }
-
-    const assistant = await assistantResponse.json();
 
     // Generate responses for each prompt (sequentially)
     const responses = [];
@@ -139,7 +124,7 @@ serve(async (req) => {
             'OpenAI-Beta': 'assistants=v2',
           },
           body: JSON.stringify({
-            assistant_id: assistant.id,
+            assistant_id: assistantId,
           }),
         });
 
