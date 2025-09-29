@@ -1,6 +1,10 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
+
+const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const supabaseUrl = Deno.env.get('SUPABASE_URL');
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,6 +12,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -15,189 +20,134 @@ serve(async (req) => {
   try {
     const { productId } = await req.json();
 
-    const authHeader = req.headers.get('Authorization');
+    if (!productId) {
+      return new Response(JSON.stringify({ error: 'Product ID is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log('Generating responses for prompts of product:', productId);
+
+    // Get user ID from the request headers
+    const authHeader = req.headers.get('authorization');
     if (!authHeader) {
-      throw new Error('Missing authorization header');
+      throw new Error('Authorization header required');
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
-    const assistantId = Deno.env.get('ASSISTANT_ID');
+    // Create Supabase client
+    const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
 
-    if (!openaiApiKey) {
-      throw new Error('OPENAI_API_KEY environment variable is not set');
+    // Get user from token
+    const token = authHeader.replace('Bearer ', '');
+    const { data: userData, error: userError } = await supabase.auth.getUser(token);
+    
+    if (userError || !userData.user) {
+      throw new Error('Invalid user token');
     }
 
-    if (!assistantId) {
-      throw new Error('ASSISTANT_ID environment variable is not set');
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: {
-        headers: { Authorization: authHeader },
-      },
-    });
-
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      throw new Error('Unable to authenticate user');
-    }
-
+    // Fetch prompts for the product
     const { data: prompts, error: promptsError } = await supabase
       .from('prompts')
-      .select('id, content')
+      .select('*')
       .eq('product_id', productId)
-      .eq('user_id', user.id);
+      .eq('user_id', userData.user.id);
 
     if (promptsError) {
-      throw new Error(`Error fetching prompts: ${promptsError.message}`);
+      throw new Error(`Failed to fetch prompts: ${promptsError.message}`);
     }
 
     if (!prompts || prompts.length === 0) {
-      return new Response(
-        JSON.stringify({ success: true, message: 'No prompts found for this product' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: 'No prompts found for this product',
+        responsesGenerated: 0,
+        responses: []
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
+    console.log(`Found ${prompts.length} prompts to generate responses for`);
+
+    // Generate responses for each prompt (sequentially)
+    const responses = [];
+    
     for (const prompt of prompts) {
-      const threadResponse = await fetch('https://api.openai.com/v1/threads', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openaiApiKey}`,
-          'Content-Type': 'application/json',
-          'OpenAI-Beta': 'assistants=v2',
-        },
-        body: JSON.stringify({
-          messages: [
-            {
-              role: 'user',
-              content: prompt.content,
-            },
-          ],
-        }),
-      });
-
-      if (!threadResponse.ok) {
-        const errorText = await threadResponse.text();
-        console.error('Thread creation error:', errorText);
-        throw new Error(`Failed to create thread: ${errorText}`);
-      }
-
-      const thread = await threadResponse.json();
-      console.log('Thread created:', thread.id);
-
-      const runResponse = await fetch(
-        `https://api.openai.com/v1/threads/${thread.id}/runs`,
-        {
-          method: 'POST',
+      console.log(`Generating response for prompt ${prompt.id}...`);
+      
+      try {
+        // --------------------
+        // Responses API (replaces assistants + threads + runs)
+        // --------------------
+        const resp = await fetch("https://api.openai.com/v1/responses", {
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${openaiApiKey}`,
-            'Content-Type': 'application/json',
-            'OpenAI-Beta': 'assistants=v2',
+            "Authorization": `Bearer ${openAIApiKey}`,
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            assistant_id: assistantId,
+            model: "gpt-4o",
+            input: `You are a helpful assistant that provides informative responses to product-related queries.
+Respond directly to this prompt:
+
+${prompt.content}
+
+Return a concise, relevant answer.`
           }),
-        }
-      );
-
-      if (!runResponse.ok) {
-        const errorText = await runResponse.text();
-        console.error('Run creation error:', errorText);
-        throw new Error(`Failed to create run: ${errorText}`);
-      }
-
-      const run = await runResponse.json();
-      console.log('Run started:', run.id);
-
-      let runStatus = run.status;
-      let attempts = 0;
-      const maxAttempts = 60;
-
-      while (runStatus !== 'completed' && runStatus !== 'failed' && attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        const statusResponse = await fetch(
-          `https://api.openai.com/v1/threads/${thread.id}/runs/${run.id}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${openaiApiKey}`,
-              'OpenAI-Beta': 'assistants=v2',
-            },
-          }
-        );
-
-        const statusData = await statusResponse.json();
-        runStatus = statusData.status;
-        attempts++;
-
-        console.log(`Run status (attempt ${attempts}):`, runStatus);
-      }
-
-      if (runStatus === 'failed') {
-        console.error('Run failed');
-        continue;
-      }
-
-      if (runStatus !== 'completed') {
-        console.error('Run did not complete in time');
-        continue;
-      }
-
-      const messagesResponse = await fetch(
-        `https://api.openai.com/v1/threads/${thread.id}/messages`,
-        {
-          headers: {
-            'Authorization': `Bearer ${openaiApiKey}`,
-            'OpenAI-Beta': 'assistants=v2',
-          },
-        }
-      );
-
-      if (!messagesResponse.ok) {
-        console.error('Failed to fetch messages');
-        continue;
-      }
-
-      const messagesData = await messagesResponse.json();
-      const assistantMessage = messagesData.data.find(
-        (msg: any) => msg.role === 'assistant'
-      );
-
-      if (!assistantMessage || !assistantMessage.content || assistantMessage.content.length === 0) {
-        console.error('No assistant message found');
-        continue;
-      }
-
-      const responseText = assistantMessage.content[0].text.value;
-      console.log('AI Response:', responseText);
-
-      const { error: insertError } = await supabase
-        .from('prompt_responses')
-        .insert({
-          prompt_id: prompt.id,
-          user_id: user.id,
-          response: responseText,
         });
 
-      if (insertError) {
-        console.error('Error inserting prompt response:', insertError);
+        if (!resp.ok) {
+          console.error(`Failed to generate response for prompt ${prompt.id}: ${resp.status}`);
+          continue;
+        }
+
+        const respData = await resp.json();
+        console.log("Full response:", JSON.stringify(respData, null, 2));
+
+        const responseText =
+          respData.output_text ??
+          respData.output?.[0]?.content?.[0]?.text ??
+          "";
+
+        // Save each response
+        const { data: storedResponse, error: responseError } = await supabase
+          .from('prompt_responses')
+          .insert({
+            prompt_id: prompt.id,
+            response_text: responseText,
+            model_name: 'gpt-4o'
+          })
+          .select()
+          .single();
+
+        if (responseError) {
+          console.error(`Failed to store response for prompt ${prompt.id}:`, responseError);
+        } else {
+          responses.push(storedResponse);
+        }
+      } catch (promptError) {
+        console.error(`Error processing prompt ${prompt.id}:`, promptError);
+        continue;
       }
     }
-
-    return new Response(
-      JSON.stringify({ success: true, message: 'Buyer-intent outputs generated successfully' }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-
+    
+    console.log(`Generated ${responses.length}/${prompts.length} responses`);
+    
+    return new Response(JSON.stringify({ 
+      success: true, 
+      responsesGenerated: responses.length,
+      responses: responses,
+      message: 'Responses generated successfully'
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     console.error('Error in generate-buyer-intent-outputs function:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });
