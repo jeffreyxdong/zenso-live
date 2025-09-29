@@ -152,18 +152,6 @@ serve(async (req) => {
       throw new Error(`Invalid response format from AI - expected array of 10-15 strings, got ${prompts?.length || 0}`);
     }
 
-    // Ensure we have exactly 15 prompts
-    if (prompts.length < 15) {
-      console.log(`Got ${prompts.length} prompts, generating additional ones...`);
-      // Duplicate some prompts with slight variations if we have fewer than 15
-      while (prompts.length < 15 && prompts.length > 0) {
-        const randomPrompt = prompts[Math.floor(Math.random() * Math.min(prompts.length, 5))];
-        prompts.push(randomPrompt + ' deals');
-      }
-    } else if (prompts.length > 15) {
-      prompts = prompts.slice(0, 15);
-    }
-
     console.log('Inserting prompts into database for user:', userData.user.id);
 
     // Insert prompts into database
