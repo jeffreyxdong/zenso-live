@@ -72,6 +72,8 @@ serve(async (req) => {
 
     // Generate responses for each prompt (sequentially)
     const responses = [];
+    
+    const responses = [];
 
     for (const prompt of prompts) {
       console.log(`Generating response for prompt ${prompt.id}...`);
@@ -102,6 +104,8 @@ serve(async (req) => {
               }
             ]
           }),
+        });
+
 
         if (!resp.ok) {
           console.error(`Failed to generate response for prompt ${prompt.id}: ${resp.status}`);
