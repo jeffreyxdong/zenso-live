@@ -122,14 +122,22 @@ serve(async (req) => {
           responseText = respData.output_text;
         } else if (respData.output && Array.isArray(respData.output)) {
           for (const item of respData.output) {
-            if (item.content && Array.isArray(item.content)) {
+            if (item.type === "message" && item.content && Array.isArray(item.content)) {
               for (const block of item.content) {
                 if (block.type === "output_text" && block.text) {
                   responseText += block.text + "\n";
-                } else if (block.type === "message" && block.role === "assistant") {
-                  responseText += block.content?.map(c => c.text).join("\n") || "";
-                } else if (block.type === "citation") {
-                  sources.push(block);
+                  
+                  // Extract citations from annotations
+                  if (block.annotations && Array.isArray(block.annotations)) {
+                    for (const annotation of block.annotations) {
+                      if (annotation.type === "url_citation") {
+                        sources.push({
+                          title: annotation.title,
+                          url: annotation.url
+                        });
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -144,7 +152,8 @@ serve(async (req) => {
           .insert({
             prompt_id: prompt.id,
             response_text: responseText,
-            model_name: 'gpt-4o'
+            model_name: 'gpt-4o',
+            sources: sources.length > 0 ? sources : null
           })
           .select()
           .single();
