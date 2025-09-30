@@ -512,21 +512,21 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
   };
 
   const getVisibilityBadge = (score?: number) => {
-    if (!score) return <Badge variant="outline">No Data</Badge>;
+    if (score === null || score === undefined) return <Badge variant="outline">No Data</Badge>;
     if (score >= 80) return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">High</Badge>;
     if (score >= 60) return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Medium</Badge>;
     return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Low</Badge>;
   };
 
   const getSentimentBadge = (score?: number) => {
-    if (!score) return <Badge variant="outline">No Data</Badge>;
+    if (score === null || score === undefined) return <Badge variant="outline">No Data</Badge>;
     if (score >= 70) return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Positive</Badge>;
     if (score >= 30) return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Neutral</Badge>;
     return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Negative</Badge>;
   };
 
   const getPositionBadge = (score?: number) => {
-    if (!score) return <Badge variant="outline">No Data</Badge>;
+    if (score === null || score === undefined) return <Badge variant="outline">No Data</Badge>;
     if (score >= 80) return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">High</Badge>;
     if (score >= 60) return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Medium</Badge>;
     return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Low</Badge>;
@@ -957,7 +957,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                       <span className="font-medium">Visibility</span>
                     </div>
                     <div className="text-2xl font-bold mb-1">
-                      {selectedProduct.visibility_score || 'N/A'}%
+                      {selectedProduct.visibility_score !== null && selectedProduct.visibility_score !== undefined ? `${selectedProduct.visibility_score}` : 'N/A'}
                     </div>
                     {getVisibilityBadge(selectedProduct.visibility_score)}
                   </CardContent>
@@ -970,7 +970,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                       <span className="font-medium">Sentiment</span>
                     </div>
                     <div className="text-2xl font-bold mb-1">
-                      {selectedProduct.sentiment_score || 'N/A'}%
+                      {selectedProduct.sentiment_score !== null && selectedProduct.sentiment_score !== undefined ? `${selectedProduct.sentiment_score}` : 'N/A'}
                     </div>
                     {getSentimentBadge(selectedProduct.sentiment_score)}
                   </CardContent>
@@ -983,7 +983,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                       <span className="font-medium">Position</span>
                     </div>
                     <div className="text-2xl font-bold mb-1">
-                      {selectedProduct.position_score || 'N/A'}
+                      {selectedProduct.position_score !== null && selectedProduct.position_score !== undefined ? `${selectedProduct.position_score}` : 'N/A'}
                     </div>
                     {getPositionBadge(selectedProduct.position_score)}
                   </CardContent>
@@ -1024,25 +1024,25 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                     <div>
                       <div className="flex justify-between text-sm mb-1">
                         <span>Brand Visibility</span>
-                        <span>{selectedProduct.visibility_score}%</span>
+                        <span>{selectedProduct.visibility_score ?? 0}</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div 
                           className="bg-blue-600 h-2 rounded-full" 
-                          style={{ width: `${selectedProduct.visibility_score || 0}%` }}
+                          style={{ width: `${selectedProduct.visibility_score ?? 0}%` }}
                         ></div>
                       </div>
                     </div>
-                    
+
                     <div>
                       <div className="flex justify-between text-sm mb-1">
                         <span>Sentiment Score</span>
-                        <span>{selectedProduct.sentiment_score}%</span>
+                        <span>{selectedProduct.sentiment_score ?? 0}</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div 
                           className="bg-pink-600 h-2 rounded-full" 
-                          style={{ width: `${selectedProduct.sentiment_score || 0}%` }}
+                          style={{ width: `${selectedProduct.sentiment_score ?? 0}%` }}
                         ></div>
                       </div>
                     </div>
@@ -1050,12 +1050,12 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                     <div>
                       <div className="flex justify-between text-sm mb-1">
                         <span>Position Score</span>
-                        <span>{selectedProduct.position_score}%</span>
+                        <span>{selectedProduct.position_score ?? 0}</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div 
                           className="bg-green-600 h-2 rounded-full" 
-                          style={{ width: `${selectedProduct.position_score || 0}%` }}
+                          style={{ width: `${selectedProduct.position_score ?? 0}%` }}
                         ></div>
                       </div>
                     </div>
