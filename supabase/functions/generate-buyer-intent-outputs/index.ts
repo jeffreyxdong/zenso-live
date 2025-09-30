@@ -112,10 +112,31 @@ serve(async (req) => {
         const respData = await resp.json();
         console.log("Full response:", JSON.stringify(respData, null, 2));
 
-        const responseText =
-          respData.output_text ??
-          respData.output?.[0]?.content?.[0]?.text ??
-          "";
+        // --------------------
+        // Extract text + sources
+        // --------------------
+        let responseText = "";
+        let sources: any[] = [];
+
+        if (respData.output_text) {
+          responseText = respData.output_text;
+        } else if (respData.output && Array.isArray(respData.output)) {
+          for (const item of respData.output) {
+            if (item.content && Array.isArray(item.content)) {
+              for (const block of item.content) {
+                if (block.type === "output_text" && block.text) {
+                  responseText += block.text + "\n";
+                } else if (block.type === "message" && block.role === "assistant") {
+                  responseText += block.content?.map(c => c.text).join("\n") || "";
+                } else if (block.type === "citation") {
+                  sources.push(block);
+                }
+              }
+            }
+          }
+        }
+        responseText = responseText.trim();
+
 
         // Save each response
         const { data: storedResponse, error: responseError } = await supabase
