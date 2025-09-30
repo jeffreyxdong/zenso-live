@@ -52,8 +52,8 @@ const ProductMetrics = ({ metrics }: ProductMetricsProps) => {
         <CardContent>
           <div className="space-y-4">
             <div className="flex items-baseline gap-2">
-              <div className="text-5xl font-bold tracking-tight">{metrics.visibilityScore}</div>
-              <div className="text-2xl text-muted-foreground font-light">/100</div>
+              <div className="text-4xl font-bold tracking-tight tabular-nums">{metrics.visibilityScore}</div>
+              <div className="text-lg text-muted-foreground font-light">/100</div>
             </div>
             <div className="space-y-2">
               <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -83,8 +83,8 @@ const ProductMetrics = ({ metrics }: ProductMetricsProps) => {
         <CardContent>
           <div className="space-y-4">
             <div className="flex items-baseline gap-2">
-              <div className="text-5xl font-bold tracking-tight">{metrics.sentimentScore}</div>
-              <div className="text-2xl text-muted-foreground font-light">/100</div>
+              <div className="text-4xl font-bold tracking-tight tabular-nums">{metrics.sentimentScore}</div>
+              <div className="text-lg text-muted-foreground font-light">/100</div>
             </div>
             <div className="space-y-2">
               <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -114,8 +114,8 @@ const ProductMetrics = ({ metrics }: ProductMetricsProps) => {
         <CardContent>
           <div className="space-y-4">
             <div className="flex items-baseline gap-2">
-              <div className="text-5xl font-bold tracking-tight">{metrics.positionScore}</div>
-              <div className="text-2xl text-muted-foreground font-light">/100</div>
+              <div className="text-4xl font-bold tracking-tight tabular-nums">{metrics.positionScore}</div>
+              <div className="text-lg text-muted-foreground font-light">/100</div>
             </div>
             <div className="space-y-2">
               <div className="h-2 bg-muted rounded-full overflow-hidden">

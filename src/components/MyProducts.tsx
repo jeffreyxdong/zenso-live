@@ -515,24 +515,24 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
     const displayScore = score ?? 0;
     if (displayScore >= 80) {
       return (
-        <Badge className="bg-green-100 text-green-800 hover:bg-green-100 px-3 py-1">
-          <span className="text-lg font-bold">{displayScore}</span>
-          <span className="text-xs ml-1 opacity-70">/100</span>
+        <Badge className="bg-green-100 text-green-800 hover:bg-green-100 px-2 py-0.5 font-mono tabular-nums">
+          <span className="text-sm font-semibold">{displayScore}</span>
+          <span className="text-xs ml-0.5 opacity-60">/100</span>
         </Badge>
       );
     }
     if (displayScore >= 60) {
       return (
-        <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 px-3 py-1">
-          <span className="text-lg font-bold">{displayScore}</span>
-          <span className="text-xs ml-1 opacity-70">/100</span>
+        <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 px-2 py-0.5 font-mono tabular-nums">
+          <span className="text-sm font-semibold">{displayScore}</span>
+          <span className="text-xs ml-0.5 opacity-60">/100</span>
         </Badge>
       );
     }
     return (
-      <Badge className="bg-red-100 text-red-800 hover:bg-red-100 px-3 py-1">
-        <span className="text-lg font-bold">{displayScore}</span>
-        <span className="text-xs ml-1 opacity-70">/100</span>
+      <Badge className="bg-red-100 text-red-800 hover:bg-red-100 px-2 py-0.5 font-mono tabular-nums">
+        <span className="text-sm font-semibold">{displayScore}</span>
+        <span className="text-xs ml-0.5 opacity-60">/100</span>
       </Badge>
     );
   };
@@ -962,10 +962,10 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                       <span className="font-medium text-sm">Visibility</span>
                     </div>
                     <div className="flex items-baseline gap-2 mb-3">
-                      <div className="text-4xl font-bold tracking-tight">
+                      <div className="text-3xl font-bold tracking-tight tabular-nums">
                         {selectedProduct.visibility_score ?? 0}
                       </div>
-                      <div className="text-xl text-muted-foreground font-light">/100</div>
+                      <div className="text-lg text-muted-foreground font-light">/100</div>
                     </div>
                     <div className="h-2 bg-muted rounded-full overflow-hidden">
                       <div 
@@ -987,10 +987,10 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                       <span className="font-medium text-sm">Sentiment</span>
                     </div>
                     <div className="flex items-baseline gap-2 mb-3">
-                      <div className="text-4xl font-bold tracking-tight">
+                      <div className="text-3xl font-bold tracking-tight tabular-nums">
                         {selectedProduct.sentiment_score ?? 0}
                       </div>
-                      <div className="text-xl text-muted-foreground font-light">/100</div>
+                      <div className="text-lg text-muted-foreground font-light">/100</div>
                     </div>
                     <div className="h-2 bg-muted rounded-full overflow-hidden">
                       <div 
@@ -1012,10 +1012,10 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                       <span className="font-medium text-sm">Position</span>
                     </div>
                     <div className="flex items-baseline gap-2 mb-3">
-                      <div className="text-4xl font-bold tracking-tight">
+                      <div className="text-3xl font-bold tracking-tight tabular-nums">
                         {selectedProduct.position_score ?? 0}
                       </div>
-                      <div className="text-xl text-muted-foreground font-light">/100</div>
+                      <div className="text-lg text-muted-foreground font-light">/100</div>
                     </div>
                     <div className="h-2 bg-muted rounded-full overflow-hidden">
                       <div 
