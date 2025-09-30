@@ -241,7 +241,7 @@ export type Database = {
           prompt_id: string
           response_text: string
           source: string | null
-          sources: string | null
+          sources: Json | null
         }
         Insert: {
           created_at?: string
@@ -250,7 +250,7 @@ export type Database = {
           prompt_id: string
           response_text: string
           source?: string | null
-          sources?: string | null
+          sources?: Json | null
         }
         Update: {
           created_at?: string
@@ -259,7 +259,7 @@ export type Database = {
           prompt_id?: string
           response_text?: string
           source?: string | null
-          sources?: string | null
+          sources?: Json | null
         }
         Relationships: [
           {
@@ -433,7 +433,8 @@ export type Database = {
           response_id: string | null
           response_text: string | null
           sentiment_score: number | null
-          sources: string | null
+          source: string | null
+          sources: Json | null
           store_id: string | null
           user_id: string | null
           visibility_score: number | null
