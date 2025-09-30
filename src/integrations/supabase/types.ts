@@ -240,7 +240,8 @@ export type Database = {
           model_name: string
           prompt_id: string
           response_text: string
-          sources: Json | null
+          source: string | null
+          sources: string | null
         }
         Insert: {
           created_at?: string
@@ -248,7 +249,8 @@ export type Database = {
           model_name: string
           prompt_id: string
           response_text: string
-          sources?: Json | null
+          source?: string | null
+          sources?: string | null
         }
         Update: {
           created_at?: string
@@ -256,7 +258,8 @@ export type Database = {
           model_name?: string
           prompt_id?: string
           response_text?: string
-          sources?: Json | null
+          source?: string | null
+          sources?: string | null
         }
         Relationships: [
           {
@@ -408,6 +411,53 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prompt_responses_with_prompts: {
+        Row: {
+          brand_name: string | null
+          model_name: string | null
+          position_score: number | null
+          product_handle: string | null
+          product_id: string | null
+          product_title: string | null
+          prompt_active: boolean | null
+          prompt_content: string | null
+          prompt_created_at: string | null
+          prompt_id: string | null
+          prompt_status: string | null
+          prompt_updated_at: string | null
+          response_created_at: string | null
+          response_id: string | null
+          response_text: string | null
+          sentiment_score: number | null
+          sources: string | null
+          store_id: string | null
+          user_id: string | null
+          visibility_score: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompt_responses_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "prompts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prompts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prompts_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
             referencedColumns: ["id"]
           },
         ]
