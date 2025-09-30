@@ -61,13 +61,6 @@ interface MyProductsProps {
 const productSchema = z.object({
   title: z.string().min(1, "Product title is required"),
   handle: z.string().optional(),
-  product_type: z.string().optional(),
-  vendor: z.string().optional(),
-  status: z.enum(["active", "draft", "archived"]),
-  price: z.number().min(0, "Price must be positive"),
-  compare_at_price: z.number().optional(),
-  sku: z.string().optional(),
-  inventory_quantity: z.number().int().min(0, "Inventory must be non-negative"),
   tags: z.string().optional(),
 });
 
@@ -92,13 +85,6 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
     defaultValues: {
       title: "",
       handle: "",
-      product_type: "",
-      vendor: "",
-      status: "active",
-      price: 0,
-      compare_at_price: undefined,
-      sku: "",
-      inventory_quantity: 0,
       tags: "",
     },
   });
@@ -135,9 +121,9 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
             shopify_id: `manual-${Date.now()}`,
             title: data.title,
             handle: handle,
-            product_type: data.product_type || null,
-            vendor: data.vendor || null,
-            status: data.status,
+            product_type: null,
+            vendor: null,
+            status: "active",
             tags: tags.length > 0 ? tags : null,
           })
           .select()
@@ -152,10 +138,10 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
           product_id: productData.id,
           shopify_variant_id: `manual-variant-${Date.now()}`,
           title: "Default Title",
-          price: data.price,
-          compare_at_price: data.compare_at_price || null,
-          inventory_quantity: data.inventory_quantity,
-          sku: data.sku || null,
+          price: 0,
+          compare_at_price: null,
+          inventory_quantity: 0,
+          sku: null,
         });
 
       if (variantError) throw variantError;
@@ -175,8 +161,8 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
               productId: productData.id,
               storeId: activeStore.id,
               productTitle: data.title,
-              productType: data.product_type,
-              vendor: data.vendor,
+              productType: null,
+              vendor: null,
               tags: tags
             },
             headers: authHeaders,
@@ -845,130 +831,6 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                       <FormLabel>Handle (URL)</FormLabel>
                       <FormControl>
                         <Input placeholder="auto-generated-if-empty" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="active">Active</SelectItem>
-                          <SelectItem value="draft">Draft</SelectItem>
-                          <SelectItem value="archived">Archived</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="product_type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Product Type</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., T-Shirt, Snowboard" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="vendor"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Vendor</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Your Brand" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Price</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          step="0.01"
-                          placeholder="0.00" 
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="compare_at_price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Compare at Price (optional)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          step="0.01"
-                          placeholder="0.00" 
-                          {...field}
-                          onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="inventory_quantity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Inventory Quantity</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number"
-                          placeholder="0" 
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="sku"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>SKU</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., TSH-001" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
