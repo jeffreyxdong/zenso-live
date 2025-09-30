@@ -513,9 +513,28 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
 
   const getScoreBadge = (score?: number) => {
     const displayScore = score ?? 0;
-    if (displayScore >= 80) return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">{displayScore}</Badge>;
-    if (displayScore >= 60) return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">{displayScore}</Badge>;
-    return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">{displayScore}</Badge>;
+    if (displayScore >= 80) {
+      return (
+        <Badge className="bg-green-100 text-green-800 hover:bg-green-100 px-3 py-1">
+          <span className="text-lg font-bold">{displayScore}</span>
+          <span className="text-xs ml-1 opacity-70">/100</span>
+        </Badge>
+      );
+    }
+    if (displayScore >= 60) {
+      return (
+        <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 px-3 py-1">
+          <span className="text-lg font-bold">{displayScore}</span>
+          <span className="text-xs ml-1 opacity-70">/100</span>
+        </Badge>
+      );
+    }
+    return (
+      <Badge className="bg-red-100 text-red-800 hover:bg-red-100 px-3 py-1">
+        <span className="text-lg font-bold">{displayScore}</span>
+        <span className="text-xs ml-1 opacity-70">/100</span>
+      </Badge>
+    );
   };
 
   const handleProductClick = (product: Product) => {
@@ -937,41 +956,77 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
               {/* Metrics Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Eye className="w-4 h-4 text-blue-600" />
-                      <span className="font-medium">Visibility</span>
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Eye className="w-5 h-5 text-blue-600" />
+                      <span className="font-medium text-sm">Visibility</span>
                     </div>
-                    <div className="text-2xl font-bold mb-1">
-                      {selectedProduct.visibility_score ?? 0}
+                    <div className="flex items-baseline gap-2 mb-3">
+                      <div className="text-4xl font-bold tracking-tight">
+                        {selectedProduct.visibility_score ?? 0}
+                      </div>
+                      <div className="text-xl text-muted-foreground font-light">/100</div>
                     </div>
-                    {getScoreBadge(selectedProduct.visibility_score)}
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full transition-all duration-500 ${
+                          (selectedProduct.visibility_score ?? 0) >= 80 ? 'bg-green-600' : 
+                          (selectedProduct.visibility_score ?? 0) >= 60 ? 'bg-yellow-500' : 
+                          'bg-red-600'
+                        }`}
+                        style={{ width: `${selectedProduct.visibility_score ?? 0}%` }}
+                      />
+                    </div>
                   </CardContent>
                 </Card>
 
                 <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Heart className="w-4 h-4 text-pink-600" />
-                      <span className="font-medium">Sentiment</span>
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Heart className="w-5 h-5 text-pink-600" />
+                      <span className="font-medium text-sm">Sentiment</span>
                     </div>
-                    <div className="text-2xl font-bold mb-1">
-                      {selectedProduct.sentiment_score ?? 0}
+                    <div className="flex items-baseline gap-2 mb-3">
+                      <div className="text-4xl font-bold tracking-tight">
+                        {selectedProduct.sentiment_score ?? 0}
+                      </div>
+                      <div className="text-xl text-muted-foreground font-light">/100</div>
                     </div>
-                    {getScoreBadge(selectedProduct.sentiment_score)}
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full transition-all duration-500 ${
+                          (selectedProduct.sentiment_score ?? 0) >= 80 ? 'bg-green-600' : 
+                          (selectedProduct.sentiment_score ?? 0) >= 60 ? 'bg-yellow-500' : 
+                          'bg-red-600'
+                        }`}
+                        style={{ width: `${selectedProduct.sentiment_score ?? 0}%` }}
+                      />
+                    </div>
                   </CardContent>
                 </Card>
 
                 <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <MapPin className="w-4 h-4 text-green-600" />
-                      <span className="font-medium">Position</span>
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <MapPin className="w-5 h-5 text-green-600" />
+                      <span className="font-medium text-sm">Position</span>
                     </div>
-                    <div className="text-2xl font-bold mb-1">
-                      {selectedProduct.position_score ?? 0}
+                    <div className="flex items-baseline gap-2 mb-3">
+                      <div className="text-4xl font-bold tracking-tight">
+                        {selectedProduct.position_score ?? 0}
+                      </div>
+                      <div className="text-xl text-muted-foreground font-light">/100</div>
                     </div>
-                    {getScoreBadge(selectedProduct.position_score)}
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full transition-all duration-500 ${
+                          (selectedProduct.position_score ?? 0) >= 80 ? 'bg-green-600' : 
+                          (selectedProduct.position_score ?? 0) >= 60 ? 'bg-yellow-500' : 
+                          'bg-red-600'
+                        }`}
+                        style={{ width: `${selectedProduct.position_score ?? 0}%` }}
+                      />
+                    </div>
                   </CardContent>
                 </Card>
               </div>

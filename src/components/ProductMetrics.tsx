@@ -50,18 +50,27 @@ const ProductMetrics = ({ metrics }: ProductMetricsProps) => {
           <Eye className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <div className="text-2xl font-bold">{metrics.visibilityScore}</div>
-              <div className="text-sm text-muted-foreground">out of 100</div>
+          <div className="space-y-4">
+            <div className="flex items-baseline gap-2">
+              <div className="text-5xl font-bold tracking-tight">{metrics.visibilityScore}</div>
+              <div className="text-2xl text-muted-foreground font-light">/100</div>
             </div>
-            <Badge className={getScoreColor(metrics.visibilityScore)}>
-              {metrics.visibilityScore}/100
-            </Badge>
+            <div className="space-y-2">
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className={`h-full transition-all duration-500 ${
+                    metrics.visibilityScore >= 80 ? 'bg-success' : 
+                    metrics.visibilityScore >= 60 ? 'bg-yellow-500' : 
+                    'bg-destructive'
+                  }`}
+                  style={{ width: `${metrics.visibilityScore}%` }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                How often your product appears in AI responses
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            How often your product appears in AI responses
-          </p>
         </CardContent>
       </Card>
 
@@ -72,18 +81,27 @@ const ProductMetrics = ({ metrics }: ProductMetricsProps) => {
           <Heart className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <div className="text-2xl font-bold">{metrics.sentimentScore}</div>
-              <div className="text-sm text-muted-foreground">out of 100</div>
+          <div className="space-y-4">
+            <div className="flex items-baseline gap-2">
+              <div className="text-5xl font-bold tracking-tight">{metrics.sentimentScore}</div>
+              <div className="text-2xl text-muted-foreground font-light">/100</div>
             </div>
-            <Badge className={getScoreColor(metrics.sentimentScore)}>
-              {metrics.sentimentScore}/100
-            </Badge>
+            <div className="space-y-2">
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className={`h-full transition-all duration-500 ${
+                    metrics.sentimentScore >= 80 ? 'bg-success' : 
+                    metrics.sentimentScore >= 60 ? 'bg-yellow-500' : 
+                    'bg-destructive'
+                  }`}
+                  style={{ width: `${metrics.sentimentScore}%` }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Overall sentiment in AI recommendations
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Overall sentiment in AI recommendations
-          </p>
         </CardContent>
       </Card>
 
@@ -94,18 +112,27 @@ const ProductMetrics = ({ metrics }: ProductMetricsProps) => {
           <MapPin className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <div className="text-2xl font-bold">{metrics.positionScore}</div>
-              <div className="text-sm text-muted-foreground">out of 100</div>
+          <div className="space-y-4">
+            <div className="flex items-baseline gap-2">
+              <div className="text-5xl font-bold tracking-tight">{metrics.positionScore}</div>
+              <div className="text-2xl text-muted-foreground font-light">/100</div>
             </div>
-            <Badge className={getScoreColor(metrics.positionScore)}>
-              {metrics.positionScore}/100
-            </Badge>
+            <div className="space-y-2">
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className={`h-full transition-all duration-500 ${
+                    metrics.positionScore >= 80 ? 'bg-success' : 
+                    metrics.positionScore >= 60 ? 'bg-yellow-500' : 
+                    'bg-destructive'
+                  }`}
+                  style={{ width: `${metrics.positionScore}%` }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                How well your product ranks in AI responses
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            How well your product ranks in AI responses
-          </p>
         </CardContent>
       </Card>
     </div>
