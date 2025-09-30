@@ -12,7 +12,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -27,45 +26,32 @@ serve(async (req) => {
       });
     }
 
-    console.log('Calculating scores for product:', productTitle);
+    console.log('Scoring responses for product:', productTitle);
 
-    // Get user ID from the request headers
+    // Get user ID
     const authHeader = req.headers.get('authorization');
-    if (!authHeader) {
-      throw new Error('Authorization header required');
-    }
-
-    // Create Supabase client
-    const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
-
-    // Get user from token
+    if (!authHeader) throw new Error('Authorization header required');
     const token = authHeader.replace('Bearer ', '');
-    const { data: userData, error: userError } = await supabase.auth.getUser(token);
-    
-    if (userError || !userData.user) {
-      throw new Error('Invalid user token');
-    }
 
-    // Fetch all responses for the product
+    const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
+    const { data: userData, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !userData.user) throw new Error('Invalid user token');
+
+    // Fetch all responses for this product
     const { data: responses, error: responsesError } = await supabase
       .from('prompt_responses')
       .select(`
-        *,
-        prompts!inner(
-          product_id,
-          user_id
-        )
+        id,
+        response_text,
+        prompts!inner(product_id, user_id)
       `)
       .eq('prompts.product_id', productId)
       .eq('prompts.user_id', userData.user.id);
 
-    if (responsesError) {
-      throw new Error(`Failed to fetch responses: ${responsesError.message}`);
-    }
-
+    if (responsesError) throw new Error(`Failed to fetch responses: ${responsesError.message}`);
     if (!responses || responses.length === 0) {
-      return new Response(JSON.stringify({ 
-        success: true, 
+      return new Response(JSON.stringify({
+        success: true,
         message: 'No responses found for this product',
         scores: null
       }), {
@@ -75,207 +61,119 @@ serve(async (req) => {
 
     console.log(`Found ${responses.length} responses to analyze`);
 
-    const allResponsesText = responses.map(r => r.response_text).join('\n\n');
+    const allResponsesText = responses.map(r => r.response_text).join("\n\n---\n\n");
 
-    // Create assistant for scoring
-    const assistantResponse = await fetch('https://api.openai.com/v1/assistants', {
-      method: 'POST',
+    // Call Responses API
+    const resp = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2',
+        "Authorization": `Bearer ${openAIApiKey}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        name: 'Brand Scoring Analyst',
-        instructions: `You are an expert research analyst scoring brand mentions in AI-generated responses. 
-Your job has three sequential steps. Return results in order as a JSON object.
+        model: "gpt-4o",
+        input: [
+          {
+            role: "system",
+            content: `You are an expert research analyst scoring brand mentions in AI-generated responses. 
+You will be given a collection of multiple responses (a large text blob). 
+Evaluate them collectively and return three scores. Use the definitions below.
 
 Step 1 – Visibility Score:  
-A 0–100 score based on whether and how prominently the brand is mentioned overall.
+A 0–100 score based on whether and how prominently the brand is mentioned overall across all responses.
 
 Step 2 – Position Score:  
-Calculate a "Position Score" from 0–100 that measures how prominently the brand is mentioned based on its position in the text.
-
-Instructions for Position Score:
-1. Identify all mentions of the specified brand in the output.
-2. Weight earlier mentions more heavily (mentions in the first 10% of the text contribute most).
-3. Apply diminishing returns for multiple mentions (first mention carries the most weight).
-4. Normalize result to 0–100 (0 = no mention, 100 = mentioned first, prominently, and multiple times).
+A 0–100 score measuring how prominently the brand is mentioned based on position.  
+- Mentions earlier in the combined text count more.  
+- First mention carries most weight.  
+- Multiple mentions have diminishing returns.  
+- Normalize to 0–100.
 
 Step 3 – Sentiment Score:  
-Calculate a "Sentiment Score" from 0–100 that represents the tone of mentions toward the brand.
+A 0–100 score reflecting tone of mentions toward the brand.  
+- Very positive = 80–100  
+- Slightly positive = 60–79  
+- Neutral / descriptive = 40–59  
+- Slightly negative = 20–39  
+- Very negative = 0–19  
+- Weight sentiment near first mentions more heavily.  
 
-Instructions for Sentiment Score:
-1. Analyze the sentiment of each mention (positive, neutral, negative).
-2. Heavily weight sentiment that appears near the first mention.
-3. Map sentiment to numeric score:  
-   • Very positive = 80–100  
-   • Slightly positive = 60–79  
-   • Neutral / descriptive = 40–59  
-   • Slightly negative = 20–39  
-   • Very negative = 0–19  
-4. Normalize result to a single 0–100 number.
-
-Return ONLY a JSON object with this format:
+Return ONLY a JSON object in this format:
 {
   "visibility_score": 85,
   "position_score": 72,
   "sentiment_score": 91
-}`,
-      }),
+}`
+          },
+          {
+            role: "user",
+            content: `Here is the collection of responses for the product "${productTitle}".  
+They are multiple outputs bundled together. Score them collectively:
+
+${allResponsesText}`
+          }
+        ]
+      })
     });
 
-    if (!assistantResponse.ok) {
-      throw new Error(`Failed to create assistant: ${assistantResponse.status}`);
+    if (!resp.ok) throw new Error(`OpenAI API error: ${resp.status}`);
+
+    const respData = await resp.json();
+    console.log("Raw scoring response:", JSON.stringify(respData, null, 2));
+
+    let scoresText =
+      respData.output_text ??
+      respData.output?.[0]?.content?.[0]?.text ??
+      "";
+
+    // Clean possible markdown wrapping
+    if (scoresText.startsWith("```json")) {
+      scoresText = scoresText.replace(/^```json\s*/i, "").replace(/\s*```$/, "");
+    } else if (scoresText.startsWith("```")) {
+      scoresText = scoresText.replace(/^```\s*/, "").replace(/\s*```$/, "");
     }
 
-    const assistant = await assistantResponse.json();
+    const scores = JSON.parse(scoresText);
+    const visibilityScore = parseInt(scores.visibility_score) || 0;
+    const positionScore = parseInt(scores.position_score) || 0;
+    const sentimentScore = parseInt(scores.sentiment_score) || 0;
 
-    // Create thread
-    const threadResponse = await fetch('https://api.openai.com/v1/threads', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2',
+    // Save to product_scores
+    const { data: insertedScore, error: scoreError } = await supabase
+      .from('product_scores')
+      .insert({
+        product_id: productId,
+        visibility_score: visibilityScore,
+        position_score: positionScore,
+        sentiment_score: sentimentScore
+      })
+      .select()
+      .single();
+
+    if (scoreError) throw new Error(`Failed to save scores: ${scoreError.message}`);
+
+    console.log(`Inserted scores for product ${productId}:`, insertedScore);
+
+    return new Response(JSON.stringify({
+      success: true,
+      scores: {
+        visibility_score: visibilityScore,
+        position_score: positionScore,
+        sentiment_score: sentimentScore
       },
-      body: JSON.stringify({}),
+      scoreId: insertedScore.id,
+      message: "Product scores calculated and saved successfully"
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
-    if (!threadResponse.ok) {
-      throw new Error(`Failed to create thread: ${threadResponse.status}`);
-    }
-
-    const thread = await threadResponse.json();
-
-    // Add message to thread
-    const messageContent = `Analyze brand mentions for "${productTitle}" in these responses:
-
-${allResponsesText}`;
-
-    await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2',
-      },
-      body: JSON.stringify({
-        role: 'user',
-        content: messageContent,
-      }),
-    });
-
-    // Start run
-    const runResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2',
-      },
-      body: JSON.stringify({
-        assistant_id: assistant.id,
-      }),
-    });
-
-    if (!runResponse.ok) {
-      throw new Error(`Failed to start run: ${runResponse.status}`);
-    }
-
-    const run = await runResponse.json();
-
-    // Poll for completion
-    let runStatus = run.status;
-    while (runStatus === 'queued' || runStatus === 'in_progress') {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const statusResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs/${run.id}`, {
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'OpenAI-Beta': 'assistants=v2',
-        },
-      });
-      
-      const statusData = await statusResponse.json();
-      runStatus = statusData.status;
-    }
-
-    if (runStatus !== 'completed') {
-      throw new Error(`Run failed with status: ${runStatus}`);
-    }
-
-    // Get messages
-    const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'OpenAI-Beta': 'assistants=v2',
-      },
-    });
-
-    const messagesData = await messagesResponse.json();
-    const scoresText = messagesData.data[0].content[0].text.value.trim();
-    
-    try {
-      // Parse the JSON response
-      let cleanedScores = scoresText;
-      if (cleanedScores.startsWith('```json')) {
-        cleanedScores = cleanedScores.replace(/^```json\s*/i, '').replace(/\s*```$/, '');
-      } else if (cleanedScores.startsWith('```')) {
-        cleanedScores = cleanedScores.replace(/^```\s*/, '').replace(/\s*```$/, '');
-      }
-      
-      const scores = JSON.parse(cleanedScores);
-      const visibilityScore = parseInt(scores.visibility_score) || 0;
-      const positionScore = parseInt(scores.position_score) || 0;
-      const sentimentScore = parseInt(scores.sentiment_score) || 0;
-
-      console.log(`Calculated scores for product: ${productTitle}`);
-      console.log(`Visibility: ${visibilityScore}, Position: ${positionScore}, Sentiment: ${sentimentScore}`);
-
-      // Insert scores into product_scores table
-      const { data: insertedScore, error: scoreError } = await supabase
-        .from('product_scores')
-        .insert({
-          product_id: productId,
-          visibility_score: visibilityScore,
-          position_score: positionScore,
-          sentiment_score: sentimentScore
-        })
-        .select()
-        .single();
-
-      if (scoreError) {
-        console.error('Failed to insert product scores:', scoreError);
-        throw new Error(`Failed to save scores: ${scoreError.message}`);
-      }
-
-      console.log(`Inserted scores for product ${productId} into product_scores table`);
-
-      return new Response(JSON.stringify({ 
-        success: true, 
-        scores: {
-          visibility_score: visibilityScore,
-          position_score: positionScore,
-          sentiment_score: sentimentScore
-        },
-        scoreId: insertedScore.id,
-        message: 'Product scores calculated and saved successfully'
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    } catch (parseError) {
-      console.error('Failed to parse scoring response:', scoresText);
-      console.error('Parse error:', parseError);
-      throw new Error('Failed to parse scoring response');
-    }
   } catch (error) {
-    console.error('Error in score-buyer-intent-outputs function:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error("Error in score-buyer-intent-outputs function:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
     return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });
+
