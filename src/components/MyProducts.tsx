@@ -525,6 +525,13 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
     return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Negative</Badge>;
   };
 
+  const getPositionBadge = (score?: number) => {
+    if (!score) return <Badge variant="outline">No Data</Badge>;
+    if (score >= 80) return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">High</Badge>;
+    if (score >= 60) return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Medium</Badge>;
+    return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Low</Badge>;
+  };
+
   const handleProductClick = (product: Product) => {
     if (onProductClick) {
       onProductClick(product.id);
@@ -753,12 +760,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                         {getSentimentBadge(product.sentiment_score)}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-muted-foreground" />
-                          <span className="text-sm font-medium">
-                            {product.position_score ? `#${product.position_score}` : 'No Data'}
-                          </span>
-                        </div>
+                        {getPositionBadge(product.position_score)}
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
@@ -981,9 +983,9 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                       <span className="font-medium">Position</span>
                     </div>
                     <div className="text-2xl font-bold mb-1">
-                      #{selectedProduct.position_score || 'N/A'}
+                      {selectedProduct.position_score || 'N/A'}
                     </div>
-                    <Badge variant="outline">Search Ranking</Badge>
+                    {getPositionBadge(selectedProduct.position_score)}
                   </CardContent>
                 </Card>
               </div>
@@ -1041,6 +1043,19 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                         <div 
                           className="bg-pink-600 h-2 rounded-full" 
                           style={{ width: `${selectedProduct.sentiment_score || 0}%` }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span>Position Score</span>
+                        <span>{selectedProduct.position_score}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-green-600 h-2 rounded-full" 
+                          style={{ width: `${selectedProduct.position_score || 0}%` }}
                         ></div>
                       </div>
                     </div>

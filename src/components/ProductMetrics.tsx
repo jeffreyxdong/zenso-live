@@ -35,10 +35,16 @@ const ProductMetrics = ({ metrics }: ProductMetricsProps) => {
     }
   };
 
-  const getPositionColor = (position: number) => {
-    if (position <= 3) return "bg-success text-success-foreground";
-    if (position <= 7) return "bg-yellow-500 text-white";
+  const getPositionColor = (score: number) => {
+    if (score >= 80) return "bg-success text-success-foreground";
+    if (score >= 60) return "bg-yellow-500 text-white";
     return "bg-destructive text-destructive-foreground";
+  };
+
+  const getPositionLabel = (score: number) => {
+    if (score >= 80) return "High";
+    if (score >= 60) return "Medium";
+    return "Low";
   };
 
   return (
@@ -90,21 +96,21 @@ const ProductMetrics = ({ metrics }: ProductMetricsProps) => {
       {/* Position */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Average Position</CardTitle>
+          <CardTitle className="text-sm font-medium">Position Score</CardTitle>
           <MapPin className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <div className="text-2xl font-bold">#{metrics.position}</div>
+              <div className="text-2xl font-bold">{getPositionLabel(metrics.positionScore)}</div>
               <div className="text-sm text-muted-foreground">Score: {metrics.positionScore}/100</div>
             </div>
-            <Badge className={getPositionColor(metrics.position)}>
-              Rank {metrics.position}
+            <Badge className={getPositionColor(metrics.positionScore)}>
+              {getPositionLabel(metrics.positionScore)}
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            Average ranking position in AI responses
+            How well your product ranks in AI responses
           </p>
         </CardContent>
       </Card>
