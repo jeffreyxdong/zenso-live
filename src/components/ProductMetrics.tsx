@@ -35,16 +35,10 @@ const ProductMetrics = ({ metrics }: ProductMetricsProps) => {
     }
   };
 
-  const getPositionColor = (score: number) => {
+  const getScoreColor = (score: number) => {
     if (score >= 80) return "bg-success text-success-foreground";
     if (score >= 60) return "bg-yellow-500 text-white";
     return "bg-destructive text-destructive-foreground";
-  };
-
-  const getPositionLabel = (score: number) => {
-    if (score >= 80) return "High";
-    if (score >= 60) return "Medium";
-    return "Low";
   };
 
   return (
@@ -58,11 +52,11 @@ const ProductMetrics = ({ metrics }: ProductMetricsProps) => {
         <CardContent>
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <div className="text-2xl font-bold">{metrics.visibility}</div>
-              <div className="text-sm text-muted-foreground">Score: {metrics.visibilityScore}/100</div>
+              <div className="text-2xl font-bold">{metrics.visibilityScore}</div>
+              <div className="text-sm text-muted-foreground">out of 100</div>
             </div>
-            <Badge className={getVisibilityColor(metrics.visibility)}>
-              {metrics.visibility}
+            <Badge className={getScoreColor(metrics.visibilityScore)}>
+              {metrics.visibilityScore}/100
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
@@ -80,11 +74,11 @@ const ProductMetrics = ({ metrics }: ProductMetricsProps) => {
         <CardContent>
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <div className="text-2xl font-bold">{metrics.sentiment}</div>
-              <div className="text-sm text-muted-foreground">Score: {metrics.sentimentScore}/100</div>
+              <div className="text-2xl font-bold">{metrics.sentimentScore}</div>
+              <div className="text-sm text-muted-foreground">out of 100</div>
             </div>
-            <Badge className={getSentimentColor(metrics.sentiment)}>
-              {metrics.sentiment}
+            <Badge className={getScoreColor(metrics.sentimentScore)}>
+              {metrics.sentimentScore}/100
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
@@ -102,11 +96,11 @@ const ProductMetrics = ({ metrics }: ProductMetricsProps) => {
         <CardContent>
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <div className="text-2xl font-bold">{getPositionLabel(metrics.positionScore)}</div>
-              <div className="text-sm text-muted-foreground">Score: {metrics.positionScore}/100</div>
+              <div className="text-2xl font-bold">{metrics.positionScore}</div>
+              <div className="text-sm text-muted-foreground">out of 100</div>
             </div>
-            <Badge className={getPositionColor(metrics.positionScore)}>
-              {getPositionLabel(metrics.positionScore)}
+            <Badge className={getScoreColor(metrics.positionScore)}>
+              {metrics.positionScore}/100
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground mt-2">

@@ -511,25 +511,11 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
     return `${totalInventory} in stock`;
   };
 
-  const getVisibilityBadge = (score?: number) => {
+  const getScoreBadge = (score?: number) => {
     if (score === null || score === undefined) return <Badge variant="outline">No Data</Badge>;
-    if (score >= 80) return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">High</Badge>;
-    if (score >= 60) return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Medium</Badge>;
-    return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Low</Badge>;
-  };
-
-  const getSentimentBadge = (score?: number) => {
-    if (score === null || score === undefined) return <Badge variant="outline">No Data</Badge>;
-    if (score >= 70) return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Positive</Badge>;
-    if (score >= 30) return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Neutral</Badge>;
-    return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Negative</Badge>;
-  };
-
-  const getPositionBadge = (score?: number) => {
-    if (score === null || score === undefined) return <Badge variant="outline">No Data</Badge>;
-    if (score >= 80) return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">High</Badge>;
-    if (score >= 60) return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Medium</Badge>;
-    return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Low</Badge>;
+    if (score >= 80) return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">{score}</Badge>;
+    if (score >= 60) return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">{score}</Badge>;
+    return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">{score}</Badge>;
   };
 
   const handleProductClick = (product: Product) => {
@@ -754,13 +740,13 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {getVisibilityBadge(product.visibility_score)}
+                        {getScoreBadge(product.visibility_score)}
                       </TableCell>
                       <TableCell>
-                        {getSentimentBadge(product.sentiment_score)}
+                        {getScoreBadge(product.sentiment_score)}
                       </TableCell>
                       <TableCell>
-                        {getPositionBadge(product.position_score)}
+                        {getScoreBadge(product.position_score)}
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
@@ -959,7 +945,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                     <div className="text-2xl font-bold mb-1">
                       {selectedProduct.visibility_score !== null && selectedProduct.visibility_score !== undefined ? `${selectedProduct.visibility_score}` : 'N/A'}
                     </div>
-                    {getVisibilityBadge(selectedProduct.visibility_score)}
+                    {getScoreBadge(selectedProduct.visibility_score)}
                   </CardContent>
                 </Card>
 
@@ -972,7 +958,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                     <div className="text-2xl font-bold mb-1">
                       {selectedProduct.sentiment_score !== null && selectedProduct.sentiment_score !== undefined ? `${selectedProduct.sentiment_score}` : 'N/A'}
                     </div>
-                    {getSentimentBadge(selectedProduct.sentiment_score)}
+                    {getScoreBadge(selectedProduct.sentiment_score)}
                   </CardContent>
                 </Card>
 
@@ -985,7 +971,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                     <div className="text-2xl font-bold mb-1">
                       {selectedProduct.position_score !== null && selectedProduct.position_score !== undefined ? `${selectedProduct.position_score}` : 'N/A'}
                     </div>
-                    {getPositionBadge(selectedProduct.position_score)}
+                    {getScoreBadge(selectedProduct.position_score)}
                   </CardContent>
                 </Card>
               </div>
