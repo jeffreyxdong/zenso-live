@@ -512,10 +512,10 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
   };
 
   const getScoreBadge = (score?: number) => {
-    if (score === null || score === undefined) return <Badge variant="outline">No Data</Badge>;
-    if (score >= 80) return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">{score}</Badge>;
-    if (score >= 60) return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">{score}</Badge>;
-    return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">{score}</Badge>;
+    const displayScore = score ?? 0;
+    if (displayScore >= 80) return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">{displayScore}</Badge>;
+    if (displayScore >= 60) return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">{displayScore}</Badge>;
+    return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">{displayScore}</Badge>;
   };
 
   const handleProductClick = (product: Product) => {
@@ -943,7 +943,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                       <span className="font-medium">Visibility</span>
                     </div>
                     <div className="text-2xl font-bold mb-1">
-                      {selectedProduct.visibility_score !== null && selectedProduct.visibility_score !== undefined ? `${selectedProduct.visibility_score}` : 'N/A'}
+                      {selectedProduct.visibility_score ?? 0}
                     </div>
                     {getScoreBadge(selectedProduct.visibility_score)}
                   </CardContent>
@@ -956,7 +956,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                       <span className="font-medium">Sentiment</span>
                     </div>
                     <div className="text-2xl font-bold mb-1">
-                      {selectedProduct.sentiment_score !== null && selectedProduct.sentiment_score !== undefined ? `${selectedProduct.sentiment_score}` : 'N/A'}
+                      {selectedProduct.sentiment_score ?? 0}
                     </div>
                     {getScoreBadge(selectedProduct.sentiment_score)}
                   </CardContent>
@@ -969,7 +969,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                       <span className="font-medium">Position</span>
                     </div>
                     <div className="text-2xl font-bold mb-1">
-                      {selectedProduct.position_score !== null && selectedProduct.position_score !== undefined ? `${selectedProduct.position_score}` : 'N/A'}
+                      {selectedProduct.position_score ?? 0}
                     </div>
                     {getScoreBadge(selectedProduct.position_score)}
                   </CardContent>
