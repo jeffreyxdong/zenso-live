@@ -102,12 +102,13 @@ Step 4 - Source Information: When a product is mentioned in the collection of mu
 Do not include the full URL, just the name of the source website/material. 
 
 
+
 Return ONLY a JSON object in this format:
 {
   "visibility_score": 85,
   "position_score": 72,
   "sentiment_score": 91
-  sources: array of sources
+  sources: an array of sources 
 }`
           },
           {
