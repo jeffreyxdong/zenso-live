@@ -282,16 +282,32 @@ const ProductOverview = () => {
           console.error("Error fetching scores:", scoresError);
         }
 
-        // Fetch prompt responses to get sources_final
-        const { data: promptResponsesData, error: promptResponsesError } = await supabase
-          .from("prompt_responses")
-          .select("sources_final")
-          .eq("prompt_id", productId)
-          .order("created_at", { ascending: false })
+        // Fetch prompts for this product to get their responses
+        const { data: promptsData, error: promptsError } = await supabase
+          .from("prompts")
+          .select("id")
+          .eq("product_id", productId)
           .limit(1);
 
-        if (promptResponsesError) {
-          console.error("Error fetching prompt responses:", promptResponsesError);
+        if (promptsError) {
+          console.error("Error fetching prompts:", promptsError);
+        }
+
+        // Fetch prompt responses to get sources_final using the prompt ID
+        let promptResponsesData = null;
+        if (promptsData && promptsData.length > 0) {
+          const { data, error: promptResponsesError } = await supabase
+            .from("prompt_responses")
+            .select("sources_final")
+            .eq("prompt_id", promptsData[0].id)
+            .order("created_at", { ascending: false })
+            .limit(1);
+
+          if (promptResponsesError) {
+            console.error("Error fetching prompt responses:", promptResponsesError);
+          } else {
+            promptResponsesData = data;
+          }
         }
 
         // Parse sources from sources_final
