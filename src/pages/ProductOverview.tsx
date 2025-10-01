@@ -555,19 +555,36 @@ Stay focused during calls with noise cancellation and enjoy music during breaks 
         <CardContent>
           {product.sources && product.sources.length > 0 ? (
             <div className="flex flex-wrap gap-3">
-              {product.sources.map((source, index) => (
-                <div 
-                  key={index} 
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg border bg-card hover:bg-accent transition-colors"
-                >
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-sm font-semibold text-primary">
-                      {source.domain.charAt(0).toUpperCase()}
-                    </span>
+              {product.sources.map((source, index) => {
+                // Remove common domain extensions
+                const displayName = source.domain
+                  .replace(/\.(com|org|net|io|co|edu|gov|uk|us|ca|au|de|fr|jp|cn|in)$/i, '');
+                
+                return (
+                  <div 
+                    key={index} 
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg border bg-card hover:bg-accent transition-colors"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                      <img 
+                        src={`https://www.google.com/s2/favicons?domain=${source.domain}&sz=32`}
+                        alt={`${source.domain} icon`}
+                        className="w-5 h-5"
+                        onError={(e) => {
+                          // Fallback to first letter if favicon fails to load
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent) {
+                            parent.innerHTML = `<span class="text-sm font-semibold text-primary">${displayName.charAt(0).toUpperCase()}</span>`;
+                          }
+                        }}
+                      />
+                    </div>
+                    <span className="font-medium text-sm capitalize">{displayName}</span>
                   </div>
-                  <span className="font-medium text-sm">{source.domain}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
