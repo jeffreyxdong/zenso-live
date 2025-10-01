@@ -140,24 +140,36 @@ ${allResponsesText}`
     }
 
     const scores = JSON.parse(scoresText);
+    console.log('Parsed scores object:', JSON.stringify(scores, null, 2));
+    
     const visibilityScore = parseInt(scores.visibility_score) || 0;
     const positionScore = parseInt(scores.position_score) || 0;
     const sentimentScore = parseInt(scores.sentiment_score) || 0;
     const sources = scores.sources || [];
 
+    console.log('Extracted sources:', JSON.stringify(sources, null, 2));
+    console.log('Sources array length:', sources.length);
+    console.log('Number of responses to update:', responses.length);
+
     // Save sources to all prompt_responses that were analyzed
     if (sources.length > 0 && responses.length > 0) {
       const responseIds = responses.map(r => r.id);
-      const { error: updateError } = await supabase
+      console.log('Response IDs to update:', responseIds);
+      
+      const { data: updateData, error: updateError } = await supabase
         .from('prompt_responses')
         .update({ sources_final: sources })
-        .in('id', responseIds);
+        .in('id', responseIds)
+        .select();
       
       if (updateError) {
         console.error('Failed to update sources:', updateError);
       } else {
-        console.log(`Updated sources for ${responseIds.length} responses`);
+        console.log(`Successfully updated sources for ${responseIds.length} responses`);
+        console.log('Update result:', JSON.stringify(updateData, null, 2));
       }
+    } else {
+      console.log('Skipping sources update - sources.length:', sources.length, 'responses.length:', responses.length);
     }
 
     // Save to product_scores
