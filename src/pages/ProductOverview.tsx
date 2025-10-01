@@ -226,6 +226,56 @@ const generateMockCompetitors = (): Competitor[] => [
   { id: "c4", name: "Fourth Place Product", position: 4, visibilityScore: 76 }
 ];
 
+// Filter sources that mention the product
+const filterSourcesByProduct = (sources: any[], productTitle: string) => {
+  if (!sources || sources.length === 0) return [];
+  
+  const productKeywords = productTitle.toLowerCase().split(' ').filter(word => word.length > 3);
+  
+  return sources.filter(source => {
+    const sourceText = (source.text || source.title || '').toLowerCase();
+    const sourceUrl = (source.url || '').toLowerCase();
+    
+    // Check if any product keyword appears in the source text or URL
+    return productKeywords.some(keyword => 
+      sourceText.includes(keyword) || sourceUrl.includes(keyword)
+    );
+  });
+};
+
+// Aggregate sources by domain
+const aggregateSourcesByDomain = (allSources: any[], userWebsite: string) => {
+  const domainMap = new Map<string, { count: number; totalCitations: number; isOwn: boolean }>();
+  
+  allSources.forEach(source => {
+    if (!source.url) return;
+    
+    try {
+      const url = new URL(source.url);
+      const domain = url.hostname.replace('www.', '');
+      
+      const isOwn = userWebsite && domain.includes(userWebsite.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, ''));
+      
+      if (!domainMap.has(domain)) {
+        domainMap.set(domain, { count: 0, totalCitations: 0, isOwn });
+      }
+      
+      const data = domainMap.get(domain)!;
+      data.count += 1;
+      data.totalCitations += source.citation_count || 0;
+    } catch (e) {
+      console.error('Invalid URL:', source.url);
+    }
+  });
+  
+  return Array.from(domainMap.entries()).map(([domain, data]) => ({
+    domain,
+    used: data.count,
+    avgCitations: data.count > 0 ? (data.totalCitations / data.count).toFixed(1) : '0.0',
+    isOwn: data.isOwn
+  })).sort((a, b) => b.used - a.used);
+};
+
 const ProductOverview = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
@@ -235,6 +285,7 @@ const ProductOverview = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [previewContent, setPreviewContent] = useState("");
   const [previewType, setPreviewType] = useState<string>("");
+  const [sourcesData, setSourcesData] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -336,6 +387,38 @@ const ProductOverview = () => {
         };
 
         setProduct(enhancedProduct);
+        
+        // Fetch sources from prompt_responses
+        const { data: responsesData, error: responsesError } = await supabase
+          .from("prompt_responses")
+          .select(`
+            sources,
+            prompts!inner(product_id)
+          `)
+          .eq("prompts.product_id", productId);
+
+        if (responsesError) {
+          console.error("Error fetching sources:", responsesError);
+        } else if (responsesData) {
+          // Extract all sources and filter for those mentioning the product
+          const allSources: any[] = [];
+          responsesData.forEach(response => {
+            if (response.sources && Array.isArray(response.sources)) {
+              allSources.push(...response.sources);
+            }
+          });
+          
+          // Filter sources that mention this product
+          const filteredSources = filterSourcesByProduct(allSources, productData.title);
+          
+          // Aggregate by domain
+          const aggregatedSources = aggregateSourcesByDomain(
+            filteredSources, 
+            activeStore?.website || ''
+          );
+          
+          setSourcesData(aggregatedSources);
+        }
       } catch (error: any) {
         console.error("Error fetching product:", error);
         toast({
@@ -349,7 +432,7 @@ const ProductOverview = () => {
     };
 
     fetchProduct();
-  }, [productId]);
+  }, [productId, activeStore]);
 
   const handleGenerateContent = async (suggestion: Suggestion) => {
     // Mock AI content generation
@@ -509,68 +592,48 @@ Stay focused during calls with noise cancellation and enjoy music during breaks 
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="rounded-lg border">
-            <div className="grid grid-cols-4 gap-4 p-4 bg-muted/50 border-b font-medium text-sm">
-              <div>Domain</div>
-              <div>Used</div>
-              <div>Avg. Citations</div>
-              <div>Type</div>
+          {sourcesData.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No sources found that mention this product yet.
             </div>
-            <div className="divide-y">
-              <div className="grid grid-cols-4 gap-4 p-4 items-center">
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded bg-orange-500 flex items-center justify-center">
-                    <div className="w-3 h-3 bg-white rounded-full"></div>
-                  </div>
-                  <span className="font-medium">reddit.com</span>
-                </div>
-                <div>100%</div>
-                <div>2.0</div>
-                <div>
-                  <Badge variant="secondary">Other</Badge>
-                </div>
+          ) : (
+            <div className="rounded-lg border">
+              <div className="grid grid-cols-4 gap-4 p-4 bg-muted/50 border-b font-medium text-sm">
+                <div>Domain</div>
+                <div>Times Used</div>
+                <div>Avg. Citations</div>
+                <div>Type</div>
               </div>
-              <div className="grid grid-cols-4 gap-4 p-4 items-center">
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded bg-red-600 flex items-center justify-center">
-                    <div className="w-3 h-3 bg-white rounded-sm"></div>
-                  </div>
-                  <span className="font-medium">youtube.com</span>
-                </div>
-                <div>100%</div>
-                <div>0.0</div>
-                <div>
-                  <Badge variant="secondary">Other</Badge>
-                </div>
-              </div>
-              <div className="grid grid-cols-4 gap-4 p-4 items-center">
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded bg-gray-400 flex items-center justify-center">
-                    <div className="w-3 h-3 bg-white rounded-full"></div>
-                  </div>
-                  <span className="font-medium">blendjet.com</span>
-                </div>
-                <div>50%</div>
-                <div>3.0</div>
-                <div>
-                  <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100">You</Badge>
-                </div>
-              </div>
-              <div className="grid grid-cols-4 gap-4 p-4 items-center">
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded bg-green-600 flex items-center justify-center text-white text-xs font-bold">
-                    CR
-                  </div>
-                  <span className="font-medium">consumerreports.org</span>
-                </div>
-                <div>50%</div>
-                <div>3.0</div>
-                <div>
-                  <Badge variant="secondary">Other</Badge>
-                </div>
+              <div className="divide-y">
+                {sourcesData.map((source, index) => {
+                  const domainInitials = source.domain.split('.')[0].substring(0, 2).toUpperCase();
+                  const colors = ['bg-orange-500', 'bg-red-600', 'bg-blue-600', 'bg-green-600', 'bg-purple-600', 'bg-gray-400'];
+                  const bgColor = colors[index % colors.length];
+                  
+                  return (
+                    <div key={source.domain} className="grid grid-cols-4 gap-4 p-4 items-center">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-6 h-6 rounded ${bgColor} flex items-center justify-center text-white text-xs font-bold`}>
+                          {domainInitials}
+                        </div>
+                        <span className="font-medium">{source.domain}</span>
+                      </div>
+                      <div>{source.used}</div>
+                      <div>{source.avgCitations}</div>
+                      <div>
+                        <Badge 
+                          variant={source.isOwn ? "default" : "secondary"}
+                          className={source.isOwn ? "bg-green-100 text-green-700 hover:bg-green-100" : ""}
+                        >
+                          {source.isOwn ? "You" : "Other"}
+                        </Badge>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
