@@ -12,6 +12,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 // Data types
+interface Source {
+  domain: string;
+  used_percentage: number;
+  avg_citations: number;
+  type: string;
+  is_own_domain?: boolean;
+}
+
 interface Product {
   id: string;
   title: string;
@@ -30,6 +38,7 @@ interface Product {
   positionHistory: { date: string; value: number }[];
   suggestions: Suggestion[];
   competitors: Competitor[];
+  sources: Source[];
   currentMetrics: {
     visibility: "High" | "Medium" | "Low";
     sentiment: "Positive" | "Neutral" | "Negative";
@@ -273,6 +282,33 @@ const ProductOverview = () => {
           console.error("Error fetching scores:", scoresError);
         }
 
+        // Fetch prompt responses to get sources_final
+        const { data: promptResponsesData, error: promptResponsesError } = await supabase
+          .from("prompt_responses")
+          .select("sources_final")
+          .eq("prompt_id", productId)
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        if (promptResponsesError) {
+          console.error("Error fetching prompt responses:", promptResponsesError);
+        }
+
+        // Parse sources from sources_final
+        let sources: Source[] = [];
+        if (promptResponsesData && promptResponsesData.length > 0 && promptResponsesData[0].sources_final) {
+          const sourcesFinal = promptResponsesData[0].sources_final as any;
+          if (Array.isArray(sourcesFinal)) {
+            sources = sourcesFinal.map((source: any) => ({
+              domain: source.domain || source.name || "Unknown",
+              used_percentage: source.used_percentage || source.usage || 0,
+              avg_citations: source.avg_citations || source.citations || 0,
+              type: source.type || "Other",
+              is_own_domain: source.is_own_domain || false
+            }));
+          }
+        }
+
         // Use the latest scores or fallback to product table scores
         const latestScore = scoresData && scoresData.length > 0 ? scoresData[scoresData.length - 1] : null;
         const visibilityScore = latestScore?.visibility_score || productData.visibility_score || 0;
@@ -325,6 +361,7 @@ const ProductOverview = () => {
           positionHistory,
           suggestions: generateMockSuggestions(productData.title),
           competitors: generateMockCompetitors(),
+          sources,
           currentMetrics: {
             visibility: getVisibilityLevel(visibilityScore),
             sentiment: getSentimentLevel(sentimentScore),
@@ -509,68 +546,41 @@ Stay focused during calls with noise cancellation and enjoy music during breaks 
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="rounded-lg border">
-            <div className="grid grid-cols-4 gap-4 p-4 bg-muted/50 border-b font-medium text-sm">
-              <div>Domain</div>
-              <div>Used</div>
-              <div>Avg. Citations</div>
-              <div>Type</div>
-            </div>
-            <div className="divide-y">
-              <div className="grid grid-cols-4 gap-4 p-4 items-center">
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded bg-orange-500 flex items-center justify-center">
-                    <div className="w-3 h-3 bg-white rounded-full"></div>
-                  </div>
-                  <span className="font-medium">reddit.com</span>
-                </div>
-                <div>100%</div>
-                <div>2.0</div>
-                <div>
-                  <Badge variant="secondary">Other</Badge>
-                </div>
+          {product.sources && product.sources.length > 0 ? (
+            <div className="rounded-lg border">
+              <div className="grid grid-cols-4 gap-4 p-4 bg-muted/50 border-b font-medium text-sm">
+                <div>Domain</div>
+                <div>Used</div>
+                <div>Avg. Citations</div>
+                <div>Type</div>
               </div>
-              <div className="grid grid-cols-4 gap-4 p-4 items-center">
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded bg-red-600 flex items-center justify-center">
-                    <div className="w-3 h-3 bg-white rounded-sm"></div>
+              <div className="divide-y">
+                {product.sources.map((source, index) => (
+                  <div key={index} className="grid grid-cols-4 gap-4 p-4 items-center">
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 h-6 rounded bg-muted flex items-center justify-center text-xs font-bold">
+                        {source.domain.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="font-medium">{source.domain}</span>
+                    </div>
+                    <div>{source.used_percentage}%</div>
+                    <div>{source.avg_citations.toFixed(1)}</div>
+                    <div>
+                      {source.is_own_domain ? (
+                        <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100">You</Badge>
+                      ) : (
+                        <Badge variant="secondary">{source.type}</Badge>
+                      )}
+                    </div>
                   </div>
-                  <span className="font-medium">youtube.com</span>
-                </div>
-                <div>100%</div>
-                <div>0.0</div>
-                <div>
-                  <Badge variant="secondary">Other</Badge>
-                </div>
-              </div>
-              <div className="grid grid-cols-4 gap-4 p-4 items-center">
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded bg-gray-400 flex items-center justify-center">
-                    <div className="w-3 h-3 bg-white rounded-full"></div>
-                  </div>
-                  <span className="font-medium">blendjet.com</span>
-                </div>
-                <div>50%</div>
-                <div>3.0</div>
-                <div>
-                  <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100">You</Badge>
-                </div>
-              </div>
-              <div className="grid grid-cols-4 gap-4 p-4 items-center">
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded bg-green-600 flex items-center justify-center text-white text-xs font-bold">
-                    CR
-                  </div>
-                  <span className="font-medium">consumerreports.org</span>
-                </div>
-                <div>50%</div>
-                <div>3.0</div>
-                <div>
-                  <Badge variant="secondary">Other</Badge>
-                </div>
+                ))}
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              No source data available yet
+            </div>
+          )}
         </CardContent>
       </Card>
 
