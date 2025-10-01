@@ -46,7 +46,7 @@ serve(async (req) => {
       throw new Error('Invalid user token');
     }
 
-    // --------------------
+        // --------------------
     // Responses API (replaces assistants + threads + runs)
     // --------------------
     const messageContent = `Generate buyer-intent prompts for this product:
@@ -55,14 +55,14 @@ serve(async (req) => {
     - Vendor: ${vendor || 'Not specified'}
     - Tags: ${tags?.join(', ') || 'Not specified'}`;
     
-    const resp = await fetch("https://api.openai.com/v1/responses", {
+        const resp = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${openAIApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-4o",
         input: `You are an expert e-commerce copywriter. 
     Generate 5 specific, actionable buyer-intent search queries that potential customers would use when they're ready to purchase a product like this.
     
@@ -89,17 +89,12 @@ serve(async (req) => {
     const respData = await resp.json();
     console.log("Full response:", JSON.stringify(respData, null, 2));
     
-    // -------- FIXED EXTRACTION --------
     const generatedContent =
-      respData.output?.[0]?.content
-        ?.map((c: any) => c.text)
-        .filter(Boolean)
-        .join("\n") ?? "";
+      respData.output_text ??
+      respData.output?.[0]?.content?.[0]?.text ??
+      "";
 
-    if (!generatedContent) {
-      throw new Error("No text content returned from OpenAI response");
-    }
-    // ----------------------------------
+     
 
     console.log('Generated content:', generatedContent);
 
@@ -146,6 +141,7 @@ serve(async (req) => {
       throw new Error('Failed to parse AI response');
     }
 
+  
     console.log('Inserting prompts into database for user:', userData.user.id);
 
     // Insert prompts into database
