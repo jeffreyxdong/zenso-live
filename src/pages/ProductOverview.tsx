@@ -315,12 +315,20 @@ const ProductOverview = () => {
         if (promptResponsesData && promptResponsesData.length > 0 && promptResponsesData[0].sources_final) {
           const sourcesFinal = promptResponsesData[0].sources_final as any;
           if (Array.isArray(sourcesFinal)) {
-            sources = sourcesFinal.map((source: any) => ({
-              domain: source.domain || source.name || "Unknown",
-              used_percentage: source.used_percentage || source.usage || 0,
-              avg_citations: source.avg_citations || source.citations || 0,
-              type: source.type || "Other",
-              is_own_domain: source.is_own_domain || false
+            // sources_final is an array of domain strings
+            const domainCounts = new Map<string, number>();
+            sourcesFinal.forEach((item: any) => {
+              const domain = typeof item === 'string' ? item : (item.domain || item.name || "Unknown");
+              domainCounts.set(domain, (domainCounts.get(domain) || 0) + 1);
+            });
+            
+            const totalSources = sourcesFinal.length;
+            sources = Array.from(domainCounts.entries()).map(([domain, count]) => ({
+              domain: domain,
+              used_percentage: Math.round((count / totalSources) * 100),
+              avg_citations: count,
+              type: "Other",
+              is_own_domain: false
             }));
           }
         }
