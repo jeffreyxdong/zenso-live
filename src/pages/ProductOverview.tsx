@@ -235,7 +235,6 @@ const ProductOverview = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [previewContent, setPreviewContent] = useState("");
   const [previewType, setPreviewType] = useState<string>("");
-  const [sources, setSources] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -337,80 +336,6 @@ const ProductOverview = () => {
         };
 
         setProduct(enhancedProduct);
-
-        // Fetch sources data from prompt_responses for this product
-        const { data: promptsData, error: promptsError } = await supabase
-          .from("prompts")
-          .select("id")
-          .eq("product_id", productId)
-          .eq("user_id", userData.user.id);
-
-        if (promptsError) {
-          console.error("Error fetching prompts:", promptsError);
-        } else if (promptsData && promptsData.length > 0) {
-          const promptIds = promptsData.map(p => p.id);
-          
-          const { data: responsesData, error: responsesError } = await supabase
-            .from("prompt_responses")
-            .select("sources_final")
-            .in("prompt_id", promptIds);
-
-          if (responsesError) {
-            console.error("Error fetching sources:", responsesError);
-          } else if (responsesData && responsesData.length > 0) {
-            // Aggregate sources across all responses
-            const allSources: any[] = [];
-            responsesData.forEach(response => {
-              if (response.sources_final && Array.isArray(response.sources_final)) {
-                allSources.push(...response.sources_final);
-              }
-            });
-
-            // Calculate statistics for each unique domain
-            const domainStats = new Map<string, { count: number; totalCitations: number; type: string }>();
-            
-            allSources.forEach((source: any) => {
-              const domain = source.domain || source.url || "Unknown";
-              const citations = source.citations || 0;
-              const type = source.type || "Other";
-              
-              if (domainStats.has(domain)) {
-                const stats = domainStats.get(domain)!;
-                stats.count++;
-                stats.totalCitations += citations;
-              } else {
-                domainStats.set(domain, { count: 1, totalCitations: citations, type });
-              }
-            });
-
-            // Convert to array and calculate percentages
-            const totalResponses = responsesData.length;
-            const sourcesArray = Array.from(domainStats.entries()).map(([domain, stats]) => {
-              let isOwn = false;
-              if (activeStore?.website) {
-                try {
-                  const websiteUrl = activeStore.website.startsWith('http') 
-                    ? activeStore.website 
-                    : `https://${activeStore.website}`;
-                  const hostname = new URL(websiteUrl).hostname;
-                  isOwn = domain.includes(hostname);
-                } catch (e) {
-                  // Invalid URL, skip
-                }
-              }
-              
-              return {
-                domain,
-                used: Math.round((stats.count / totalResponses) * 100),
-                avgCitations: stats.count > 0 ? (stats.totalCitations / stats.count).toFixed(1) : "0.0",
-                type: stats.type,
-                isOwn
-              };
-            }).sort((a, b) => b.used - a.used);
-
-            setSources(sourcesArray);
-          }
-        }
       } catch (error: any) {
         console.error("Error fetching product:", error);
         toast({
@@ -424,7 +349,7 @@ const ProductOverview = () => {
     };
 
     fetchProduct();
-  }, [productId, activeStore]);
+  }, [productId]);
 
   const handleGenerateContent = async (suggestion: Suggestion) => {
     // Mock AI content generation
@@ -584,41 +509,68 @@ Stay focused during calls with noise cancellation and enjoy music during breaks 
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {sources.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No source data available yet. Sources will appear after prompts are generated and scored.
+          <div className="rounded-lg border">
+            <div className="grid grid-cols-4 gap-4 p-4 bg-muted/50 border-b font-medium text-sm">
+              <div>Domain</div>
+              <div>Used</div>
+              <div>Avg. Citations</div>
+              <div>Type</div>
             </div>
-          ) : (
-            <div className="rounded-lg border">
-              <div className="grid grid-cols-4 gap-4 p-4 bg-muted/50 border-b font-medium text-sm">
-                <div>Domain</div>
-                <div>Used</div>
-                <div>Avg. Citations</div>
-                <div>Type</div>
-              </div>
-              <div className="divide-y">
-                {sources.map((source, index) => (
-                  <div key={index} className="grid grid-cols-4 gap-4 p-4 items-center">
-                    <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 rounded bg-muted flex items-center justify-center text-xs font-medium">
-                        {source.domain.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="font-medium">{source.domain}</span>
-                    </div>
-                    <div>{source.used}%</div>
-                    <div>{source.avgCitations}</div>
-                    <div>
-                      {source.isOwn ? (
-                        <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100">You</Badge>
-                      ) : (
-                        <Badge variant="secondary">{source.type}</Badge>
-                      )}
-                    </div>
+            <div className="divide-y">
+              <div className="grid grid-cols-4 gap-4 p-4 items-center">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded bg-orange-500 flex items-center justify-center">
+                    <div className="w-3 h-3 bg-white rounded-full"></div>
                   </div>
-                ))}
+                  <span className="font-medium">reddit.com</span>
+                </div>
+                <div>100%</div>
+                <div>2.0</div>
+                <div>
+                  <Badge variant="secondary">Other</Badge>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 gap-4 p-4 items-center">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded bg-red-600 flex items-center justify-center">
+                    <div className="w-3 h-3 bg-white rounded-sm"></div>
+                  </div>
+                  <span className="font-medium">youtube.com</span>
+                </div>
+                <div>100%</div>
+                <div>0.0</div>
+                <div>
+                  <Badge variant="secondary">Other</Badge>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 gap-4 p-4 items-center">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded bg-gray-400 flex items-center justify-center">
+                    <div className="w-3 h-3 bg-white rounded-full"></div>
+                  </div>
+                  <span className="font-medium">blendjet.com</span>
+                </div>
+                <div>50%</div>
+                <div>3.0</div>
+                <div>
+                  <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100">You</Badge>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 gap-4 p-4 items-center">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded bg-green-600 flex items-center justify-center text-white text-xs font-bold">
+                    CR
+                  </div>
+                  <span className="font-medium">consumerreports.org</span>
+                </div>
+                <div>50%</div>
+                <div>3.0</div>
+                <div>
+                  <Badge variant="secondary">Other</Badge>
+                </div>
               </div>
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
 
