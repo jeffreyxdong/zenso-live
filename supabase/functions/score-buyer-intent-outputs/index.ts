@@ -75,22 +75,22 @@ serve(async (req) => {
         input: [
           {
             role: "system",
-            content: `You are an expert research analyst scoring brand mentions in AI-generated responses. 
+            content: `You are an expert research analyst scoring product mentions in AI-generated responses. 
 You will be given a collection of multiple responses (a large text blob). 
 Evaluate them collectively and return three scores. Use the definitions below.
 
 Step 1 – Visibility Score:  
-A 0–100 score based on whether and how prominently the brand is mentioned overall across all responses.
+A 0–100 score based on whether and how prominently the product is mentioned overall across all responses.
 
 Step 2 – Position Score:  
-A 0–100 score measuring how prominently the brand is mentioned based on position.  
+A 0–100 score measuring how prominently the product is mentioned based on position.  
 - Mentions earlier in the combined text count more.  
 - First mention carries most weight.  
 - Multiple mentions have diminishing returns.  
 - Normalize to 0–100.
 
 Step 3 – Sentiment Score:  
-A 0–100 score reflecting tone of mentions toward the brand.  
+A 0–100 score reflecting tone of mentions toward the product.  
 - Very positive = 80–100  
 - Slightly positive = 60–79  
 - Neutral / descriptive = 40–59  
@@ -98,11 +98,16 @@ A 0–100 score reflecting tone of mentions toward the brand.
 - Very negative = 0–19  
 - Weight sentiment near first mentions more heavily.  
 
+
+Step 4 - Source Information:
+When a product is mentioned in the collection of multiple ressponses, output an array of all the sources that mentioned the product. Do not include the full URL, just the name of the source website/material.
+
 Return ONLY a JSON object in this format:
 {
   "visibility_score": 85,
   "position_score": 72,
   "sentiment_score": 91
+   sources: [...new Set(sourceDomains)] // ensure unique
 }`
           },
           {
