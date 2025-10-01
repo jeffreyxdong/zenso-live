@@ -3,7 +3,7 @@ import { useParams, useNavigate, useOutletContext } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Globe } from "lucide-react";
+import { ArrowLeft, Globe, Search, ExternalLink, Loader2, FileText, List, Code } from "lucide-react";
 import ProductMetrics from "@/components/ProductMetrics";
 import ProductCharts from "@/components/ProductCharts";
 import SuggestionsList from "@/components/SuggestionsList";
@@ -55,6 +55,18 @@ interface Suggestion {
   type: "content" | "schema" | "faq" | "description";
   estimatedImpact: "High" | "Medium" | "Low";
   status: "pending" | "applied" | "generating";
+}
+
+interface PDPContent {
+  url: string;
+  title: string;
+  metaDescription: string;
+  description: string;
+  bullets: string[];
+  schema: any;
+  images: string[];
+  price: string;
+  extractedAt: string;
 }
 
 // Generate historical data from actual product scores database records
@@ -228,6 +240,10 @@ const ProductOverview = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [previewContent, setPreviewContent] = useState("");
   const [previewType, setPreviewType] = useState<string>("");
+  const [pdpUrl, setPdpUrl] = useState<string | null>(null);
+  const [pdpContent, setPdpContent] = useState<PDPContent | null>(null);
+  const [pdpLoading, setPdpLoading] = useState(false);
+  const [pdpFetching, setPdpFetching] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -485,6 +501,75 @@ Stay focused during calls with noise cancellation and enjoy music during breaks 
     console.log("Applied content to store for suggestion:", suggestionId);
   };
 
+  const handleDiscoverPDP = async () => {
+    if (!product) return;
+
+    setPdpLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('find-product-pdp', {
+        body: {
+          productName: product.title,
+          brand: product.vendor
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.pdpUrl) {
+        setPdpUrl(data.pdpUrl);
+        toast({
+          title: "PDP Found",
+          description: "Official product page discovered successfully",
+        });
+      } else {
+        toast({
+          title: "No PDP Found",
+          description: "Could not locate the official product page",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error("Error discovering PDP:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to discover product page",
+        variant: "destructive",
+      });
+    } finally {
+      setPdpLoading(false);
+    }
+  };
+
+  const handleFetchPDPContent = async () => {
+    if (!pdpUrl) return;
+
+    setPdpFetching(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-pdp-content', {
+        body: { pdpUrl }
+      });
+
+      if (error) throw error;
+
+      if (data) {
+        setPdpContent(data as PDPContent);
+        toast({
+          title: "Content Extracted",
+          description: "Successfully fetched and parsed product page content",
+        });
+      }
+    } catch (error: any) {
+      console.error("Error fetching PDP content:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to fetch product page content",
+        variant: "destructive",
+      });
+    } finally {
+      setPdpFetching(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -543,6 +628,158 @@ Stay focused during calls with noise cancellation and enjoy music during breaks 
         suggestions={product.suggestions}
         onGenerateContent={handleGenerateContent}
       />
+
+      {/* AI Optimization - PDP Discovery */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Search className="h-5 w-5 text-primary" />
+            AI Optimization - Product Page Discovery
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={handleDiscoverPDP}
+                disabled={pdpLoading || pdpFetching}
+                className="w-fit"
+              >
+                {pdpLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Discovering...
+                  </>
+                ) : (
+                  <>
+                    <Search className="h-4 w-4 mr-2" />
+                    Discover Official PDP
+                  </>
+                )}
+              </Button>
+              
+              {pdpUrl && (
+                <Button
+                  onClick={handleFetchPDPContent}
+                  disabled={pdpFetching || pdpLoading}
+                  variant="secondary"
+                >
+                  {pdpFetching ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Extracting...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Extract Content
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+
+            {pdpUrl && (
+              <div className="p-4 bg-muted rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <Globe className="h-4 w-4 text-primary" />
+                  <span className="font-medium text-sm">Official Product Page</span>
+                </div>
+                <a
+                  href={pdpUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary hover:underline flex items-center gap-1"
+                >
+                  {pdpUrl}
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+            )}
+
+            {pdpContent && (
+              <div className="space-y-4 border-t pt-4">
+                {/* Title */}
+                {pdpContent.title && (
+                  <div>
+                    <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-primary" />
+                      Page Title
+                    </h3>
+                    <p className="text-sm text-muted-foreground">{pdpContent.title}</p>
+                  </div>
+                )}
+
+                {/* Meta Description */}
+                {pdpContent.metaDescription && (
+                  <div>
+                    <h3 className="font-semibold text-sm mb-2">Meta Description</h3>
+                    <p className="text-sm text-muted-foreground">{pdpContent.metaDescription}</p>
+                  </div>
+                )}
+
+                {/* Description */}
+                {pdpContent.description && (
+                  <div>
+                    <h3 className="font-semibold text-sm mb-2">Product Description</h3>
+                    <p className="text-sm text-muted-foreground line-clamp-6">
+                      {pdpContent.description}
+                    </p>
+                  </div>
+                )}
+
+                {/* Bullet Points */}
+                {pdpContent.bullets && pdpContent.bullets.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                      <List className="h-4 w-4 text-primary" />
+                      Key Features ({pdpContent.bullets.length})
+                    </h3>
+                    <ul className="space-y-1">
+                      {pdpContent.bullets.slice(0, 5).map((bullet, idx) => (
+                        <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
+                          <span className="text-primary mt-1">•</span>
+                          <span>{bullet}</span>
+                        </li>
+                      ))}
+                      {pdpContent.bullets.length > 5 && (
+                        <li className="text-sm text-muted-foreground italic">
+                          +{pdpContent.bullets.length - 5} more features
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Schema */}
+                {pdpContent.schema && (
+                  <div>
+                    <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                      <Code className="h-4 w-4 text-primary" />
+                      Structured Data (JSON-LD)
+                    </h3>
+                    <pre className="text-xs bg-muted p-3 rounded overflow-auto max-h-48">
+                      {JSON.stringify(pdpContent.schema, null, 2)}
+                    </pre>
+                  </div>
+                )}
+
+                {/* Price */}
+                {pdpContent.price && (
+                  <div>
+                    <h3 className="font-semibold text-sm mb-2">Price</h3>
+                    <p className="text-sm font-medium text-primary">{pdpContent.price}</p>
+                  </div>
+                )}
+
+                <div className="text-xs text-muted-foreground pt-2 border-t">
+                  Content extracted on {new Date(pdpContent.extractedAt).toLocaleString()}
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Sources Section */}
       <Card>

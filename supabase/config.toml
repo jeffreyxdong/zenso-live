@@ -159,6 +159,12 @@ verify_jwt = false
 [functions.score-buyer-intent-outputs]
 verify_jwt = false
 
+[functions.find-product-pdp]
+verify_jwt = false
+
+[functions.fetch-pdp-content]
+verify_jwt = false
+
 [storage]
 enabled = true
 port = 54322
