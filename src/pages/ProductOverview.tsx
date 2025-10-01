@@ -3,7 +3,7 @@ import { useParams, useNavigate, useOutletContext } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, TrendingUp, MapPin, Heart, Globe } from "lucide-react";
+import { ArrowLeft, Globe } from "lucide-react";
 import ProductMetrics from "@/components/ProductMetrics";
 import ProductCharts from "@/components/ProductCharts";
 import SuggestionsList from "@/components/SuggestionsList";
@@ -37,7 +37,6 @@ interface Product {
   sentimentHistory: { date: string; value: number }[];
   positionHistory: { date: string; value: number }[];
   suggestions: Suggestion[];
-  competitors: Competitor[];
   sources: Source[];
   currentMetrics: {
     visibility: "High" | "Medium" | "Low";
@@ -56,13 +55,6 @@ interface Suggestion {
   type: "content" | "schema" | "faq" | "description";
   estimatedImpact: "High" | "Medium" | "Low";
   status: "pending" | "applied" | "generating";
-}
-
-interface Competitor {
-  id: string;
-  name: string;
-  position: number;
-  visibilityScore: number;
 }
 
 // Generate historical data from actual product scores database records
@@ -227,14 +219,6 @@ const generateMockSuggestions = (productTitle: string): Suggestion[] => {
   return suggestions;
 };
 
-// Mock competitors generator
-const generateMockCompetitors = (): Competitor[] => [
-  { id: "c1", name: "Top Competitor Product", position: 1, visibilityScore: 95 },
-  { id: "c2", name: "Second Place Product", position: 2, visibilityScore: 89 },
-  { id: "c3", name: "Third Place Product", position: 3, visibilityScore: 82 },
-  { id: "c4", name: "Fourth Place Product", position: 4, visibilityScore: 76 }
-];
-
 const ProductOverview = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
@@ -384,7 +368,6 @@ const ProductOverview = () => {
           sentimentHistory, 
           positionHistory,
           suggestions: generateMockSuggestions(productData.title),
-          competitors: generateMockCompetitors(),
           sources,
           currentMetrics: {
             visibility: getVisibilityLevel(visibilityScore),
@@ -571,71 +554,26 @@ Stay focused during calls with noise cancellation and enjoy music during breaks 
         </CardHeader>
         <CardContent>
           {product.sources && product.sources.length > 0 ? (
-            <div className="rounded-lg border">
-              <div className="grid grid-cols-4 gap-4 p-4 bg-muted/50 border-b font-medium text-sm">
-                <div>Domain</div>
-                <div>Used</div>
-                <div>Avg. Citations</div>
-                <div>Type</div>
-              </div>
-              <div className="divide-y">
-                {product.sources.map((source, index) => (
-                  <div key={index} className="grid grid-cols-4 gap-4 p-4 items-center">
-                    <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 rounded bg-muted flex items-center justify-center text-xs font-bold">
-                        {source.domain.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="font-medium">{source.domain}</span>
-                    </div>
-                    <div>{source.used_percentage}%</div>
-                    <div>{source.avg_citations.toFixed(1)}</div>
-                    <div>
-                      {source.is_own_domain ? (
-                        <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100">You</Badge>
-                      ) : (
-                        <Badge variant="secondary">{source.type}</Badge>
-                      )}
-                    </div>
+            <div className="flex flex-wrap gap-3">
+              {product.sources.map((source, index) => (
+                <div 
+                  key={index} 
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg border bg-card hover:bg-accent transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-sm font-semibold text-primary">
+                      {source.domain.charAt(0).toUpperCase()}
+                    </span>
                   </div>
-                ))}
-              </div>
+                  <span className="font-medium text-sm">{source.domain}</span>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
               No source data available yet
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Competitors Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-primary" />
-            Top Competitors
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {product.competitors.map((competitor, index) => (
-              <div key={competitor.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium">
-                    #{competitor.position}
-                  </div>
-                  <div>
-                    <h3 className="font-medium">{competitor.name}</h3>
-                    <p className="text-sm text-muted-foreground">Position #{competitor.position}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-medium">{competitor.visibilityScore}%</div>
-                  <div className="text-sm text-muted-foreground">Visibility Score</div>
-                </div>
-              </div>
-            ))}
-          </div>
         </CardContent>
       </Card>
 
