@@ -242,6 +242,7 @@ export type Database = {
           response_text: string
           source: string | null
           sources: Json | null
+          sources_final: Json | null
         }
         Insert: {
           created_at?: string
@@ -251,6 +252,7 @@ export type Database = {
           response_text: string
           source?: string | null
           sources?: Json | null
+          sources_final?: Json | null
         }
         Update: {
           created_at?: string
@@ -260,6 +262,7 @@ export type Database = {
           response_text?: string
           source?: string | null
           sources?: Json | null
+          sources_final?: Json | null
         }
         Relationships: [
           {
