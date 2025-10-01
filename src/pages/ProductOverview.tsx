@@ -38,6 +38,7 @@ interface Product {
   positionHistory: { date: string; value: number }[];
   suggestions: Suggestion[];
   sources: Source[];
+  recommendations?: Recommendation[];
   currentMetrics: {
     visibility: "High" | "Medium" | "Low";
     sentiment: "Positive" | "Neutral" | "Negative";
@@ -46,6 +47,18 @@ interface Product {
     sentimentScore: number;
     positionScore: number;
   };
+}
+
+interface Recommendation {
+  id: string;
+  title: string;
+  description: string;
+  category: "content" | "schema" | "technical" | "branding";
+  impact: "high" | "medium" | "low";
+  effort: "high" | "medium" | "low";
+  pdp_url?: string;
+  status: "pending" | "in_progress" | "completed" | "dismissed";
+  created_at: string;
 }
 
 interface Suggestion {
@@ -244,6 +257,7 @@ const ProductOverview = () => {
   const [pdpContent, setPdpContent] = useState<PDPContent | null>(null);
   const [pdpLoading, setPdpLoading] = useState(false);
   const [pdpFetching, setPdpFetching] = useState(false);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -291,6 +305,17 @@ const ProductOverview = () => {
 
         if (promptsError) {
           console.error("Error fetching prompts:", promptsError);
+        }
+
+        // Fetch recommendations for this product
+        const { data: recommendationsData, error: recommendationsError } = await supabase
+          .from("product_recommendations")
+          .select("*")
+          .eq("product_id", productId)
+          .order("created_at", { ascending: false });
+
+        if (recommendationsError) {
+          console.error("Error fetching recommendations:", recommendationsError);
         }
 
         // Fetch prompt responses to get sources_final using the prompt ID
@@ -385,6 +410,7 @@ const ProductOverview = () => {
           positionHistory,
           suggestions: generateMockSuggestions(productData.title),
           sources,
+          recommendations: (recommendationsData as Recommendation[]) || [],
           currentMetrics: {
             visibility: getVisibilityLevel(visibilityScore),
             sentiment: getSentimentLevel(sentimentScore),
@@ -501,72 +527,72 @@ Stay focused during calls with noise cancellation and enjoy music during breaks 
     console.log("Applied content to store for suggestion:", suggestionId);
   };
 
-  const handleDiscoverPDP = async () => {
+  const handleGenerateRecommendations = async () => {
     if (!product) return;
 
-    setPdpLoading(true);
+    setRecommendationsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('find-product-pdp', {
-        body: {
-          productName: product.title,
-          brand: product.vendor
-        }
+      const { data, error } = await supabase.functions.invoke('generate-pdp-recommendations', {
+        body: { productId: product.id }
       });
 
       if (error) throw error;
 
-      if (data?.pdpUrl) {
-        setPdpUrl(data.pdpUrl);
+      if (data?.success) {
         toast({
-          title: "PDP Found",
-          description: "Official product page discovered successfully",
+          title: "Recommendations Generated",
+          description: `Generated ${data.recommendationsCount} AI optimization recommendations`,
         });
+        
+        // Refresh product data to show new recommendations
+        window.location.reload();
       } else {
         toast({
-          title: "No PDP Found",
-          description: "Could not locate the official product page",
+          title: "No Recommendations",
+          description: data?.message || "Could not generate recommendations",
           variant: "destructive",
         });
       }
     } catch (error: any) {
-      console.error("Error discovering PDP:", error);
+      console.error("Error generating recommendations:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to discover product page",
+        description: error.message || "Failed to generate recommendations",
         variant: "destructive",
       });
     } finally {
-      setPdpLoading(false);
+      setRecommendationsLoading(false);
     }
   };
 
-  const handleFetchPDPContent = async () => {
-    if (!pdpUrl) return;
-
-    setPdpFetching(true);
+  const handleUpdateRecommendationStatus = async (recommendationId: string, newStatus: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke('fetch-pdp-content', {
-        body: { pdpUrl }
-      });
+      const { error } = await supabase
+        .from("product_recommendations")
+        .update({ status: newStatus })
+        .eq("id", recommendationId);
 
       if (error) throw error;
 
-      if (data) {
-        setPdpContent(data as PDPContent);
-        toast({
-          title: "Content Extracted",
-          description: "Successfully fetched and parsed product page content",
-        });
+      // Update local state
+      if (product) {
+        const updatedRecommendations = product.recommendations?.map(rec =>
+          rec.id === recommendationId ? { ...rec, status: newStatus as any } : rec
+        );
+        setProduct({ ...product, recommendations: updatedRecommendations });
       }
+
+      toast({
+        title: "Status Updated",
+        description: "Recommendation status updated successfully",
+      });
     } catch (error: any) {
-      console.error("Error fetching PDP content:", error);
+      console.error("Error updating recommendation:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to fetch product page content",
+        description: "Failed to update recommendation status",
         variant: "destructive",
       });
-    } finally {
-      setPdpFetching(false);
     }
   };
 
@@ -629,155 +655,115 @@ Stay focused during calls with noise cancellation and enjoy music during breaks 
         onGenerateContent={handleGenerateContent}
       />
 
-      {/* AI Optimization - PDP Discovery */}
+      {/* AI Optimization - Recommendations */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Search className="h-5 w-5 text-primary" />
-            AI Optimization - Product Page Discovery
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Search className="h-5 w-5 text-primary" />
+              AI Optimization Suggestions
+            </CardTitle>
+            {(!product.recommendations || product.recommendations.length === 0) && (
               <Button
-                onClick={handleDiscoverPDP}
-                disabled={pdpLoading || pdpFetching}
-                className="w-fit"
+                onClick={handleGenerateRecommendations}
+                disabled={recommendationsLoading}
+                size="sm"
               >
-                {pdpLoading ? (
+                {recommendationsLoading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Discovering...
+                    Generating...
                   </>
                 ) : (
                   <>
                     <Search className="h-4 w-4 mr-2" />
-                    Discover Official PDP
+                    Generate Recommendations
                   </>
                 )}
               </Button>
-              
-              {pdpUrl && (
-                <Button
-                  onClick={handleFetchPDPContent}
-                  disabled={pdpFetching || pdpLoading}
-                  variant="secondary"
-                >
-                  {pdpFetching ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Extracting...
-                    </>
-                  ) : (
-                    <>
-                      <FileText className="h-4 w-4 mr-2" />
-                      Extract Content
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
-
-            {pdpUrl && (
-              <div className="p-4 bg-muted rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <Globe className="h-4 w-4 text-primary" />
-                  <span className="font-medium text-sm">Official Product Page</span>
-                </div>
-                <a
-                  href={pdpUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-primary hover:underline flex items-center gap-1"
-                >
-                  {pdpUrl}
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </div>
-            )}
-
-            {pdpContent && (
-              <div className="space-y-4 border-t pt-4">
-                {/* Title */}
-                {pdpContent.title && (
-                  <div>
-                    <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-primary" />
-                      Page Title
-                    </h3>
-                    <p className="text-sm text-muted-foreground">{pdpContent.title}</p>
-                  </div>
-                )}
-
-                {/* Meta Description */}
-                {pdpContent.metaDescription && (
-                  <div>
-                    <h3 className="font-semibold text-sm mb-2">Meta Description</h3>
-                    <p className="text-sm text-muted-foreground">{pdpContent.metaDescription}</p>
-                  </div>
-                )}
-
-                {/* Description */}
-                {pdpContent.description && (
-                  <div>
-                    <h3 className="font-semibold text-sm mb-2">Product Description</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-6">
-                      {pdpContent.description}
-                    </p>
-                  </div>
-                )}
-
-                {/* Bullet Points */}
-                {pdpContent.bullets && pdpContent.bullets.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                      <List className="h-4 w-4 text-primary" />
-                      Key Features ({pdpContent.bullets.length})
-                    </h3>
-                    <ul className="space-y-1">
-                      {pdpContent.bullets.slice(0, 5).map((bullet, idx) => (
-                        <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
-                          <span className="text-primary mt-1">•</span>
-                          <span>{bullet}</span>
-                        </li>
-                      ))}
-                      {pdpContent.bullets.length > 5 && (
-                        <li className="text-sm text-muted-foreground italic">
-                          +{pdpContent.bullets.length - 5} more features
-                        </li>
-                      )}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Schema */}
-                {pdpContent.schema && (
-                  <div>
-                    <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                      <Code className="h-4 w-4 text-primary" />
-                      Structured Data (JSON-LD)
-                    </h3>
-                    <pre className="text-xs bg-muted p-3 rounded overflow-auto max-h-48">
-                      {JSON.stringify(pdpContent.schema, null, 2)}
-                    </pre>
-                  </div>
-                )}
-
-                {/* Price */}
-                {pdpContent.price && (
-                  <div>
-                    <h3 className="font-semibold text-sm mb-2">Price</h3>
-                    <p className="text-sm font-medium text-primary">{pdpContent.price}</p>
-                  </div>
-                )}
-
-                <div className="text-xs text-muted-foreground pt-2 border-t">
-                  Content extracted on {new Date(pdpContent.extractedAt).toLocaleString()}
-                </div>
-              </div>
             )}
           </div>
+        </CardHeader>
+        <CardContent>
+          {product.recommendations && product.recommendations.length > 0 ? (
+            <div className="space-y-4">
+              {product.recommendations.map((rec) => (
+                <div
+                  key={rec.id}
+                  className="p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold">{rec.title}</h3>
+                        <Badge variant={rec.impact === "high" ? "default" : rec.impact === "medium" ? "secondary" : "outline"}>
+                          {rec.impact} impact
+                        </Badge>
+                        <Badge variant="outline" className="capitalize">
+                          {rec.effort} effort
+                        </Badge>
+                        <Badge variant="outline" className="capitalize">
+                          {rec.category}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{rec.description}</p>
+                      {rec.pdp_url && (
+                        <a
+                          href={rec.pdp_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline flex items-center gap-1"
+                        >
+                          View product page
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {rec.status === "pending" && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleUpdateRecommendationStatus(rec.id, "in_progress")}
+                          >
+                            Start
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleUpdateRecommendationStatus(rec.id, "dismissed")}
+                          >
+                            Dismiss
+                          </Button>
+                        </>
+                      )}
+                      {rec.status === "in_progress" && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleUpdateRecommendationStatus(rec.id, "completed")}
+                        >
+                          Complete
+                        </Button>
+                      )}
+                      {rec.status === "completed" && (
+                        <Badge variant="default">Completed</Badge>
+                      )}
+                      {rec.status === "dismissed" && (
+                        <Badge variant="secondary">Dismissed</Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground mb-4">
+                No AI optimization recommendations yet. Generate recommendations to improve your product's visibility in AI-powered search.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

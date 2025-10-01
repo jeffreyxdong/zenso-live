@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      product_recommendations: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          effort: string
+          id: string
+          impact: string
+          pdp_url: string | null
+          product_id: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          effort: string
+          id?: string
+          impact: string
+          pdp_url?: string | null
+          product_id: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          effort?: string
+          id?: string
+          impact?: string
+          pdp_url?: string | null
+          product_id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       product_scores: {
         Row: {
           created_at: string

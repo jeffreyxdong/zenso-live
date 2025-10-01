@@ -187,7 +187,16 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
             headers: authHeaders,
           });
 
-          console.log('Buyer-intent analysis pipeline completed successfully');
+          // Step 4: Generate PDP recommendations
+          console.log('Generating AI optimization recommendations...');
+          await supabase.functions.invoke('generate-pdp-recommendations', {
+            body: {
+              productId: productData.id,
+            },
+            headers: authHeaders,
+          });
+
+          console.log('Buyer-intent analysis and AI recommendations pipeline completed successfully');
         }
       } catch (promptError) {
         console.error('Error in buyer-intent analysis pipeline:', promptError);
@@ -196,7 +205,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
 
       toast({
         title: "Success",
-        description: "Product added successfully with buyer-intent prompts generated",
+        description: "Product added successfully with AI optimization recommendations",
       });
 
       form.reset();
