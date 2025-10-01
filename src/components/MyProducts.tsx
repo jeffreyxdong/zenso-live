@@ -514,27 +514,12 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
   const getScoreBadge = (score?: number) => {
     const displayScore = score ?? 0;
     if (displayScore >= 80) {
-      return (
-        <Badge className="bg-green-100 text-green-800 hover:bg-green-100 px-2 py-0.5 font-mono tabular-nums">
-          <span className="text-sm font-semibold">{displayScore}</span>
-          <span className="text-xs ml-0.5 opacity-60">/100</span>
-        </Badge>
-      );
+      return <span className="text-sm font-semibold px-3 py-1.5 rounded-md border text-green-700 bg-green-50 border-green-200">{displayScore}/100</span>;
     }
     if (displayScore >= 60) {
-      return (
-        <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 px-2 py-0.5 font-mono tabular-nums">
-          <span className="text-sm font-semibold">{displayScore}</span>
-          <span className="text-xs ml-0.5 opacity-60">/100</span>
-        </Badge>
-      );
+      return <span className="text-sm font-semibold px-3 py-1.5 rounded-md border text-yellow-700 bg-yellow-50 border-yellow-200">{displayScore}/100</span>;
     }
-    return (
-      <Badge className="bg-red-100 text-red-800 hover:bg-red-100 px-2 py-0.5 font-mono tabular-nums">
-        <span className="text-sm font-semibold">{displayScore}</span>
-        <span className="text-xs ml-0.5 opacity-60">/100</span>
-      </Badge>
-    );
+    return <span className="text-sm font-semibold px-3 py-1.5 rounded-md border text-red-700 bg-red-50 border-red-200">{displayScore}/100</span>;
   };
 
   const handleProductClick = (product: Product) => {
