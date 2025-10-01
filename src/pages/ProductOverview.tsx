@@ -385,13 +385,28 @@ const ProductOverview = () => {
 
             // Convert to array and calculate percentages
             const totalResponses = responsesData.length;
-            const sourcesArray = Array.from(domainStats.entries()).map(([domain, stats]) => ({
-              domain,
-              used: Math.round((stats.count / totalResponses) * 100),
-              avgCitations: stats.count > 0 ? (stats.totalCitations / stats.count).toFixed(1) : "0.0",
-              type: stats.type,
-              isOwn: activeStore && domain.includes(new URL(activeStore.website).hostname)
-            })).sort((a, b) => b.used - a.used);
+            const sourcesArray = Array.from(domainStats.entries()).map(([domain, stats]) => {
+              let isOwn = false;
+              if (activeStore?.website) {
+                try {
+                  const websiteUrl = activeStore.website.startsWith('http') 
+                    ? activeStore.website 
+                    : `https://${activeStore.website}`;
+                  const hostname = new URL(websiteUrl).hostname;
+                  isOwn = domain.includes(hostname);
+                } catch (e) {
+                  // Invalid URL, skip
+                }
+              }
+              
+              return {
+                domain,
+                used: Math.round((stats.count / totalResponses) * 100),
+                avgCitations: stats.count > 0 ? (stats.totalCitations / stats.count).toFixed(1) : "0.0",
+                type: stats.type,
+                isOwn
+              };
+            }).sort((a, b) => b.used - a.used);
 
             setSources(sourcesArray);
           }
