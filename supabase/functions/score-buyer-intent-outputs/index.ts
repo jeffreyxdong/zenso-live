@@ -142,6 +142,22 @@ ${allResponsesText}`
     const visibilityScore = parseInt(scores.visibility_score) || 0;
     const positionScore = parseInt(scores.position_score) || 0;
     const sentimentScore = parseInt(scores.sentiment_score) || 0;
+    const sources = scores.sources || [];
+
+    // Update prompt_responses with sources
+    if (sources.length > 0 && responses.length > 0) {
+      const responseIds = responses.map(r => r.id);
+      const { error: updateError } = await supabase
+        .from('prompt_responses')
+        .update({ sources: sources })
+        .in('id', responseIds);
+
+      if (updateError) {
+        console.error('Failed to update prompt_responses with sources:', updateError);
+      } else {
+        console.log(`Updated ${responseIds.length} prompt_responses with sources`);
+      }
+    }
 
     // Save to product_scores
     const { data: insertedScore, error: scoreError } = await supabase
