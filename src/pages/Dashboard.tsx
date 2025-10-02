@@ -35,28 +35,30 @@ const Dashboard = () => {
     }
   }, [activeTab, activeStore?.id]);
 
-  const loadBrandAnalytics = async () => {
+  const loadBrandAnalytics = async (forceRescore = false) => {
     if (!activeStore?.id) return;
     
     try {
       setIsLoadingAnalytics(true);
       
-      // Check if we already have brand analytics
-      const { data: existingPrompts } = await supabase
-        .from('brand_prompts')
-        .select('visibility_score')
-        .eq('store_id', activeStore.id);
+      // Check if we already have brand analytics (skip if forcing rescore)
+      if (!forceRescore) {
+        const { data: existingPrompts } = await supabase
+          .from('brand_prompts')
+          .select('visibility_score')
+          .eq('store_id', activeStore.id);
 
-      if (existingPrompts && existingPrompts.length > 0) {
-        // Calculate average from existing data
-        const scores = existingPrompts.filter(p => p.visibility_score !== null);
-        if (scores.length > 0) {
-          const avg = Math.round(
-            scores.reduce((sum, p) => sum + (p.visibility_score || 0), 0) / scores.length
-          );
-          setBrandVisibility(avg);
-          setIsLoadingAnalytics(false);
-          return;
+        if (existingPrompts && existingPrompts.length > 0) {
+          // Calculate average from existing data
+          const scores = existingPrompts.filter(p => p.visibility_score !== null);
+          if (scores.length > 0) {
+            const avg = Math.round(
+              scores.reduce((sum, p) => sum + (p.visibility_score || 0), 0) / scores.length
+            );
+            setBrandVisibility(avg);
+            setIsLoadingAnalytics(false);
+            return;
+          }
         }
       }
 
@@ -402,7 +404,7 @@ const Dashboard = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={loadBrandAnalytics}
+                onClick={() => loadBrandAnalytics(true)}
                 disabled={isLoadingAnalytics}
                 className="gap-2"
               >
@@ -432,7 +434,7 @@ const Dashboard = () => {
                       </p>
                       {brandVisibility === null && !isLoadingAnalytics && (
                         <Button 
-                          onClick={loadBrandAnalytics}
+                          onClick={() => loadBrandAnalytics(true)}
                           className="mt-4"
                           size="sm"
                         >
