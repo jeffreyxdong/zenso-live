@@ -314,6 +314,9 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
     if (score == null) {
       return <span className="text-xs text-muted-foreground px-2 py-1 rounded bg-muted/50">No Data</span>;
     }
+    if (score === 0) {
+      return <span className="text-sm font-semibold px-3 py-1.5 rounded-md border text-muted-foreground bg-muted/50 border-muted">Not Mentioned</span>;
+    }
     const colorClass =
       type === "visibility"
         ? score >= 80
