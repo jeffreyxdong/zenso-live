@@ -11,17 +11,17 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// --- Helper to safely extract text from Responses API JSON ---
+// --- Robust helper to safely extract text from Responses API ---
 function extractText(json: any): string {
-  if (json.output && Array.isArray(json.output)) {
+  if (json?.output && Array.isArray(json.output)) {
     return json.output
       .map((o: any) =>
-        o.content?.map((c: any) => c.text).join(" ")
+        o.content?.map((c: any) => (c.text ?? "")).join(" ")
       )
       .join(" ")
       .trim();
   }
-  if (json.output_text) return json.output_text.trim();
+  if (json?.output_text) return json.output_text.trim();
   return "";
 }
 
@@ -85,7 +85,7 @@ Rules:
 
     let prompts: string[] = [];
     try {
-      const cleaned = generatedText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      const cleaned = generatedText.replace(/```json\n?/g, "").replace(/```/g, "").trim();
       prompts = JSON.parse(cleaned);
     } catch (e) {
       console.error("Prompt parse error:", e, "Raw text:", generatedText);
