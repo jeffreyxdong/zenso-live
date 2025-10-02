@@ -7,6 +7,7 @@ import { Search, TrendingUp, Globe, BarChart3, Eye, Heart, MapPin, FileText, Dat
 import { PromptsTab } from "@/components/PromptsTab";
 import MyProducts from "@/components/MyProducts";
 import ProductMetrics from "@/components/ProductMetrics";
+import BrandVisibilityChart from "@/components/BrandVisibilityChart";
 import { useNavigate, useLocation, useOutletContext } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -449,19 +450,7 @@ const Dashboard = () => {
           </Card>
 
           {/* Brand AI Visibility Trends */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Brand AI Visibility Trends</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64 bg-muted/50 rounded-lg flex items-center justify-center">
-                <div className="text-center">
-                  <TrendingUp className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-muted-foreground">Brand visibility chart will go here</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {activeStore?.id && <BrandVisibilityChart storeId={activeStore.id} />}
 
           {/* AI Optimization Suggestions */}
           <Card>
