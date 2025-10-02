@@ -19,12 +19,67 @@ const Dashboard = () => {
     return urlParams.get("tab") || "overview";
   });
   const [companyName, setCompanyName] = useState("BrandRefs");
+  const [brandVisibility, setBrandVisibility] = useState<number | null>(null);
+  const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
 
   // Update activeTab when URL changes
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     setActiveTab(urlParams.get("tab") || "overview");
   }, [location.search]);
+
+  // Load brand analytics when brand-overview tab is active
+  useEffect(() => {
+    if (activeTab === "brand-overview" && activeStore?.id) {
+      loadBrandAnalytics();
+    }
+  }, [activeTab, activeStore?.id]);
+
+  const loadBrandAnalytics = async () => {
+    if (!activeStore?.id) return;
+    
+    try {
+      setIsLoadingAnalytics(true);
+      
+      // Check if we already have brand analytics
+      const { data: existingPrompts } = await supabase
+        .from('prompts')
+        .select('visibility_score')
+        .eq('store_id', activeStore.id)
+        .is('product_id', null);
+
+      if (existingPrompts && existingPrompts.length > 0) {
+        // Calculate average from existing data
+        const scores = existingPrompts.filter(p => p.visibility_score !== null);
+        if (scores.length > 0) {
+          const avg = Math.round(
+            scores.reduce((sum, p) => sum + (p.visibility_score || 0), 0) / scores.length
+          );
+          setBrandVisibility(avg);
+          setIsLoadingAnalytics(false);
+          return;
+        }
+      }
+
+      // Generate new analytics
+      const { data, error } = await supabase.functions.invoke('brand-analytics', {
+        body: { storeId: activeStore.id }
+      });
+
+      if (error) {
+        console.error('Error calling brand-analytics:', error);
+        throw error;
+      }
+      
+      if (data?.averageVisibility !== undefined) {
+        setBrandVisibility(data.averageVisibility);
+      }
+    } catch (error) {
+      console.error('Error loading brand analytics:', error);
+    } finally {
+      setIsLoadingAnalytics(false);
+    }
+  };
 
   // Load company profile data
   useEffect(() => {
@@ -341,17 +396,46 @@ const Dashboard = () => {
 
       {activeTab === "brand-overview" && (
         <div className="space-y-6">
-          {/* Brand Metrics - 3 Column Component */}
-          <ProductMetrics
-            metrics={{
-              visibility: "High",
-              sentiment: "Positive",
-              position: 2,
-              visibilityScore: 87,
-              sentimentScore: 86,
-              positionScore: 92
-            }}
-          />
+          {/* Brand AI Visibility Score */}
+          <Card>
+            <CardHeader>
+              <CardTitle>AI Visibility Score</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  {isLoadingAnalytics ? (
+                    <>
+                      <div className="text-6xl font-bold text-muted-foreground mb-2">
+                        ...
+                      </div>
+                      <p className="text-muted-foreground">
+                        Analyzing brand visibility...
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-6xl font-bold text-primary mb-2">
+                        {brandVisibility !== null ? brandVisibility : '--'}
+                      </div>
+                      <p className="text-muted-foreground">
+                        Average visibility across brand prompts
+                      </p>
+                      {brandVisibility === null && !isLoadingAnalytics && (
+                        <Button 
+                          onClick={loadBrandAnalytics}
+                          className="mt-4"
+                          size="sm"
+                        >
+                          Generate Analytics
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Brand AI Visibility Trends */}
           <Card>

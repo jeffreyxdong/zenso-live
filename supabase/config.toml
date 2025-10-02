@@ -168,6 +168,9 @@ verify_jwt = false
 [functions.generate-pdp-recommendations]
 verify_jwt = false
 
+[functions.brand-analytics]
+verify_jwt = false
+
 [storage]
 enabled = true
 port = 54322
