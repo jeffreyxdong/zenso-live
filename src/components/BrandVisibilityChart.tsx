@@ -156,16 +156,24 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis 
                 dataKey="date" 
-                className="text-xs fill-muted-foreground"
-                tick={{ fontSize: 10 }}
+                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
                 tickFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                label={{ value: 'Date', position: 'insideBottom', offset: -5, fontSize: 12 }}
+                label={{ 
+                  value: 'Date', 
+                  position: 'insideBottom', 
+                  offset: -5, 
+                  style: { fontSize: 12, fill: 'hsl(var(--muted-foreground))' }
+                }}
               />
               <YAxis 
-                className="text-xs fill-muted-foreground"
-                tick={{ fontSize: 10 }}
+                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
                 domain={[0, 100]}
-                label={{ value: 'Visibility Score', angle: -90, position: 'insideLeft', fontSize: 12 }}
+                label={{ 
+                  value: 'Visibility Score', 
+                  angle: -90, 
+                  position: 'insideLeft',
+                  style: { fontSize: 12, fill: 'hsl(var(--muted-foreground))' }
+                }}
               />
               <Tooltip 
                 contentStyle={{ 
