@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, TrendingUp, Globe, BarChart3, Eye, Heart, MapPin, FileText, Database, Cpu, Target, Sparkles, CheckCircle } from "lucide-react";
+import { Search, TrendingUp, Globe, BarChart3, Eye, Heart, MapPin, FileText, Database, Cpu, Target, Sparkles, CheckCircle, RefreshCw } from "lucide-react";
 import { PromptsTab } from "@/components/PromptsTab";
 import MyProducts from "@/components/MyProducts";
 import ProductMetrics from "@/components/ProductMetrics";
@@ -397,8 +397,18 @@ const Dashboard = () => {
         <div className="space-y-6">
           {/* Brand AI Visibility Score */}
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle>AI Visibility Score</CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={loadBrandAnalytics}
+                disabled={isLoadingAnalytics}
+                className="gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${isLoadingAnalytics ? 'animate-spin' : ''}`} />
+                Rescore
+              </Button>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-center py-8">
