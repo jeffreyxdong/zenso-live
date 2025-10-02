@@ -52,6 +52,12 @@ const AddStoreModal = ({ open, onOpenChange, onStoreAdded }: AddStoreModalProps)
         return;
       }
 
+      // First, deactivate all existing stores for this user
+      await supabase
+        .from("stores")
+        .update({ is_active: false })
+        .eq("user_id", user.id);
+
       // Create new store (always set as active)
       const { data: newStore, error } = await supabase
         .from("stores")

@@ -74,7 +74,16 @@ const StoreSelector = ({ onStoreChange, onAddStore }: StoreSelectorProps) => {
 
   const switchToStore = async (store: Store) => {
     try {
-      // Update active store in database
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // First deactivate all stores for this user
+      await supabase
+        .from("stores")
+        .update({ is_active: false })
+        .eq("user_id", user.id);
+
+      // Then activate the selected store
       await supabase
         .from("stores")
         .update({ is_active: true })
