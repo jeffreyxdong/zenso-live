@@ -405,10 +405,10 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
                   />
                 </TableHead>
                 <TableHead>Prompt</TableHead>
-                <TableHead>Visibility</TableHead>
-                <TableHead>Sentiment</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead className="w-12">Actions</TableHead>
+                <TableHead className="text-center">Visibility</TableHead>
+                <TableHead className="text-center">Sentiment</TableHead>
+                <TableHead className="text-center">Created</TableHead>
+                <TableHead className="w-12 text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -428,12 +428,12 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
                       </p>
                     </div>
                   </TableCell>
-                  <TableCell>{getScoreDisplay(p.visibility_score, "visibility")}</TableCell>
-                  <TableCell>{getScoreDisplay(p.sentiment_score, "sentiment")}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
+                  <TableCell className="text-center">{getScoreDisplay(p.visibility_score, "visibility")}</TableCell>
+                  <TableCell className="text-center">{getScoreDisplay(p.sentiment_score, "sentiment")}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground text-center">
                     {new Date(p.created_at).toLocaleDateString()}
                   </TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
+                  <TableCell onClick={(e) => e.stopPropagation()} className="text-center">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">
