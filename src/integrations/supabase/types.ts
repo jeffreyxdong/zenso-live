@@ -14,6 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      brand_prompt_responses: {
+        Row: {
+          brand_prompt_id: string
+          created_at: string
+          id: string
+          model_name: string
+          response_text: string
+          source: string | null
+          sources: Json | null
+          sources_final: Json | null
+        }
+        Insert: {
+          brand_prompt_id: string
+          created_at?: string
+          id?: string
+          model_name: string
+          response_text: string
+          source?: string | null
+          sources?: Json | null
+          sources_final?: Json | null
+        }
+        Update: {
+          brand_prompt_id?: string
+          created_at?: string
+          id?: string
+          model_name?: string
+          response_text?: string
+          source?: string | null
+          sources?: Json | null
+          sources_final?: Json | null
+        }
+        Relationships: []
+      }
+      brand_prompts: {
+        Row: {
+          active: boolean
+          brand_name: string
+          content: string
+          created_at: string
+          id: string
+          position_score: number | null
+          sentiment_score: number | null
+          status: string
+          store_id: string
+          updated_at: string
+          user_id: string
+          visibility_score: number | null
+        }
+        Insert: {
+          active?: boolean
+          brand_name: string
+          content: string
+          created_at?: string
+          id?: string
+          position_score?: number | null
+          sentiment_score?: number | null
+          status?: string
+          store_id: string
+          updated_at?: string
+          user_id: string
+          visibility_score?: number | null
+        }
+        Update: {
+          active?: boolean
+          brand_name?: string
+          content?: string
+          created_at?: string
+          id?: string
+          position_score?: number | null
+          sentiment_score?: number | null
+          status?: string
+          store_id?: string
+          updated_at?: string
+          user_id?: string
+          visibility_score?: number | null
+        }
+        Relationships: []
+      }
       product_recommendations: {
         Row: {
           category: string

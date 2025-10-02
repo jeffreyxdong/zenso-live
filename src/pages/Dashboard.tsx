@@ -43,10 +43,9 @@ const Dashboard = () => {
       
       // Check if we already have brand analytics
       const { data: existingPrompts } = await supabase
-        .from('prompts')
+        .from('brand_prompts')
         .select('visibility_score')
-        .eq('store_id', activeStore.id)
-        .is('product_id', null);
+        .eq('store_id', activeStore.id);
 
       if (existingPrompts && existingPrompts.length > 0) {
         // Calculate average from existing data

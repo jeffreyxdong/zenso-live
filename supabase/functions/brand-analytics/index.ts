@@ -123,13 +123,13 @@ Example format:
     }));
 
     const { data: insertedPrompts, error: insertError } = await supabase
-      .from('prompts')
+      .from('brand_prompts')
       .insert(promptRecords)
       .select();
 
     if (insertError) {
-      console.error('Error inserting prompts:', insertError);
-      throw new Error('Failed to store prompts');
+      console.error('Error inserting brand prompts:', insertError);
+      throw new Error('Failed to store brand prompts');
     }
 
     console.log(`Stored ${insertedPrompts.length} prompts in database`);
@@ -223,16 +223,16 @@ ${responseText}`;
 
       // Store response
       await supabase
-        .from('prompt_responses')
+        .from('brand_prompt_responses')
         .insert({
-          prompt_id: prompt.id,
+          brand_prompt_id: prompt.id,
           response_text: responseText,
           model_name: 'gpt-4o-mini',
         });
 
       // Update prompt with visibility score
       await supabase
-        .from('prompts')
+        .from('brand_prompts')
         .update({ visibility_score: visibilityScore })
         .eq('id', prompt.id);
 
