@@ -137,55 +137,61 @@ Example format:
     // Step 2: Generate responses for each prompt
     const responses: Array<{ promptId: string; responseText: string; visibilityScore: number }> = [];
 
-    for (const prompt of insertedPrompts) {
-      console.log(`Generating response for prompt: ${prompt.content}`);
+    console.log(`Starting response generation for ${insertedPrompts.length} prompts`);
 
-      const responsePrompt = `${prompt.content}
+    for (let i = 0; i < insertedPrompts.length; i++) {
+      const prompt = insertedPrompts[i];
+      console.log(`[${i + 1}/${insertedPrompts.length}] Processing prompt: ${prompt.content.substring(0, 50)}...`);
+
+      try {
+        const responsePrompt = `${prompt.content}
 
 Please provide a comprehensive response as if answering a user's search query.`;
 
-      const responseData = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            { role: 'system', content: 'You are a helpful AI assistant providing informative responses to user queries.' },
-            { role: 'user', content: responsePrompt }
-          ],
-          max_tokens: 1000,
-        }),
-      });
+        console.log('Calling OpenAI for response generation...');
+        const responseData = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openAIApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [
+              { role: 'system', content: 'You are a helpful AI assistant providing informative responses to user queries.' },
+              { role: 'user', content: responsePrompt }
+            ],
+            max_tokens: 1000,
+          }),
+        });
 
-      if (!responseData.ok) {
-        console.error(`Failed to generate response for prompt ${prompt.id}`);
-        continue;
-      }
+        if (!responseData.ok) {
+          console.error(`Failed to generate response for prompt ${prompt.id}: ${responseData.statusText}`);
+          continue;
+        }
 
-      const responseJson = await responseData.json();
-      const responseText = responseJson.choices?.[0]?.message?.content || '';
+        const responseJson = await responseData.json();
+        const responseText = responseJson.choices?.[0]?.message?.content || '';
 
-      console.log(`Response generated (${responseText.length} chars)`);
+        console.log(`Response generated (${responseText.length} chars)`);
 
-      // Step 3: Score visibility
-      console.log(`Scoring brand visibility for: ${store.name}`);
+        // Step 3: Score visibility
+        console.log(`Scoring brand visibility for: ${store.name}`);
 
-      const contentLower = responseText.toLowerCase();
-      const brandLower = store.name.toLowerCase();
-      
-      const exactMatch = contentLower.includes(brandLower);
-      const wordBoundaryMatch = new RegExp(`\\b${brandLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(responseText);
-      const partialMatch = brandLower.split(' ').some((word: string) => word.length > 2 && contentLower.includes(word));
-      
-      const brandMentioned = exactMatch || wordBoundaryMatch || partialMatch;
-      
-      let visibilityScore = 0;
+        const contentLower = responseText.toLowerCase();
+        const brandLower = store.name.toLowerCase();
+        
+        const exactMatch = contentLower.includes(brandLower);
+        const wordBoundaryMatch = new RegExp(`\\b${brandLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(responseText);
+        const partialMatch = brandLower.split(' ').some((word: string) => word.length > 2 && contentLower.includes(word));
+        
+        const brandMentioned = exactMatch || wordBoundaryMatch || partialMatch;
+        
+        let visibilityScore = 0;
 
-      if (brandMentioned) {
-        const scoringPrompt = `You are an expert research analyst. The brand "${store.name}" is mentioned in this content. Provide a visibility score of 1-100 based on how prominently and visibly the brand is featured. Consider factors like:
+        if (brandMentioned) {
+          console.log('Brand mentioned, calculating visibility score...');
+          const scoringPrompt = `You are an expert research analyst. The brand "${store.name}" is mentioned in this content. Provide a visibility score of 1-100 based on how prominently and visibly the brand is featured. Consider factors like:
 - Position in the content (earlier mentions score higher)
 - Context of the mention (positive context, recommendations score higher)
 - Frequency of mentions
@@ -196,59 +202,86 @@ Respond with ONLY a number between 1-100, nothing else.
 Content to analyze:
 ${responseText}`;
 
-        const scoreResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${openAIApiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'gpt-4o-mini',
-            messages: [
-              { role: 'user', content: scoringPrompt }
-            ],
-            max_tokens: 10,
-          }),
-        });
+          const scoreResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openAIApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o-mini',
+              messages: [
+                { role: 'user', content: scoringPrompt }
+              ],
+              max_tokens: 10,
+            }),
+          });
 
-        if (scoreResponse.ok) {
-          const scoreData = await scoreResponse.json();
-          const scoreText = scoreData.choices?.[0]?.message?.content?.trim() || '0';
-          visibilityScore = parseInt(scoreText) || 0;
-          console.log(`Visibility score: ${visibilityScore}`);
+          if (scoreResponse.ok) {
+            const scoreData = await scoreResponse.json();
+            const scoreText = scoreData.choices?.[0]?.message?.content?.trim() || '0';
+            visibilityScore = parseInt(scoreText) || 0;
+            console.log(`Visibility score calculated: ${visibilityScore}`);
+          } else {
+            console.error('Failed to calculate visibility score');
+          }
+        } else {
+          console.log(`Brand "${store.name}" not mentioned - visibility score 0`);
         }
-      } else {
-        console.log(`Brand "${store.name}" not mentioned - visibility score 0`);
-      }
 
-      // Store response
-      await supabase
-        .from('brand_prompt_responses')
-        .insert({
-          brand_prompt_id: prompt.id,
-          response_text: responseText,
-          model_name: 'gpt-4o-mini',
+        // Store response
+        console.log('Storing response in database...');
+        const { error: responseInsertError } = await supabase
+          .from('brand_prompt_responses')
+          .insert({
+            brand_prompt_id: prompt.id,
+            response_text: responseText,
+            model_name: 'gpt-4o-mini',
+          });
+
+        if (responseInsertError) {
+          console.error('Failed to insert response:', responseInsertError);
+        } else {
+          console.log('Response stored successfully');
+        }
+
+        // Update prompt with visibility score
+        console.log('Updating prompt with visibility score...');
+        const { error: updateError } = await supabase
+          .from('brand_prompts')
+          .update({ visibility_score: visibilityScore })
+          .eq('id', prompt.id);
+
+        if (updateError) {
+          console.error('Failed to update prompt:', updateError);
+        } else {
+          console.log('Prompt updated with visibility score');
+        }
+
+        responses.push({
+          promptId: prompt.id,
+          responseText,
+          visibilityScore,
         });
 
-      // Update prompt with visibility score
-      await supabase
-        .from('brand_prompts')
-        .update({ visibility_score: visibilityScore })
-        .eq('id', prompt.id);
-
-      responses.push({
-        promptId: prompt.id,
-        responseText,
-        visibilityScore,
-      });
+        console.log(`[${i + 1}/${insertedPrompts.length}] Completed successfully`);
+      } catch (promptError) {
+        console.error(`Error processing prompt ${prompt.id}:`, promptError);
+        // Continue with next prompt even if this one fails
+      }
     }
+
+    console.log(`Finished processing all prompts. Successfully generated ${responses.length} responses.`);
 
     // Calculate average visibility score
     const avgVisibility = responses.length > 0
       ? Math.round(responses.reduce((sum, r) => sum + r.visibilityScore, 0) / responses.length)
       : 0;
 
-    console.log(`Brand analytics complete. Average visibility: ${avgVisibility}`);
+    console.log(`=== Brand analytics complete ===`);
+    console.log(`Total prompts: ${prompts.length}`);
+    console.log(`Responses generated: ${responses.length}`);
+    console.log(`Average visibility score: ${avgVisibility}`);
 
     return new Response(
       JSON.stringify({
