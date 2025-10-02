@@ -159,11 +159,13 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
                 className="text-xs fill-muted-foreground"
                 tick={{ fontSize: 10 }}
                 tickFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                label={{ value: 'Date', position: 'insideBottom', offset: -5, fontSize: 12 }}
               />
               <YAxis 
                 className="text-xs fill-muted-foreground"
                 tick={{ fontSize: 10 }}
                 domain={[0, 100]}
+                label={{ value: 'Visibility Score', angle: -90, position: 'insideLeft', fontSize: 12 }}
               />
               <Tooltip 
                 contentStyle={{ 
