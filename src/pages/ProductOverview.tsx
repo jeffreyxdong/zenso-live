@@ -690,11 +690,11 @@ Stay focused during calls with noise cancellation and enjoy music during breaks 
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold">{rec.title}</h3>
-                        <Badge variant={rec.impact === "high" ? "default" : rec.impact === "medium" ? "secondary" : "outline"}>
-                          {rec.impact} impact
+                        <Badge variant={rec.impact === "high" ? "default" : rec.impact === "medium" ? "secondary" : "outline"} className="capitalize">
+                          {rec.impact} Impact
                         </Badge>
                         <Badge variant="outline" className="capitalize">
-                          {rec.effort} effort
+                          {rec.effort} Effort
                         </Badge>
                         <Badge variant="outline" className="capitalize">
                           {rec.category}
@@ -711,40 +711,6 @@ Stay focused during calls with noise cancellation and enjoy music during breaks 
                           View product page
                           <ExternalLink className="h-3 w-3" />
                         </a>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {rec.status === "pending" && (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleUpdateRecommendationStatus(rec.id, "in_progress")}
-                          >
-                            Start
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleUpdateRecommendationStatus(rec.id, "dismissed")}
-                          >
-                            Dismiss
-                          </Button>
-                        </>
-                      )}
-                      {rec.status === "in_progress" && (
-                        <Button
-                          size="sm"
-                          onClick={() => handleUpdateRecommendationStatus(rec.id, "completed")}
-                        >
-                          Complete
-                        </Button>
-                      )}
-                      {rec.status === "completed" && (
-                        <Badge variant="default">Completed</Badge>
-                      )}
-                      {rec.status === "dismissed" && (
-                        <Badge variant="secondary">Dismissed</Badge>
                       )}
                     </div>
                   </div>
