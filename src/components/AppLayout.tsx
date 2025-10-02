@@ -335,6 +335,11 @@ const AppLayout = () => {
       <AddStoreModal 
         open={showAddStoreModal}
         onOpenChange={setShowAddStoreModal}
+        onStoreAdded={(newStore) => {
+          setActiveStore(newStore);
+          // Force a page reload to refresh all data with the new active store
+          window.location.reload();
+        }}
       />
     </SidebarProvider>
   );
