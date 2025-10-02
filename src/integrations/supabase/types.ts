@@ -516,30 +516,6 @@ export type Database = {
       }
     }
     Views: {
-      brand_prompt_responses_with_prompts: {
-        Row: {
-          brand_name: string | null
-          model_name: string | null
-          position_score: number | null
-          prompt_active: boolean | null
-          prompt_content: string | null
-          prompt_created_at: string | null
-          prompt_id: string | null
-          prompt_status: string | null
-          prompt_updated_at: string | null
-          response_created_at: string | null
-          response_id: string | null
-          response_text: string | null
-          sentiment_score: number | null
-          source: string | null
-          sources: Json | null
-          sources_final: Json | null
-          store_id: string | null
-          user_id: string | null
-          visibility_score: number | null
-        }
-        Relationships: []
-      }
       product_scores_with_titles: {
         Row: {
           created_at: string | null
