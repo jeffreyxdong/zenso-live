@@ -48,11 +48,7 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
     try {
       setIsLoading(true);
       
-      // Get last 7 days of data
-      const endDate = new Date();
-      const startDate = subDays(endDate, 6);
-      
-      // Fetch daily scores for brand prompts associated with this store
+      // Fetch all daily scores for brand prompts associated with this store
       const { data: dailyScores, error } = await supabase
         .from('prompt_daily_scores')
         .select(`
@@ -61,11 +57,14 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
           prompts!inner(store_id)
         `)
         .eq('prompts.store_id', storeId)
-        .gte('date', format(startDate, 'yyyy-MM-dd'))
-        .lte('date', format(endDate, 'yyyy-MM-dd'))
         .order('date', { ascending: true });
 
       if (error) throw error;
+
+      if (!dailyScores || dailyScores.length === 0) {
+        setVisibilityData([]);
+        return;
+      }
 
       // Aggregate scores by date (average across all prompts)
       const scoresByDate = new Map<string, number[]>();
@@ -80,19 +79,27 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
         }
       });
 
-      // Create chart data with all 7 days
+      // Get date range from first score to today
+      const firstDate = new Date(dailyScores[0].date);
+      const endDate = new Date();
+      
+      // Create chart data for all days from first score to today
       const chartData: ChartData[] = [];
-      for (let i = 6; i >= 0; i--) {
-        const date = format(subDays(endDate, i), 'yyyy-MM-dd');
-        const scores = scoresByDate.get(date);
+      let currentDate = new Date(firstDate);
+      
+      while (currentDate <= endDate) {
+        const dateKey = format(currentDate, 'yyyy-MM-dd');
+        const scores = scoresByDate.get(dateKey);
         const avgScore = scores && scores.length > 0
           ? Math.round(scores.reduce((sum, s) => sum + s, 0) / scores.length)
           : null;
         
         chartData.push({
-          date,
+          date: dateKey,
           value: avgScore
         });
+        
+        currentDate.setDate(currentDate.getDate() + 1);
       }
 
       setVisibilityData(chartData);
@@ -180,7 +187,9 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
           </ResponsiveContainer>
         </div>
         <div className="flex items-center justify-between mt-2 text-sm">
-          <span className="text-muted-foreground">Last 7 days</span>
+          <span className="text-muted-foreground">
+            {visibilityData.length > 0 && `${visibilityData.length} day${visibilityData.length !== 1 ? 's' : ''}`}
+          </span>
           {trend && (
             <span className={`font-medium ${trend.isPositive ? 'text-success' : 'text-destructive'}`}>
               {trend.isPositive ? '+' : '-'}{trend.value}% {trend.isPositive ? '↗' : '↘'}
