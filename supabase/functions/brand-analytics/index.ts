@@ -195,10 +195,26 @@ ${responseText}`;
       });
     }
 
-    // === Step 3: Aggregate
+    // === Step 3: Aggregate and store brand score
     const avgVisibility = responses.length
       ? Math.round(responses.reduce((sum, r) => sum + r.visibilityScore, 0) / responses.length)
       : 0;
+
+    // Store today's brand score
+    const today = new Date().toISOString().split('T')[0];
+    const { error: brandScoreError } = await supabase
+      .from('brand_scores')
+      .upsert({
+        store_id: storeId,
+        date: today,
+        visibility_score: avgVisibility,
+      }, {
+        onConflict: 'store_id,date'
+      });
+
+    if (brandScoreError) {
+      console.error('Error storing brand score:', brandScoreError);
+    }
 
     return new Response(JSON.stringify({
       success: true,

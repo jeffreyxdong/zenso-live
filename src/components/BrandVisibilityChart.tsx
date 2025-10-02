@@ -30,7 +30,7 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
           {
             event: '*',
             schema: 'public',
-            table: 'prompt_daily_scores'
+            table: 'brand_scores'
           },
           () => {
             fetchVisibilityData();
@@ -48,55 +48,43 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
     try {
       setIsLoading(true);
       
-      // Fetch all daily scores for brand prompts associated with this store
-      const { data: dailyScores, error } = await supabase
-        .from('prompt_daily_scores')
-        .select(`
-          date,
-          visibility_score,
-          prompts!inner(store_id)
-        `)
-        .eq('prompts.store_id', storeId)
+      // Fetch all brand scores for this store
+      const { data: brandScores, error } = await supabase
+        .from('brand_scores')
+        .select('date, visibility_score')
+        .eq('store_id', storeId)
         .order('date', { ascending: true });
 
       if (error) throw error;
 
-      if (!dailyScores || dailyScores.length === 0) {
+      if (!brandScores || brandScores.length === 0) {
         setVisibilityData([]);
         return;
       }
 
-      // Aggregate scores by date (average across all prompts)
-      const scoresByDate = new Map<string, number[]>();
+      // Get date range from first score to today
+      const firstDate = new Date(brandScores[0].date);
+      const endDate = new Date();
       
-      dailyScores?.forEach((score: any) => {
-        const dateKey = score.date;
-        if (!scoresByDate.has(dateKey)) {
-          scoresByDate.set(dateKey, []);
-        }
+      // Create a map of scores by date
+      const scoresByDate = new Map<string, number>();
+      brandScores.forEach((score: any) => {
         if (score.visibility_score !== null) {
-          scoresByDate.get(dateKey)!.push(score.visibility_score);
+          scoresByDate.set(score.date, score.visibility_score);
         }
       });
 
-      // Get date range from first score to today
-      const firstDate = new Date(dailyScores[0].date);
-      const endDate = new Date();
-      
       // Create chart data for all days from first score to today
       const chartData: ChartData[] = [];
       let currentDate = new Date(firstDate);
       
       while (currentDate <= endDate) {
         const dateKey = format(currentDate, 'yyyy-MM-dd');
-        const scores = scoresByDate.get(dateKey);
-        const avgScore = scores && scores.length > 0
-          ? Math.round(scores.reduce((sum, s) => sum + s, 0) / scores.length)
-          : null;
+        const score = scoresByDate.get(dateKey);
         
         chartData.push({
           date: dateKey,
-          value: avgScore
+          value: score ?? null
         });
         
         currentDate.setDate(currentDate.getDate() + 1);
