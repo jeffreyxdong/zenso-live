@@ -134,6 +134,12 @@ Example format:
 
     console.log(`Stored ${insertedPrompts.length} prompts in database`);
 
+    // Verify we have prompts to process
+    if (!insertedPrompts || insertedPrompts.length === 0) {
+      console.error('No prompts were inserted successfully');
+      throw new Error('Failed to generate prompts');
+    }
+
     // Step 2: Generate responses for each prompt
     const responses: Array<{ promptId: string; responseText: string; visibilityScore: number }> = [];
 
