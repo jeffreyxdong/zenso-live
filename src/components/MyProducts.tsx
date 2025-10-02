@@ -695,11 +695,11 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                   </TooltipProvider>
                 </div>
               </TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Visibility</TableHead>
-              <TableHead>Sentiment</TableHead>
-              <TableHead>Position</TableHead>
-              <TableHead className="w-12">Actions</TableHead>
+              <TableHead className="text-center">Status</TableHead>
+              <TableHead className="text-center">Visibility</TableHead>
+              <TableHead className="text-center">Sentiment</TableHead>
+              <TableHead className="text-center">Position</TableHead>
+              <TableHead className="w-12 text-center">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -739,7 +739,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-center">
                         <Badge
                           variant={
                             product.status === "active" 
@@ -752,16 +752,16 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                           {product.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-center">
                         {getScoreBadge(product.visibility_score)}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-center">
                         {getScoreBadge(product.sentiment_score)}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-center">
                         {getScoreBadge(product.position_score)}
                       </TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
+                      <TableCell onClick={(e) => e.stopPropagation()} className="text-center">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm">
