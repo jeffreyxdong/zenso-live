@@ -11,6 +11,20 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// --- Helper to safely extract text from Responses API JSON ---
+function extractText(json: any): string {
+  if (json.output && Array.isArray(json.output)) {
+    return json.output
+      .map((o: any) =>
+        o.content?.map((c: any) => c.text).join(" ")
+      )
+      .join(" ")
+      .trim();
+  }
+  if (json.output_text) return json.output_text.trim();
+  return "";
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -41,7 +55,7 @@ serve(async (req) => {
     if (storeError || !store) throw new Error("Store not found");
     console.log(`Store found: ${store.name} - ${store.website}`);
 
-    // === Step 1: Generate search prompts
+    // === Step 1: Generate purchase-intent prompts
     const promptGenPrompt = `You are an AI research assistant.
 
 Generate exactly 5 realistic search queries that a customer would type when shopping for products from ${store.website}.
@@ -54,29 +68,32 @@ Rules:
       method: "POST",
       headers: {
         "Authorization": `Bearer ${openAIApiKey}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
-        input: promptGenPrompt
-      })
+        input: promptGenPrompt,
+      }),
     });
 
     if (!promptResp.ok) throw new Error(`Prompt generation error: ${promptResp.statusText}`);
     const promptJson = await promptResp.json();
-    const generatedText = promptJson.output_text?.trim() || "";
+    console.log("Prompt JSON:", JSON.stringify(promptJson, null, 2));
+
+    const generatedText = extractText(promptJson);
+    if (!generatedText) throw new Error("No prompt text returned from OpenAI");
 
     let prompts: string[] = [];
     try {
       const cleaned = generatedText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
       prompts = JSON.parse(cleaned);
     } catch (e) {
-      console.error("Prompt parse error:", e);
+      console.error("Prompt parse error:", e, "Raw text:", generatedText);
       throw new Error("Failed to parse generated prompts");
     }
     console.log(`Generated ${prompts.length} prompts`);
 
-    // === Store prompts in DB
+    // Store prompts in DB
     const { data: insertedPrompts, error: insertError } = await supabase
       .from("brand_prompts")
       .insert(
@@ -94,13 +111,12 @@ Rules:
     if (insertError) throw new Error("Failed to store prompts");
     console.log(`Stored ${insertedPrompts.length} prompts`);
 
-    // === Step 2: Generate responses + score for each prompt
+    // === Step 2: Generate response + score for each prompt
     const responses: Array<{ promptId: string; responseText: string; visibilityScore: number }> = [];
 
     for (const prompt of insertedPrompts) {
       console.log(`Generating response for prompt: ${prompt.content}`);
 
-      // Call GPT for response
       const resp = await fetch("https://api.openai.com/v1/responses", {
         method: "POST",
         headers: {
@@ -109,7 +125,7 @@ Rules:
         },
         body: JSON.stringify({
           model: "gpt-4o-mini",
-          input: `${prompt.content}\n\nPlease provide a comprehensive response as if answering a customer's search query.`
+          input: `${prompt.content}\n\nPlease provide a comprehensive response as if answering a customer's search query.`,
         }),
       });
 
@@ -119,7 +135,7 @@ Rules:
       }
 
       const json = await resp.json();
-      const responseText = json.output_text ?? "";
+      const responseText = extractText(json);
       console.log(`Response generated (${responseText.length} chars)`);
 
       // Scoring
@@ -144,18 +160,18 @@ ${responseText}`;
         },
         body: JSON.stringify({
           model: "gpt-4o-mini",
-          input: scoringPrompt
+          input: scoringPrompt,
         }),
       });
 
       let visibilityScore = 0;
       if (scoreResp.ok) {
         const scoreJson = await scoreResp.json();
-        const scoreText = scoreJson.output_text?.trim() || "0";
+        const scoreText = extractText(scoreJson);
         visibilityScore = parseInt(scoreText) || 0;
       }
 
-      // === Store GPT response in DB
+      // Store GPT response
       const { error: respInsertError } = await supabase
         .from("brand_prompt_responses")
         .insert({
