@@ -649,12 +649,6 @@ Stay focused during calls with noise cancellation and enjoy music during breaks 
         positionData={product.positionHistory}
       />
 
-      {/* Suggestions */}
-      <SuggestionsList 
-        suggestions={product.suggestions}
-        onGenerateContent={handleGenerateContent}
-      />
-
       {/* AI Optimization - Recommendations */}
       <Card>
         <CardHeader>
