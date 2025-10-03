@@ -3,6 +3,9 @@ import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BarChart3, MessageCircle, Settings, Package, Target, Plus } from "lucide-react";
+import { ProductSidebarList } from "@/components/ProductSidebarList";
+import { PromptSidebarList } from "@/components/PromptSidebarList";
+import { PromptViewModal } from "@/components/PromptViewModal";
 import {
   Sidebar,
   SidebarContent,
@@ -31,6 +34,9 @@ const AppLayout = () => {
   const [showAddStoreModal, setShowAddStoreModal] = useState(false);
   const [activeStore, setActiveStore] = useState<{ id: string; name: string; website: string; is_active: boolean } | null>(null);
   const [companyName, setCompanyName] = useState("BrandRefs");
+  const [selectedProductId, setSelectedProductId] = useState<string | undefined>();
+  const [selectedPrompt, setSelectedPrompt] = useState<any>(null);
+  const [showPromptModal, setShowPromptModal] = useState(false);
 
   useEffect(() => {
     if (location.pathname === "/dashboard") {
@@ -92,6 +98,16 @@ const AppLayout = () => {
     setupRealtimeSubscription();
   }, []);
 
+  const handleProductSelect = (productId: string) => {
+    setSelectedProductId(productId);
+    navigate(`/product/${productId}`);
+  };
+
+  const handlePromptSelect = (prompt: any) => {
+    setSelectedPrompt(prompt);
+    setShowPromptModal(true);
+  };
+
   const AppSidebar = () => {
     const { state } = useSidebar();
 
@@ -105,6 +121,8 @@ const AppLayout = () => {
 
     const handleTabChange = (tabValue: string) => {
       setActiveTab(tabValue);
+      setSelectedProductId(undefined);
+      setSelectedPrompt(null);
       if (tabValue === "settings") {
         navigate("/settings");
       } else {
@@ -112,43 +130,68 @@ const AppLayout = () => {
       }
     };
 
-    return (
-      <Sidebar className={state === "collapsed" ? "w-14" : "w-60"} collapsible="icon">
-        <SidebarContent>
-          {/* Quick Actions Section */}
-          <SidebarGroup>
-            <SidebarGroupLabel>Quick Actions</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={() => setShowAddStoreModal(true)}>
-                    <Plus className="w-4 h-4" />
-                    {state !== "collapsed" && <span>Add Store</span>}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+    // Check if we should show the item list
+    const showProductList = activeTab === "products-overview" && activeStore?.id && state !== "collapsed";
+    const showPromptList = activeTab === "prompts" && activeStore?.id && state !== "collapsed";
+    const showNavigation = !showProductList && !showPromptList;
 
-          {/* Main Pages Section */}
-          <SidebarGroup>
-            <SidebarGroupLabel>Pages</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {mainItems.map((item) => (
-                  <SidebarMenuItem key={item.value}>
-                    <SidebarMenuButton 
-                      onClick={() => handleTabChange(item.value)}
-                      className={activeTab === item.value ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
-                    >
-                      <item.icon className="w-4 h-4" />
-                      {state !== "collapsed" && <span>{item.title}</span>}
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+    return (
+      <Sidebar className={state === "collapsed" ? "w-14" : "w-64"} collapsible="icon">
+        <SidebarContent>
+          {showNavigation && (
+            <>
+              {/* Quick Actions Section */}
+              <SidebarGroup>
+                <SidebarGroupLabel>Quick Actions</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton onClick={() => setShowAddStoreModal(true)}>
+                        <Plus className="w-4 h-4" />
+                        {state !== "collapsed" && <span>Add Store</span>}
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+
+              {/* Main Pages Section */}
+              <SidebarGroup>
+                <SidebarGroupLabel>Pages</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {mainItems.map((item) => (
+                      <SidebarMenuItem key={item.value}>
+                        <SidebarMenuButton 
+                          onClick={() => handleTabChange(item.value)}
+                          className={activeTab === item.value ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
+                        >
+                          <item.icon className="w-4 h-4" />
+                          {state !== "collapsed" && <span>{item.title}</span>}
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            </>
+          )}
+
+          {showProductList && (
+            <ProductSidebarList
+              storeId={activeStore.id}
+              selectedProductId={selectedProductId}
+              onProductSelect={handleProductSelect}
+            />
+          )}
+
+          {showPromptList && (
+            <PromptSidebarList
+              storeId={activeStore.id}
+              selectedPromptId={selectedPrompt?.id}
+              onPromptSelect={handlePromptSelect}
+            />
+          )}
         </SidebarContent>
       </Sidebar>
     );
@@ -240,6 +283,17 @@ const AppLayout = () => {
           window.location.reload();
         }}
       />
+
+      {selectedPrompt && (
+        <PromptViewModal
+          isOpen={showPromptModal}
+          onClose={() => {
+            setShowPromptModal(false);
+            setSelectedPrompt(null);
+          }}
+          prompt={selectedPrompt}
+        />
+      )}
     </SidebarProvider>
   );
 };
