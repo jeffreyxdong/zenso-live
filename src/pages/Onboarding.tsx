@@ -99,6 +99,8 @@ const Onboarding: React.FC = () => {
             website: companyWebsite.trim(),
             is_active: true
           })
+          .select()
+          .single()
       ]);
 
       if (profileResult.status === 'rejected' || storeResult.status === 'rejected') {
@@ -106,6 +108,15 @@ const Onboarding: React.FC = () => {
         if (profileResult.status === 'rejected') errors.push(`Profile: ${profileResult.reason?.message}`);
         if (storeResult.status === 'rejected') errors.push(`Store: ${storeResult.reason?.message}`);
         throw new Error(errors.join(', '));
+      }
+
+      // Get the created store ID and trigger brand recommendations generation
+      const createdStore = storeResult.status === 'fulfilled' ? storeResult.value.data : null;
+      if (createdStore?.id) {
+        // Fire and forget - don't wait for recommendations to complete
+        supabase.functions.invoke('generate-brand-recommendations', {
+          body: { storeId: createdStore.id }
+        }).catch(err => console.error('Failed to generate brand recommendations:', err));
       }
 
       toast({ title: "Setup complete", description: "Your company profile has been saved." });

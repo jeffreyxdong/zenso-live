@@ -72,6 +72,11 @@ const AddStoreModal = ({ open, onOpenChange, onStoreAdded }: AddStoreModalProps)
 
       if (error) throw error;
 
+      // Trigger brand recommendations generation (fire and forget)
+      supabase.functions.invoke('generate-brand-recommendations', {
+        body: { storeId: newStore.id }
+      }).catch(err => console.error('Failed to generate brand recommendations:', err));
+
       toast({
         title: "Success",
         description: "Store added successfully",
