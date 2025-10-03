@@ -22,6 +22,8 @@ const Dashboard = () => {
   const [companyName, setCompanyName] = useState("BrandRefs");
   const [brandVisibility, setBrandVisibility] = useState<number | null>(null);
   const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
+  const [brandRecommendations, setBrandRecommendations] = useState<any[]>([]);
+  const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
 
   // Update activeTab when URL changes
   useEffect(() => {
@@ -33,8 +35,50 @@ const Dashboard = () => {
   useEffect(() => {
     if (activeTab === "brand-overview" && activeStore?.id) {
       loadBrandAnalytics();
+      loadBrandRecommendations();
     }
   }, [activeTab, activeStore?.id]);
+
+  const loadBrandRecommendations = async () => {
+    if (!activeStore?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('brand_recommendations')
+        .select('*')
+        .eq('store_id', activeStore.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      setBrandRecommendations(data || []);
+    } catch (error) {
+      console.error('Error loading brand recommendations:', error);
+    }
+  };
+
+  const handleGenerateBrandRecommendations = async () => {
+    if (!activeStore?.id) return;
+    
+    try {
+      setIsLoadingRecommendations(true);
+      
+      const { data, error } = await supabase.functions.invoke('generate-brand-recommendations', {
+        body: { storeId: activeStore.id }
+      });
+
+      if (error) throw error;
+      
+      console.log('Generated brand recommendations:', data);
+      
+      // Reload recommendations
+      await loadBrandRecommendations();
+    } catch (error) {
+      console.error('Error generating brand recommendations:', error);
+    } finally {
+      setIsLoadingRecommendations(false);
+    }
+  };
 
   const loadBrandAnalytics = async (forceRescore = false) => {
     if (!activeStore?.id) return;
@@ -455,79 +499,81 @@ const Dashboard = () => {
           {/* AI Optimization Suggestions */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-primary" />
-                AI Optimization Suggestions
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  AI Optimization Suggestions
+                </CardTitle>
+                {brandRecommendations.length === 0 && (
+                  <Button
+                    onClick={handleGenerateBrandRecommendations}
+                    disabled={isLoadingRecommendations}
+                    size="sm"
+                  >
+                    {isLoadingRecommendations ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Generate Recommendations
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {[
-                  {
-                    id: "1",
-                    title: "Improve Brand Visibility in AI Responses",
-                    description: "Enhance your brand's presence across AI platforms by optimizing product descriptions and metadata to align with common search queries.",
-                    category: "content",
-                    impact: "high",
-                    effort: "medium",
-                    status: "pending"
-                  },
-                  {
-                    id: "2", 
-                    title: "Enhance Brand Sentiment Score",
-                    description: "Focus on customer testimonials and case studies in your content to improve how AI models perceive and recommend your brand.",
-                    category: "branding",
-                    impact: "high",
-                    effort: "low",
-                    status: "pending"
-                  },
-                  {
-                    id: "3",
-                    title: "Optimize for Position Rankings",
-                    description: "Implement structured data markup and improve technical SEO to help AI models rank your brand higher in recommendation lists.",
-                    category: "technical",
-                    impact: "medium",
-                    effort: "high",
-                    status: "pending"
-                  }
-                ].map((suggestion) => (
-                  <Card key={suggestion.id} className="hover:shadow-md transition-all">
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-2">
-                          <h3 className="font-medium">{suggestion.title}</h3>
-                          <div className="flex items-center gap-2">
-                            <Badge className={
-                              suggestion.impact === "high" 
-                                ? "bg-red-500 text-white" 
-                                : suggestion.impact === "medium" 
-                                ? "bg-yellow-500 text-white" 
-                                : "bg-muted text-muted-foreground"
-                            }>
-                              {suggestion.impact.charAt(0).toUpperCase() + suggestion.impact.slice(1)} Impact
-                            </Badge>
-                            <Badge className={
-                              suggestion.effort === "high" 
-                                ? "bg-red-500 text-white" 
-                                : suggestion.effort === "medium" 
-                                ? "bg-yellow-500 text-white" 
-                                : "bg-green-500 text-white"
-                            }>
-                              {suggestion.effort.charAt(0).toUpperCase() + suggestion.effort.slice(1)} Effort
+              {brandRecommendations.length > 0 ? (
+                <div className="space-y-4">
+                  {brandRecommendations.map((rec) => (
+                    <div
+                      key={rec.id}
+                      className="p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-semibold">{rec.title}</h3>
+                            <Badge 
+                              variant={rec.impact === "high" ? "default" : rec.impact === "medium" ? "secondary" : "outline"} 
+                              className="capitalize"
+                            >
+                              {rec.impact} Impact
                             </Badge>
                             <Badge variant="outline" className="capitalize">
-                              {suggestion.category}
+                              {rec.effort} Effort
+                            </Badge>
+                            <Badge variant="outline" className="capitalize">
+                              {rec.category}
                             </Badge>
                           </div>
+                          <p className="text-sm text-muted-foreground">{rec.description}</p>
+                          {rec.site_url && (
+                            <a
+                              href={rec.site_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+                            >
+                              View brand website
+                              <Globe className="h-3 w-3" />
+                            </a>
+                          )}
                         </div>
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground">{suggestion.description}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground mb-4">
+                    No AI optimization recommendations yet. Generate recommendations to improve your brand's visibility in AI-powered search.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

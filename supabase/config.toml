@@ -171,6 +171,15 @@ verify_jwt = false
 [functions.brand-analytics]
 verify_jwt = false
 
+[functions.find-brand-site]
+verify_jwt = false
+
+[functions.fetch-brand-content]
+verify_jwt = false
+
+[functions.generate-brand-recommendations]
+verify_jwt = false
+
 [storage]
 enabled = true
 port = 54322

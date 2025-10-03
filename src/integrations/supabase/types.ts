@@ -92,6 +92,56 @@ export type Database = {
         }
         Relationships: []
       }
+      brand_recommendations: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          effort: string
+          id: string
+          impact: string
+          site_url: string | null
+          status: string
+          store_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          effort: string
+          id?: string
+          impact: string
+          site_url?: string | null
+          status?: string
+          store_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          effort?: string
+          id?: string
+          impact?: string
+          site_url?: string | null
+          status?: string
+          store_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_recommendations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brand_scores: {
         Row: {
           created_at: string
