@@ -75,11 +75,13 @@ const AddStoreModal = ({ open, onOpenChange, onStoreAdded }: AddStoreModalProps)
       // Trigger brand recommendations generation (fire and forget)
       supabase.functions.invoke('generate-brand-recommendations', {
         body: { storeId: newStore.id }
-      }).catch(err => console.error('Failed to generate brand recommendations:', err));
+      }).then(() => {
+        console.log('Brand recommendations generation started');
+      }).catch(err => console.error('Failed to start brand recommendations:', err));
 
       toast({
         title: "Success",
-        description: "Store added successfully",
+        description: "Store added successfully. AI recommendations are being generated...",
       });
 
       // Reset form and close modal

@@ -39,10 +39,37 @@ const Dashboard = () => {
     }
   }, [activeTab, activeStore?.id]);
 
+  // Set up realtime subscription for brand recommendations
+  useEffect(() => {
+    if (!activeStore?.id) return;
+
+    const channel = supabase
+      .channel('brand-recommendations-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'brand_recommendations',
+          filter: `store_id=eq.${activeStore.id}`
+        },
+        (payload) => {
+          console.log('New recommendation added:', payload);
+          loadBrandRecommendations();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [activeStore?.id]);
+
   const loadBrandRecommendations = async () => {
     if (!activeStore?.id) return;
     
     try {
+      setIsLoadingRecommendations(true);
       const { data, error } = await supabase
         .from('brand_recommendations')
         .select('*')
@@ -54,6 +81,8 @@ const Dashboard = () => {
       setBrandRecommendations(data || []);
     } catch (error) {
       console.error('Error loading brand recommendations:', error);
+    } finally {
+      setIsLoadingRecommendations(false);
     }
   };
 
@@ -530,7 +559,15 @@ const Dashboard = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                {brandRecommendations.length > 0 ? (
+                {isLoadingRecommendations ? (
+                  <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                    <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+                    <div className="text-center space-y-2">
+                      <p className="font-medium">Generating AI Optimization Suggestions...</p>
+                      <p className="text-sm text-muted-foreground">This may take a moment</p>
+                    </div>
+                  </div>
+                ) : brandRecommendations.length > 0 ? (
                   <div className="space-y-4">
                     {brandRecommendations.map((rec) => (
                       <div

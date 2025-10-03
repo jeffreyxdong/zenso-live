@@ -116,10 +116,15 @@ const Onboarding: React.FC = () => {
         // Fire and forget - don't wait for recommendations to complete
         supabase.functions.invoke('generate-brand-recommendations', {
           body: { storeId: createdStore.id }
-        }).catch(err => console.error('Failed to generate brand recommendations:', err));
+        }).then(() => {
+          console.log('Brand recommendations generation started');
+        }).catch(err => console.error('Failed to start brand recommendations:', err));
       }
 
-      toast({ title: "Setup complete", description: "Your company profile has been saved." });
+      toast({ 
+        title: "Setup complete", 
+        description: "Your profile has been saved. AI recommendations are being generated..." 
+      });
       navigate("/dashboard", { replace: true });
     } catch (error: any) {
       toast({ title: "Could not save company details", description: error.message });
