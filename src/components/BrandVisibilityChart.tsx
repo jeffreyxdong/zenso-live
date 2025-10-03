@@ -165,6 +165,7 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
              <XAxis
                 dataKey="formattedDate"
+                ticks={visibilityData.slice(0, -1).map(d => d.formattedDate)} // drop last tick
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
