@@ -115,12 +115,13 @@ const AppLayout = () => {
       
       if (productsData) setProducts(productsData);
 
-      // Load prompts
+      // Load prompts - only show user-entered prompts (not suggested ones)
       const { data: promptsData } = await supabase
         .from("prompts")
-        .select("id, content, product_id, brand_name")
+        .select("id, content, product_id, brand_name, status")
         .eq("store_id", activeStore.id)
         .eq("active", true)
+        .neq("status", "suggested")
         .order("created_at", { ascending: false });
       
       if (promptsData) setPrompts(promptsData);
