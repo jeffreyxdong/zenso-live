@@ -264,10 +264,10 @@ const AppLayout = () => {
                           {prompts.slice(0, 10).map((prompt) => (
                             <SidebarMenuButton
                               key={prompt.id}
-                              className="w-full justify-start text-sm hover:bg-muted/50"
+                              className="w-full justify-start text-sm hover:bg-muted/50 overflow-hidden"
                               onClick={() => handlePromptClick(prompt.id)}
                             >
-                              {prompt.content.slice(0, 30)}...
+                              <span className="truncate">{prompt.content}</span>
                             </SidebarMenuButton>
                           ))}
                           {prompts.length > 10 && (
