@@ -225,19 +225,19 @@ const Dashboard = () => {
       {/* Main tabs for different content */}
       {activeTab === "overview" && activeStore?.id && (
         <div className="space-y-6">
-          {/* Top Row - Brand Visibility Score + Graph */}
+          {/* Hero Metric - Brand Visibility Overview */}
           <BrandVisibilityOverview storeId={activeStore.id} />
 
-          {/* Second Row - Top Performing + Rising Stars */}
+          {/* Key Actions Row - Performance vs At-Risk */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <TopPerformingProducts storeId={activeStore.id} />
-            <RisingStarProducts storeId={activeStore.id} />
+            <AtRiskProducts storeId={activeStore.id} />
           </div>
 
-          {/* Third Row - Competitive Benchmark + At-Risk Products */}
+          {/* Growth & Market Position Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <RisingStarProducts storeId={activeStore.id} />
             <CompetitiveBenchmark storeId={activeStore.id} brandName={activeStore.name} />
-            <AtRiskProducts storeId={activeStore.id} />
           </div>
         </div>
       )}
