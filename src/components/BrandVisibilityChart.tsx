@@ -165,15 +165,19 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
              <XAxis
                 dataKey="formattedDate"
-                ticks={visibilityData.slice(0, -1).map(d => d.formattedDate)} // drop last tick
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tick={{ fill: 'hsl(var(--muted-foreground))', dy: 10 }}
+                tick={{
+                  fill: 'hsl(var(--muted-foreground))',
+                  dy: 10,
+                }}
+                interval={0}
+                angle={0}
+                textAnchor="middle"
                 height={40}
+                padding={{ left: 0, right: 20 }}   // <-- this adds space for the last tick
               />
-
-
               <YAxis
                 domain={[0, 100]}
                 fontSize={12}
