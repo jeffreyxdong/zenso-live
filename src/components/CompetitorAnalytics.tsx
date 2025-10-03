@@ -10,54 +10,94 @@ interface Competitor {
   name: string;
   website: string;
   description: string;
-  marketPosition: string;
-  keyDifferentiator: string;
+  market_position: string;
+  key_differentiator: string;
 }
 
 interface CompetitorAnalyticsProps {
-  brandName: string;
-  website: string;
   storeId: string;
 }
 
-export const CompetitorAnalytics = ({ brandName, website, storeId }: CompetitorAnalyticsProps) => {
+export const CompetitorAnalytics = ({ storeId }: CompetitorAnalyticsProps) => {
   const [competitors, setCompetitors] = useState<Competitor[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  // Load competitors from database
   const loadCompetitors = async () => {
-    if (!brandName) return;
+    if (!storeId) return;
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('analyze-competitors', {
-        body: { brandName, website }
-      });
+      const { data, error } = await supabase
+        .from('competitor_analytics')
+        .select('*')
+        .eq('store_id', storeId)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      if (data?.competitors) {
-        setCompetitors(data.competitors);
-      } else {
-        throw new Error('No competitor data received');
-      }
+      setCompetitors(data || []);
     } catch (error: any) {
       console.error('Error loading competitors:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load competitor analytics",
-        variant: "destructive",
-      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (brandName) {
-      loadCompetitors();
+  // Trigger competitor analysis
+  const generateCompetitors = async () => {
+    if (!storeId) return;
+
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.functions.invoke('analyze-competitors', {
+        body: { storeId }
+      });
+
+      if (error) throw error;
+
+      console.log('Competitor analysis started');
+    } catch (error: any) {
+      console.error('Error generating competitors:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate competitor analytics",
+        variant: "destructive",
+      });
+      setIsLoading(false);
     }
-  }, [brandName, storeId]);
+  };
+
+  // Set up realtime subscription
+  useEffect(() => {
+    if (!storeId) return;
+
+    // Load initial data
+    loadCompetitors();
+
+    // Subscribe to changes
+    const channel = supabase
+      .channel('competitor-analytics-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'competitor_analytics',
+          filter: `store_id=eq.${storeId}`
+        },
+        (payload) => {
+          console.log('New competitor added:', payload);
+          loadCompetitors();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [storeId]);
 
   const getMarketPositionColor = (position: string) => {
     const pos = position.toLowerCase();
@@ -74,7 +114,7 @@ export const CompetitorAnalytics = ({ brandName, website, storeId }: CompetitorA
         <Button
           variant="ghost"
           size="sm"
-          onClick={loadCompetitors}
+          onClick={generateCompetitors}
           disabled={isLoading}
         >
           <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
@@ -119,15 +159,15 @@ export const CompetitorAnalytics = ({ brandName, website, storeId }: CompetitorA
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge
                     variant="secondary"
-                    className={getMarketPositionColor(competitor.marketPosition)}
+                    className={getMarketPositionColor(competitor.market_position)}
                   >
-                    {competitor.marketPosition}
+                    {competitor.market_position}
                   </Badge>
-                  {competitor.keyDifferentiator && (
+                  {competitor.key_differentiator && (
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <TrendingUp className="h-3 w-3" />
                       <span className="truncate max-w-[200px]">
-                        {competitor.keyDifferentiator}
+                        {competitor.key_differentiator}
                       </span>
                     </div>
                   )}
@@ -141,10 +181,10 @@ export const CompetitorAnalytics = ({ brandName, website, storeId }: CompetitorA
             <Button
               variant="link"
               size="sm"
-              onClick={loadCompetitors}
+              onClick={generateCompetitors}
               className="mt-2"
             >
-              Load competitor analytics
+              Generate competitor analytics
             </Button>
           </div>
         )}

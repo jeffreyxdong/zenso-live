@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,14 +13,37 @@ serve(async (req) => {
   }
 
   try {
-    const { brandName, website } = await req.json();
+    const { storeId } = await req.json();
     
-    if (!brandName) {
+    if (!storeId) {
       return new Response(
-        JSON.stringify({ error: 'Brand name is required' }),
+        JSON.stringify({ error: 'Store ID is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get store details
+    const { data: store, error: storeError } = await supabase
+      .from('stores')
+      .select('name, website')
+      .eq('id', storeId)
+      .single();
+
+    if (storeError || !store) {
+      console.error('Failed to fetch store:', storeError);
+      return new Response(
+        JSON.stringify({ error: 'Store not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { name: brandName, website } = store;
+    console.log('Analyzing competitors for store:', brandName);
 
     const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY');
     if (!perplexityApiKey) {
@@ -101,8 +125,44 @@ Format the response as a JSON array with objects containing: name, website, desc
 
     console.log(`Found ${competitors?.length || 0} competitors for ${brandName}`);
 
+    // Delete existing competitors for this store
+    const { error: deleteError } = await supabase
+      .from('competitor_analytics')
+      .delete()
+      .eq('store_id', storeId);
+
+    if (deleteError) {
+      console.error('Error deleting old competitors:', deleteError);
+    }
+
+    // Insert new competitors
+    if (competitors && competitors.length > 0) {
+      const competitorRecords = competitors.map((comp: any) => ({
+        store_id: storeId,
+        name: comp.name,
+        website: comp.website || null,
+        description: comp.description,
+        market_position: comp.marketPosition,
+        key_differentiator: comp.keyDifferentiator || null,
+      }));
+
+      const { error: insertError } = await supabase
+        .from('competitor_analytics')
+        .insert(competitorRecords);
+
+      if (insertError) {
+        console.error('Error inserting competitors:', insertError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to store competitor data' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log(`Stored ${competitorRecords.length} competitors for store ${storeId}`);
+    }
+
     return new Response(
-      JSON.stringify({ competitors }),
+      JSON.stringify({ success: true, count: competitors?.length || 0 }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

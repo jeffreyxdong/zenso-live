@@ -180,6 +180,42 @@ export type Database = {
           },
         ]
       }
+      competitor_analytics: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          key_differentiator: string | null
+          market_position: string
+          name: string
+          store_id: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          key_differentiator?: string | null
+          market_position: string
+          name: string
+          store_id: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          key_differentiator?: string | null
+          market_position?: string
+          name?: string
+          store_id?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       product_recommendations: {
         Row: {
           category: string

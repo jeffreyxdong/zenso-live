@@ -119,6 +119,13 @@ const Onboarding: React.FC = () => {
         }).then(() => {
           console.log('Brand recommendations generation started');
         }).catch(err => console.error('Failed to start brand recommendations:', err));
+
+        // Trigger competitor analytics generation
+        supabase.functions.invoke('analyze-competitors', {
+          body: { storeId: createdStore.id }
+        }).then(() => {
+          console.log('Competitor analytics generation started');
+        }).catch(err => console.error('Failed to start competitor analytics:', err));
       }
 
       toast({ 

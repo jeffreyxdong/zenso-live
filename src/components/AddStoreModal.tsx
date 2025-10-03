@@ -79,6 +79,13 @@ const AddStoreModal = ({ open, onOpenChange, onStoreAdded }: AddStoreModalProps)
         console.log('Brand recommendations generation started');
       }).catch(err => console.error('Failed to start brand recommendations:', err));
 
+      // Trigger competitor analytics generation (fire and forget)
+      supabase.functions.invoke('analyze-competitors', {
+        body: { storeId: newStore.id }
+      }).then(() => {
+        console.log('Competitor analytics generation started');
+      }).catch(err => console.error('Failed to start competitor analytics:', err));
+
       toast({
         title: "Success",
         description: "Store added successfully. AI recommendations are being generated...",

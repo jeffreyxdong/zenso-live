@@ -530,11 +530,7 @@ const Dashboard = () => {
 
             {/* Competitor Analytics */}
             {activeStore?.id && (
-              <CompetitorAnalytics
-                brandName={activeStore.name}
-                website={activeStore.website}
-                storeId={activeStore.id}
-              />
+              <CompetitorAnalytics storeId={activeStore.id} />
             )}
           </div>
 
