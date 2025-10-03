@@ -112,7 +112,7 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
       chartData.push({
         date: dateStr,
         value: existingScore ?? null,
-        formattedDate: formatInTimeZone(date, userTimeZone, "MMMM d"),
+        formattedDate: formatInTimeZone(date, userTimeZone, "MMM d"),
       });
     }
     
@@ -165,17 +165,14 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis 
                 dataKey="formattedDate" 
-                fontSize={12}
+                fontSize={11}
                 tickLine={false}
                 axisLine={false}
                 tick={{
                   fill: 'hsl(var(--muted-foreground))',
-                  dy: 10,
                 }}
                 interval={0}
-                angle={-45}
-                textAnchor="end"
-                height={60}
+                height={40}
               />
               <YAxis
                 domain={[0, 100]}
