@@ -206,7 +206,7 @@ const AppLayout = () => {
                     </CollapsibleTrigger>
                     <CollapsibleContent>
                       {state !== "collapsed" && products.length > 0 && (
-                        <div className="ml-6 mt-1 space-y-1">
+                        <div className="ml-8 mt-1 space-y-1 pl-2 border-l border-border/50">
                           {products.slice(0, 10).map((product) => (
                             <SidebarMenuButton
                               key={product.id}
@@ -260,7 +260,7 @@ const AppLayout = () => {
                     </CollapsibleTrigger>
                     <CollapsibleContent>
                       {state !== "collapsed" && prompts.length > 0 && (
-                        <div className="ml-6 mt-1 space-y-1">
+                        <div className="ml-8 mt-1 space-y-1 pl-2 border-l border-border/50">
                           {prompts.slice(0, 10).map((prompt) => (
                             <SidebarMenuButton
                               key={prompt.id}
