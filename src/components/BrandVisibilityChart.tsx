@@ -163,8 +163,8 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={visibilityData}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis 
-                dataKey="formattedDate" 
+             <XAxis
+                dataKey="formattedDate"
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
@@ -176,7 +176,9 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
                 angle={0}
                 textAnchor="middle"
                 height={40}
+                padding={{ left: 0, right: 20 }}   // <-- this adds space for the last tick
               />
+
               <YAxis
                 domain={[0, 100]}
                 fontSize={12}
