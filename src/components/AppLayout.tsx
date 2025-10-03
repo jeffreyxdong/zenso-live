@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BarChart3, MessageCircle, Settings, Package, Target, Plus, Filter } from "lucide-react";
+import { BarChart3, MessageCircle, Settings, Package, Target, Plus } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -184,21 +184,6 @@ const AppLayout = () => {
                 
                 {/* Header filters and store selector */}
                 <div className="flex items-center gap-3">
-                  {location.pathname === "/dashboard" && (
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm">
-                        <Filter className="w-4 h-4" />
-                        Last 7 days
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        All tags
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        All Models
-                      </Button>
-                    </div>
-                  )}
-                  
                   <StoreSelector onStoreChange={setActiveStore} onAddStore={() => setShowAddStoreModal(true)} />
                   <Button variant="outline" size="sm" onClick={handleLogout}>
                     Logout
