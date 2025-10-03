@@ -9,6 +9,11 @@ import MyProducts from "@/components/MyProducts";
 import ProductMetrics from "@/components/ProductMetrics";
 import BrandVisibilityChart from "@/components/BrandVisibilityChart";
 import { CompetitorAnalytics } from "@/components/CompetitorAnalytics";
+import BrandVisibilityOverview from "@/components/overview/BrandVisibilityOverview";
+import TopPerformingProducts from "@/components/overview/TopPerformingProducts";
+import RisingStarProducts from "@/components/overview/RisingStarProducts";
+import AtRiskProducts from "@/components/overview/AtRiskProducts";
+import CompetitiveBenchmark from "@/components/overview/CompetitiveBenchmark";
 import { useNavigate, useLocation, useOutletContext } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -218,248 +223,22 @@ const Dashboard = () => {
   return (
     <div className="space-y-6">
       {/* Main tabs for different content */}
-      {activeTab === "overview" && (
+      {activeTab === "overview" && activeStore?.id && (
         <div className="space-y-6">
-          {/* Top metrics tabs */}
-          <Tabs defaultValue="visibility" className="space-y-6">
-            <TabsList className="grid w-fit grid-cols-3">
-              <TabsTrigger value="visibility" className="flex items-center gap-2">
-                <Eye className="w-4 h-4" />
-                Visibility
-              </TabsTrigger>
-              <TabsTrigger value="sentiment" className="flex items-center gap-2">
-                <Heart className="w-4 h-4" />
-                Sentiment
-              </TabsTrigger>
-              <TabsTrigger value="position" className="flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
-                Position
-              </TabsTrigger>
-            </TabsList>
+          {/* Top Row - Brand Visibility Score + Graph */}
+          <BrandVisibilityOverview storeId={activeStore.id} />
 
-            <TabsContent value="visibility" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Main Chart Area */}
-                <div className="lg:col-span-2 space-y-6">
-                  {/* Stats Overview */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card>
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                          Brand Visibility Score
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold text-primary">87</div>
-                        <div className="flex items-center gap-1 text-xs text-green-600">
-                          <TrendingUp className="w-3 h-3" />
-                          +12% from last month
-                        </div>
-                      </CardContent>
-                    </Card>
+          {/* Second Row - Top Performing + Rising Stars */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <TopPerformingProducts storeId={activeStore.id} />
+            <RisingStarProducts storeId={activeStore.id} />
+          </div>
 
-                    <Card>
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                          Product Mentions
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold text-foreground">156</div>
-                        <div className="text-xs text-muted-foreground">
-                          Across 3 AI platforms
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                          Monthly Growth
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold text-green-600">+23%</div>
-                        <div className="text-xs text-muted-foreground">
-                          AI visibility increase
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                  
-                  {/* Main Chart */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>AI Visibility Trend</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-64 bg-muted/50 rounded-lg flex items-center justify-center">
-                        <div className="text-center">
-                          <TrendingUp className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
-                          <p className="text-muted-foreground">Visibility chart will go here</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Right Sidebar - Top Performing Products */}
-                <div className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Top Performing Products</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        {[
-                          { name: "Wireless Headphones", score: 92, change: "+8%" },
-                          { name: "Smart Watch", score: 87, change: "+12%" },
-                          { name: "Laptop Stand", score: 83, change: "+5%" },
-                          { name: "USB-C Cable", score: 79, change: "+3%" },
-                        ].map((product, index) => (
-                          <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                            <div>
-                              <div className="font-medium text-sm">{product.name}</div>
-                              <div className="text-xs text-muted-foreground">Score: {product.score}</div>
-                            </div>
-                            <div className="text-xs text-green-600 font-medium">{product.change}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">AI Platforms</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        {[
-                          { name: "ChatGPT", mentions: 78, color: "bg-green-500" },
-                          { name: "Claude", mentions: 45, color: "bg-orange-500" },
-                          { name: "Gemini", mentions: 33, color: "bg-blue-500" },
-                        ].map((platform, index) => (
-                          <div key={index} className="flex items-center gap-3">
-                            <div className={`w-3 h-3 rounded-full ${platform.color}`}></div>
-                            <div className="flex-1 text-sm">{platform.name}</div>
-                            <div className="text-sm font-medium">{platform.mentions}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="sentiment" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Overall Sentiment
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-green-600">Positive</div>
-                    <div className="text-xs text-muted-foreground">
-                      8.4/10 average score
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Positive Mentions
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-foreground">142</div>
-                    <div className="text-xs text-green-600">
-                      +18% this month
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Improvement Areas
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-foreground">3</div>
-                    <div className="text-xs text-muted-foreground">
-                      Products to optimize
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-              
-              <div className="h-64 bg-muted/50 rounded-lg flex items-center justify-center">
-                <div className="text-center">
-                  <Heart className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-muted-foreground">Sentiment analysis chart will go here</p>
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="position" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Average Position
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-primary">2.1</div>
-                    <div className="flex items-center gap-1 text-xs text-green-600">
-                      <TrendingUp className="w-3 h-3" />
-                      Improved by 0.3 positions
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Top 3 Positions
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-foreground">68%</div>
-                    <div className="text-xs text-muted-foreground">
-                      Of all mentions
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Best Performer
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-foreground">#1</div>
-                    <div className="text-xs text-muted-foreground">
-                      Wireless Headphones
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-              
-              <div className="h-64 bg-muted/50 rounded-lg flex items-center justify-center">
-                <div className="text-center">
-                  <MapPin className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-muted-foreground">Position tracking chart will go here</p>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
+          {/* Third Row - Competitive Benchmark + At-Risk Products */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <CompetitiveBenchmark storeId={activeStore.id} brandName={activeStore.name} />
+            <AtRiskProducts storeId={activeStore.id} />
+          </div>
         </div>
       )}
 
