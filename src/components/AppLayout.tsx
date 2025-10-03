@@ -208,15 +208,13 @@ const AppLayout = () => {
                       {state !== "collapsed" && products.length > 0 && (
                         <div className="ml-6 mt-1 space-y-1">
                           {products.slice(0, 10).map((product) => (
-                            <Button
+                            <SidebarMenuButton
                               key={product.id}
-                              variant="ghost"
-                              size="sm"
-                              className="w-full justify-start text-xs hover:bg-muted/50"
+                              className="w-full justify-start text-sm hover:bg-muted/50"
                               onClick={() => handleProductClick(product.id)}
                             >
                               {product.title}
-                            </Button>
+                            </SidebarMenuButton>
                           ))}
                           {products.length > 10 && (
                             <div className="text-xs text-muted-foreground px-2">
@@ -264,15 +262,13 @@ const AppLayout = () => {
                       {state !== "collapsed" && prompts.length > 0 && (
                         <div className="ml-6 mt-1 space-y-1">
                           {prompts.slice(0, 10).map((prompt) => (
-                            <Button
+                            <SidebarMenuButton
                               key={prompt.id}
-                              variant="ghost"
-                              size="sm"
-                              className="w-full justify-start text-xs hover:bg-muted/50"
+                              className="w-full justify-start text-sm hover:bg-muted/50"
                               onClick={() => handlePromptClick(prompt.id)}
                             >
                               {prompt.content.slice(0, 30)}...
-                            </Button>
+                            </SidebarMenuButton>
                           ))}
                           {prompts.length > 10 && (
                             <div className="text-xs text-muted-foreground px-2">
