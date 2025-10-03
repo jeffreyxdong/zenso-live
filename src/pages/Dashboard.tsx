@@ -8,6 +8,7 @@ import { PromptsTab } from "@/components/PromptsTab";
 import MyProducts from "@/components/MyProducts";
 import ProductMetrics from "@/components/ProductMetrics";
 import BrandVisibilityChart from "@/components/BrandVisibilityChart";
+import { CompetitorAnalytics } from "@/components/CompetitorAnalytics";
 import { useNavigate, useLocation, useOutletContext } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -526,6 +527,15 @@ const Dashboard = () => {
 
             {/* Brand AI Visibility Trends */}
             {activeStore?.id && <BrandVisibilityChart storeId={activeStore.id} />}
+
+            {/* Competitor Analytics */}
+            {activeStore?.id && (
+              <CompetitorAnalytics
+                brandName={activeStore.name}
+                website={activeStore.website}
+                storeId={activeStore.id}
+              />
+            )}
           </div>
 
           {/* Right Column - AI Optimization Suggestions */}

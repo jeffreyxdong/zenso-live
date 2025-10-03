@@ -171,6 +171,9 @@ verify_jwt = false
 [functions.brand-analytics]
 verify_jwt = false
 
+[functions.analyze-competitors]
+verify_jwt = false
+
 [functions.find-brand-site]
 verify_jwt = false
 
