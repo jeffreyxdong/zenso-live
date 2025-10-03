@@ -20,7 +20,7 @@ interface PromptViewModalProps {
     created_at: string;
     visibility_score?: number;
     sentiment_score?: number;
-  };
+  } | null;
 }
 
 interface PromptScores {
@@ -60,18 +60,18 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
   const { toast } = useToast();
 
   useEffect(() => {
-    if (isOpen && prompt.id) {
+    if (isOpen && prompt?.id) {
       fetchPromptData();
       
       // Set up real-time subscription for daily scores
       const subscription = supabase
-        .channel(`prompt_daily_scores_${prompt.id}`)
+        .channel(`prompt_daily_scores_${prompt?.id}`)
         .on('postgres_changes', 
           { 
             event: '*', 
             schema: 'public', 
             table: 'prompt_daily_scores',
-            filter: `prompt_id=eq.${prompt.id}`
+            filter: `prompt_id=eq.${prompt?.id}`
           }, 
           (payload) => {
             console.log('New daily score added:', payload);
@@ -86,9 +86,11 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
         subscription.unsubscribe();
       };
     }
-  }, [isOpen, prompt.id]);
+  }, [isOpen, prompt?.id]);
 
   const fetchPromptData = async () => {
+    if (!prompt?.id) return;
+    
     setIsLoading(true);
     try {
       // Fetch responses
@@ -216,16 +218,20 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
   return (
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Target className="w-5 h-5" />
-            Prompt Analysis
-          </DialogTitle>
-        </DialogHeader>
+        {!prompt ? (
+          <div className="p-4">No prompt selected</div>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Target className="w-5 h-5" />
+                Prompt Analysis
+              </DialogTitle>
+            </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Prompt Info */}
-          <Card>
+            <div className="space-y-6">
+              {/* Prompt Info */}
+              <Card>
             <CardHeader>
               <CardTitle className="text-sm">Prompt Details</CardTitle>
             </CardHeader>
@@ -559,6 +565,8 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
           </Card>
 
         </div>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

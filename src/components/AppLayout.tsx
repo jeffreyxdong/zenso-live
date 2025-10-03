@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BarChart3, MessageCircle, Settings, Package, Target, Plus } from "lucide-react";
+import { BarChart3, MessageCircle, Settings, Package, Target, Plus, ChevronDown } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -16,10 +16,16 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import StoreSelector from "@/components/StoreSelector";
 import AddStoreModal from "@/components/AddStoreModal";
+import { PromptViewModal } from "@/components/PromptViewModal";
 
 const AppLayout = () => {
   const navigate = useNavigate();
@@ -31,6 +37,12 @@ const AppLayout = () => {
   const [showAddStoreModal, setShowAddStoreModal] = useState(false);
   const [activeStore, setActiveStore] = useState<{ id: string; name: string; website: string; is_active: boolean } | null>(null);
   const [companyName, setCompanyName] = useState("BrandRefs");
+  const [products, setProducts] = useState<any[]>([]);
+  const [prompts, setPrompts] = useState<any[]>([]);
+  const [selectedPrompt, setSelectedPrompt] = useState<any>(null);
+  const [showPromptModal, setShowPromptModal] = useState(false);
+  const [productsExpanded, setProductsExpanded] = useState(false);
+  const [promptsExpanded, setPromptsExpanded] = useState(false);
 
   useEffect(() => {
     if (location.pathname === "/dashboard") {
@@ -92,16 +104,35 @@ const AppLayout = () => {
     setupRealtimeSubscription();
   }, []);
 
+  // Load products and prompts for sidebar
+  useEffect(() => {
+    const loadData = async () => {
+      if (!activeStore) return;
+
+      // Load products
+      const { data: productsData } = await supabase
+        .from("products")
+        .select("id, title, handle")
+        .eq("store_id", activeStore.id)
+        .order("title");
+      
+      if (productsData) setProducts(productsData);
+
+      // Load prompts
+      const { data: promptsData } = await supabase
+        .from("prompts")
+        .select("id, content, product_id, brand_name")
+        .eq("store_id", activeStore.id)
+        .order("created_at", { ascending: false });
+      
+      if (promptsData) setPrompts(promptsData);
+    };
+
+    loadData();
+  }, [activeStore]);
+
   const AppSidebar = () => {
     const { state } = useSidebar();
-
-    const mainItems = [
-      { title: "Overview", value: "overview", icon: BarChart3 },
-      { title: "Products", value: "products-overview", icon: Package },
-      { title: "Brand", value: "brand-overview", icon: Target },
-      { title: "Prompts", value: "prompts", icon: MessageCircle },
-      { title: "Settings", value: "settings", icon: Settings },
-    ];
 
     const handleTabChange = (tabValue: string) => {
       setActiveTab(tabValue);
@@ -110,6 +141,15 @@ const AppLayout = () => {
       } else {
         navigate(`/dashboard?tab=${tabValue}`);
       }
+    };
+
+    const handleProductClick = (productId: string) => {
+      navigate(`/product/${productId}`);
+    };
+
+    const handlePromptClick = (prompt: any) => {
+      setSelectedPrompt(prompt);
+      setShowPromptModal(true);
     };
 
     return (
@@ -135,17 +175,128 @@ const AppLayout = () => {
             <SidebarGroupLabel>Pages</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {mainItems.map((item) => (
-                  <SidebarMenuItem key={item.value}>
-                    <SidebarMenuButton 
-                      onClick={() => handleTabChange(item.value)}
-                      className={activeTab === item.value ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
-                    >
-                      <item.icon className="w-4 h-4" />
-                      {state !== "collapsed" && <span>{item.title}</span>}
-                    </SidebarMenuButton>
+                {/* Overview */}
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    onClick={() => handleTabChange("overview")}
+                    className={activeTab === "overview" ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                    {state !== "collapsed" && <span>Overview</span>}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
+                {/* Products - Collapsible */}
+                <Collapsible open={productsExpanded} onOpenChange={setProductsExpanded}>
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton 
+                        onClick={() => {
+                          handleTabChange("products-overview");
+                          setProductsExpanded(!productsExpanded);
+                        }}
+                        className={activeTab === "products-overview" ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
+                      >
+                        <Package className="w-4 h-4" />
+                        {state !== "collapsed" && (
+                          <>
+                            <span>Products</span>
+                            <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${productsExpanded ? "rotate-180" : ""}`} />
+                          </>
+                        )}
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      {state !== "collapsed" && products.length > 0 && (
+                        <div className="ml-6 mt-1 space-y-1">
+                          {products.slice(0, 10).map((product) => (
+                            <Button
+                              key={product.id}
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start text-xs hover:bg-muted/50"
+                              onClick={() => handleProductClick(product.id)}
+                            >
+                              {product.title}
+                            </Button>
+                          ))}
+                          {products.length > 10 && (
+                            <div className="text-xs text-muted-foreground px-2">
+                              +{products.length - 10} more
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </CollapsibleContent>
                   </SidebarMenuItem>
-                ))}
+                </Collapsible>
+
+                {/* Brand */}
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    onClick={() => handleTabChange("brand-overview")}
+                    className={activeTab === "brand-overview" ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
+                  >
+                    <Target className="w-4 h-4" />
+                    {state !== "collapsed" && <span>Brand</span>}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
+                {/* Prompts - Collapsible */}
+                <Collapsible open={promptsExpanded} onOpenChange={setPromptsExpanded}>
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton 
+                        onClick={() => {
+                          handleTabChange("prompts");
+                          setPromptsExpanded(!promptsExpanded);
+                        }}
+                        className={activeTab === "prompts" ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        {state !== "collapsed" && (
+                          <>
+                            <span>Prompts</span>
+                            <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${promptsExpanded ? "rotate-180" : ""}`} />
+                          </>
+                        )}
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      {state !== "collapsed" && prompts.length > 0 && (
+                        <div className="ml-6 mt-1 space-y-1">
+                          {prompts.slice(0, 10).map((prompt) => (
+                            <Button
+                              key={prompt.id}
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start text-xs hover:bg-muted/50"
+                              onClick={() => handlePromptClick(prompt)}
+                            >
+                              {prompt.content.slice(0, 30)}...
+                            </Button>
+                          ))}
+                          {prompts.length > 10 && (
+                            <div className="text-xs text-muted-foreground px-2">
+                              +{prompts.length - 10} more
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
+
+                {/* Settings */}
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    onClick={() => handleTabChange("settings")}
+                    className={activeTab === "settings" ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
+                  >
+                    <Settings className="w-4 h-4" />
+                    {state !== "collapsed" && <span>Settings</span>}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -239,6 +390,12 @@ const AppLayout = () => {
           // Force a page reload to refresh all data with the new active store
           window.location.reload();
         }}
+      />
+
+      <PromptViewModal
+        isOpen={showPromptModal}
+        onClose={() => setShowPromptModal(false)}
+        prompt={selectedPrompt}
       />
     </SidebarProvider>
   );
