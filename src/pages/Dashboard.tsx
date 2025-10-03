@@ -441,141 +441,146 @@ const Dashboard = () => {
       )}
 
       {activeTab === "brand-overview" && (
-        <div className="space-y-6">
-          {/* Brand AI Visibility Score */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle>AI Visibility Score</CardTitle>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => loadBrandAnalytics(true)}
-                disabled={isLoadingAnalytics}
-                className="gap-2"
-              >
-                <RefreshCw className={`h-4 w-4 ${isLoadingAnalytics ? 'animate-spin' : ''}`} />
-                Rescore
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center py-8">
-                <div className="text-center">
-                  {isLoadingAnalytics ? (
-                    <>
-                      <div className="text-6xl font-bold text-muted-foreground mb-2">
-                        ...
-                      </div>
-                      <p className="text-muted-foreground">
-                        Analyzing brand visibility...
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <div className="text-6xl font-bold text-primary mb-2">
-                        {brandVisibility !== null ? brandVisibility : '--'}
-                      </div>
-                      <p className="text-muted-foreground">
-                        Average visibility across brand prompts
-                      </p>
-                      {brandVisibility === null && !isLoadingAnalytics && (
-                        <Button 
-                          onClick={() => loadBrandAnalytics(true)}
-                          className="mt-4"
-                          size="sm"
-                        >
-                          Generate Analytics
-                        </Button>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Brand AI Visibility Trends */}
-          {activeStore?.id && <BrandVisibilityChart storeId={activeStore.id} />}
-
-          {/* AI Optimization Suggestions */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                  AI Optimization Suggestions
-                </CardTitle>
-                {brandRecommendations.length === 0 && (
-                  <Button
-                    onClick={handleGenerateBrandRecommendations}
-                    disabled={isLoadingRecommendations}
-                    size="sm"
-                  >
-                    {isLoadingRecommendations ? (
+        <div className="grid grid-cols-2 gap-6">
+          {/* Left Column - Score & Trend */}
+          <div className="space-y-6">
+            {/* Brand AI Visibility Score */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle>AI Visibility Score</CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => loadBrandAnalytics(true)}
+                  disabled={isLoadingAnalytics}
+                  className="gap-2"
+                >
+                  <RefreshCw className={`h-4 w-4 ${isLoadingAnalytics ? 'animate-spin' : ''}`} />
+                  Rescore
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-center">
+                    {isLoadingAnalytics ? (
                       <>
-                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                        Generating...
+                        <div className="text-6xl font-bold text-muted-foreground mb-2">
+                          ...
+                        </div>
+                        <p className="text-muted-foreground">
+                          Analyzing brand visibility...
+                        </p>
                       </>
                     ) : (
                       <>
-                        <Sparkles className="h-4 w-4 mr-2" />
-                        Generate Recommendations
+                        <div className="text-6xl font-bold text-primary mb-2">
+                          {brandVisibility !== null ? brandVisibility : '--'}
+                        </div>
+                        <p className="text-muted-foreground">
+                          Average visibility across brand prompts
+                        </p>
+                        {brandVisibility === null && !isLoadingAnalytics && (
+                          <Button 
+                            onClick={() => loadBrandAnalytics(true)}
+                            className="mt-4"
+                            size="sm"
+                          >
+                            Generate Analytics
+                          </Button>
+                        )}
                       </>
                     )}
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              {brandRecommendations.length > 0 ? (
-                <div className="space-y-4">
-                  {brandRecommendations.map((rec) => (
-                    <div
-                      key={rec.id}
-                      className="p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Brand AI Visibility Trends */}
+            {activeStore?.id && <BrandVisibilityChart storeId={activeStore.id} />}
+          </div>
+
+          {/* Right Column - AI Optimization Suggestions */}
+          <div>
+            <Card className="h-full">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    AI Optimization Suggestions
+                  </CardTitle>
+                  {brandRecommendations.length === 0 && (
+                    <Button
+                      onClick={handleGenerateBrandRecommendations}
+                      disabled={isLoadingRecommendations}
+                      size="sm"
                     >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 space-y-2">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="font-semibold">{rec.title}</h3>
-                            <Badge 
-                              variant={rec.impact === "high" ? "default" : rec.impact === "medium" ? "secondary" : "outline"} 
-                              className="capitalize"
-                            >
-                              {rec.impact} Impact
-                            </Badge>
-                            <Badge variant="outline" className="capitalize">
-                              {rec.effort} Effort
-                            </Badge>
-                            <Badge variant="outline" className="capitalize">
-                              {rec.category}
-                            </Badge>
+                      {isLoadingRecommendations ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Generate Recommendations
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {brandRecommendations.length > 0 ? (
+                  <div className="space-y-4">
+                    {brandRecommendations.map((rec) => (
+                      <div
+                        key={rec.id}
+                        className="p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="font-semibold">{rec.title}</h3>
+                              <Badge 
+                                variant={rec.impact === "high" ? "default" : rec.impact === "medium" ? "secondary" : "outline"} 
+                                className="capitalize"
+                              >
+                                {rec.impact} Impact
+                              </Badge>
+                              <Badge variant="outline" className="capitalize">
+                                {rec.effort} Effort
+                              </Badge>
+                              <Badge variant="outline" className="capitalize">
+                                {rec.category}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground">{rec.description}</p>
+                            {rec.site_url && (
+                              <a
+                                href={rec.site_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+                              >
+                                View brand website
+                                <Globe className="h-3 w-3" />
+                              </a>
+                            )}
                           </div>
-                          <p className="text-sm text-muted-foreground">{rec.description}</p>
-                          {rec.site_url && (
-                            <a
-                              href={rec.site_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-primary hover:underline inline-flex items-center gap-1"
-                            >
-                              View brand website
-                              <Globe className="h-3 w-3" />
-                            </a>
-                          )}
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground mb-4">
-                    No AI optimization recommendations yet. Generate recommendations to improve your brand's visibility in AI-powered search.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground mb-4">
+                      No AI optimization recommendations yet. Generate recommendations to improve your brand's visibility in AI-powered search.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       )}
 
