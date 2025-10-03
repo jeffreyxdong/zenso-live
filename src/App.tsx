@@ -12,6 +12,7 @@ import ShopifyCallback from "./pages/ShopifyCallback";
 import Auth from "./pages/Auth";
 import WelcomeBack from "./pages/WelcomeBack";
 import ProductOverview from "./pages/ProductOverview";
+import PromptDetail from "./pages/PromptDetail";
 import AppLayout from "./components/AppLayout";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/product/:productId" element={<ProductOverview />} />
+            <Route path="/prompt/:promptId" element={<PromptDetail />} />
           </Route>
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

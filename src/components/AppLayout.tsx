@@ -25,7 +25,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import StoreSelector from "@/components/StoreSelector";
 import AddStoreModal from "@/components/AddStoreModal";
-import { PromptViewModal } from "@/components/PromptViewModal";
 
 const AppLayout = () => {
   const navigate = useNavigate();
@@ -39,8 +38,6 @@ const AppLayout = () => {
   const [companyName, setCompanyName] = useState("BrandRefs");
   const [products, setProducts] = useState<any[]>([]);
   const [prompts, setPrompts] = useState<any[]>([]);
-  const [selectedPrompt, setSelectedPrompt] = useState<any>(null);
-  const [showPromptModal, setShowPromptModal] = useState(false);
   const [productsExpanded, setProductsExpanded] = useState(false);
   const [promptsExpanded, setPromptsExpanded] = useState(false);
 
@@ -148,9 +145,8 @@ const AppLayout = () => {
       navigate(`/product/${productId}`);
     };
 
-    const handlePromptClick = (prompt: any) => {
-      setSelectedPrompt(prompt);
-      setShowPromptModal(true);
+    const handlePromptClick = (promptId: string) => {
+      navigate(`/prompt/${promptId}`);
     };
 
     return (
@@ -272,7 +268,7 @@ const AppLayout = () => {
                               variant="ghost"
                               size="sm"
                               className="w-full justify-start text-xs hover:bg-muted/50"
-                              onClick={() => handlePromptClick(prompt)}
+                              onClick={() => handlePromptClick(prompt.id)}
                             >
                               {prompt.content.slice(0, 30)}...
                             </Button>
@@ -391,12 +387,6 @@ const AppLayout = () => {
           // Force a page reload to refresh all data with the new active store
           window.location.reload();
         }}
-      />
-
-      <PromptViewModal
-        isOpen={showPromptModal}
-        onClose={() => setShowPromptModal(false)}
-        prompt={selectedPrompt}
       />
     </SidebarProvider>
   );
