@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BarChart3, MessageCircle, Settings, Package, Target, ChevronDown, Plus, Filter } from "lucide-react";
+import { BarChart3, MessageCircle, Settings, Package, Target, Plus, Filter } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -31,8 +31,6 @@ const AppLayout = () => {
   const [showAddStoreModal, setShowAddStoreModal] = useState(false);
   const [activeStore, setActiveStore] = useState<{ id: string; name: string; website: string; is_active: boolean } | null>(null);
   const [companyName, setCompanyName] = useState("BrandRefs");
-  const [productsExpanded, setProductsExpanded] = useState(true);
-  const [brandExpanded, setBrandExpanded] = useState(true);
 
   useEffect(() => {
     if (location.pathname === "/dashboard") {
@@ -99,21 +97,11 @@ const AppLayout = () => {
 
     const mainItems = [
       { title: "Overview", value: "overview", icon: BarChart3 },
+      { title: "Products", value: "products-overview", icon: Package },
+      { title: "Brand", value: "brand-overview", icon: Target },
       { title: "Prompts", value: "prompts", icon: MessageCircle },
       { title: "Settings", value: "settings", icon: Settings },
     ];
-
-    const productItems = [
-      { title: "Overview", value: "products-overview" },
-    ];
-
-    const brandItems = [
-      { title: "Overview", value: "brand-overview" },
-      { title: "Competitors", value: "brand-competitors" },
-    ];
-
-    const isProductsActive = activeTab.startsWith("products-") || location.pathname.startsWith("/product");
-    const isBrandActive = activeTab.startsWith("brand-");
 
     const handleTabChange = (tabValue: string) => {
       setActiveTab(tabValue);
@@ -147,81 +135,7 @@ const AppLayout = () => {
             <SidebarGroupLabel>Pages</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {/* Overview */}
-                <SidebarMenuItem>
-                  <SidebarMenuButton 
-                    onClick={() => handleTabChange("overview")}
-                    className={activeTab === "overview" ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
-                  >
-                    <BarChart3 className="w-4 h-4" />
-                    {state !== "collapsed" && <span>Overview</span>}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-
-                {/* Products Collapsible Section */}
-                <SidebarMenuItem>
-                  <SidebarMenuButton 
-                    onClick={() => setProductsExpanded(!productsExpanded)}
-                    className={`${isProductsActive ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"} justify-between`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Package className="w-4 h-4" />
-                      {state !== "collapsed" && <span>Products</span>}
-                    </div>
-                    {state !== "collapsed" && (
-                      <ChevronDown className={`w-4 h-4 transition-transform ${productsExpanded ? "rotate-0" : "-rotate-90"}`} />
-                    )}
-                  </SidebarMenuButton>
-
-                  {/* Products Subsections */}
-                  {productsExpanded && state !== "collapsed" && (
-                    <div className="ml-6 mt-1">
-                      {productItems.map((item) => (
-                        <SidebarMenuButton 
-                          key={item.value}
-                          onClick={() => handleTabChange(item.value)}
-                          className={`${activeTab === item.value ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"} w-full justify-start text-sm py-1 mb-1`}
-                        >
-                          <span>{item.title}</span>
-                        </SidebarMenuButton>
-                      ))}
-                    </div>
-                  )}
-                </SidebarMenuItem>
-
-                {/* Brand Collapsible Section */}
-                <SidebarMenuItem>
-                  <SidebarMenuButton 
-                    onClick={() => setBrandExpanded(!brandExpanded)}
-                    className={`${isBrandActive ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"} justify-between`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Target className="w-4 h-4" />
-                      {state !== "collapsed" && <span>Brand</span>}
-                    </div>
-                    {state !== "collapsed" && (
-                      <ChevronDown className={`w-4 h-4 transition-transform ${brandExpanded ? "rotate-0" : "-rotate-90"}`} />
-                    )}
-                  </SidebarMenuButton>
-
-                  {/* Brand Subsections */}
-                  {brandExpanded && state !== "collapsed" && (
-                    <div className="ml-6 mt-1">
-                      {brandItems.map((item) => (
-                        <SidebarMenuButton 
-                          key={item.value}
-                          onClick={() => handleTabChange(item.value)}
-                          className={`${activeTab === item.value ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"} w-full justify-start text-sm py-1 mb-1`}
-                        >
-                          <span>{item.title}</span>
-                        </SidebarMenuButton>
-                      ))}
-                    </div>
-                  )}
-                </SidebarMenuItem>
-
-                {/* Other main items */}
-                {mainItems.slice(1).map((item) => (
+                {mainItems.map((item) => (
                   <SidebarMenuItem key={item.value}>
                     <SidebarMenuButton 
                       onClick={() => handleTabChange(item.value)}
