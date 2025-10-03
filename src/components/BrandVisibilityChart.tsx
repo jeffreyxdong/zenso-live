@@ -112,7 +112,7 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
       chartData.push({
         date: dateStr,
         value: existingScore ?? null,
-        formattedDate: formatInTimeZone(date, userTimeZone, "MMM dd"),
+        formattedDate: formatInTimeZone(date, userTimeZone, "MMMM d"),
       });
     }
     
@@ -173,9 +173,9 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
                   dy: 10,
                 }}
                 interval={0}
-                angle={0}
-                textAnchor="middle"
-                height={40}
+                angle={-45}
+                textAnchor="end"
+                height={60}
               />
               <YAxis
                 domain={[0, 100]}
