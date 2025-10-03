@@ -176,7 +176,7 @@ const AppLayout = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <SidebarTrigger className="lg:hidden" />
-                  <h1 className="text-2xl font-bold text-foreground">{companyName}'s Dashboard</h1>
+                  <h1 className="text-2xl font-bold text-foreground">{activeStore?.name || companyName}'s Dashboard</h1>
                   <Badge variant="secondary" className="text-xs">
                     eCommerce Pro
                   </Badge>
@@ -212,7 +212,7 @@ const AppLayout = () => {
                   {activeTab === "overview" && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <BarChart3 className="w-4 h-4" />
-                      Overview • {companyName}'s Visibility trending up by 5.2% this month
+                      Overview • {activeStore?.name || companyName}'s Visibility trending up by 5.2% this month
                     </div>
                   )}
                   {activeTab === "products-overview" && (
