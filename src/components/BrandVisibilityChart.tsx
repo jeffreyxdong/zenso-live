@@ -158,7 +158,7 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
         <CardTitle className="text-base font-medium">Brand Visibility Trend</CardTitle>
         <TrendingUp className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
-      <CardContent className="pr-10">
+      <CardContent className="pr-6">
         <div className="h-[200px]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={visibilityData}>
