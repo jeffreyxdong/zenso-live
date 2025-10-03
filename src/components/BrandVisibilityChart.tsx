@@ -169,16 +169,10 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tick={{
-                  fill: 'hsl(var(--muted-foreground))',
-                  dy: 10,
-                }}
-                interval={0}
-                angle={0}
-                textAnchor="middle"
+                tick={{ fill: 'hsl(var(--muted-foreground))', dy: 10 }}
                 height={40}
-                padding={{ left: 0, right: 20 }}   // <-- this adds space for the last tick
               />
+
 
               <YAxis
                 domain={[0, 100]}
