@@ -123,6 +123,7 @@ const AppLayout = () => {
         .from("prompts")
         .select("id, content, product_id, brand_name")
         .eq("store_id", activeStore.id)
+        .eq("active", true)
         .order("created_at", { ascending: false });
       
       if (promptsData) setPrompts(promptsData);
