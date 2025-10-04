@@ -101,12 +101,12 @@ export function BrandCard({ storeId }: BrandCardProps) {
           </div>
 
           {/* Score Section */}
-          <div className="flex-1 flex flex-col justify-center">
+          <div className="flex-1 flex flex-col justify-center items-center">
             <div className="text-6xl font-bold text-foreground tabular-nums leading-none mb-3">
               {mockData.visibilityScore}
             </div>
             
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center justify-center gap-2 mb-2">
               <div className={`flex items-center gap-1.5 ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
                 {isPositive ? (
                   <TrendingUp className="w-4 h-4" />
@@ -123,7 +123,7 @@ export function BrandCard({ storeId }: BrandCardProps) {
             {trendDirection !== "stable" && (
               <Badge 
                 variant="outline" 
-                className={`w-fit text-xs px-2 py-0.5 ${
+                className={`text-xs px-2 py-0.5 ${
                   trendDirection === "up" 
                     ? 'border-green-500/30 bg-green-500/10 text-green-500' 
                     : 'border-red-500/30 bg-red-500/10 text-red-500'
