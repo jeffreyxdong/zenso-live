@@ -225,20 +225,25 @@ const Dashboard = () => {
       {/* Main tabs for different content */}
       {activeTab === "overview" && activeStore?.id && (
         <div className="space-y-6">
-          {/* Hero Metric - Brand Visibility Overview */}
+          {/* 1. Brand Visibility Score - Top Section */}
           <BrandVisibilityOverview storeId={activeStore.id} />
 
-          {/* Key Actions Row - Performance vs At-Risk */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <TopPerformingProducts storeId={activeStore.id} />
-            <AtRiskProducts storeId={activeStore.id} />
+          {/* 2. Product Health (Left) + Competitive Benchmark (Right) */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Product Health: Top Performing & Top Changes */}
+            <div className="lg:col-span-2 space-y-6">
+              <TopPerformingProducts storeId={activeStore.id} />
+              <AtRiskProducts storeId={activeStore.id} />
+            </div>
+
+            {/* Competitive Benchmark */}
+            <div className="lg:col-span-1">
+              <CompetitiveBenchmark storeId={activeStore.id} brandName={activeStore.name} />
+            </div>
           </div>
 
-          {/* Growth & Market Position Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <RisingStarProducts storeId={activeStore.id} />
-            <CompetitiveBenchmark storeId={activeStore.id} brandName={activeStore.name} />
-          </div>
+          {/* 3. Product Visibility Drivers - Bottom Section */}
+          <RisingStarProducts storeId={activeStore.id} />
         </div>
       )}
 
