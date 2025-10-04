@@ -10,8 +10,7 @@ import ProductMetrics from "@/components/ProductMetrics";
 import BrandVisibilityChart from "@/components/BrandVisibilityChart";
 import { CompetitorAnalytics } from "@/components/CompetitorAnalytics";
 import BrandVisibilityOverview from "@/components/overview/BrandVisibilityOverview";
-import TopPerformingProducts from "@/components/overview/TopPerformingProducts";
-import HighestDailyChange from "@/components/overview/HighestDailyChange";
+import ProductHealthMetrics from "@/components/overview/ProductHealthMetrics";
 import CompetitiveBenchmark from "@/components/overview/CompetitiveBenchmark";
 import { BrandCard } from "@/components/overview/BrandCard";
 import { useNavigate, useLocation, useOutletContext } from "react-router-dom";
@@ -235,17 +234,16 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Product Health (Left) + Competitive Benchmark (Right) */}
+          {/* Competitive Benchmark (Left) + Product Health Metrics (Right) */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Product Health: Top Performing & Highest Daily Change */}
-            <div className="lg:col-span-2 space-y-6">
-              <TopPerformingProducts storeId={activeStore.id} />
-              <HighestDailyChange storeId={activeStore.id} />
-            </div>
-
             {/* Competitive Benchmark */}
             <div className="lg:col-span-1">
               <CompetitiveBenchmark storeId={activeStore.id} brandName={activeStore.name} />
+            </div>
+
+            {/* Product Health Metrics with Tabs */}
+            <div className="lg:col-span-2">
+              <ProductHealthMetrics storeId={activeStore.id} />
             </div>
           </div>
         </div>
