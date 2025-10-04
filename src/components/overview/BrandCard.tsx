@@ -51,21 +51,6 @@ export function BrandCard({ storeId }: BrandCardProps) {
         {/* Decorative gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none" />
         
-        {/* Sparkline background */}
-        <svg 
-          className="absolute right-0 top-0 w-32 h-full opacity-[0.08]" 
-          viewBox="0 0 120 200"
-          preserveAspectRatio="none"
-        >
-          <path
-            d={generateSparkline(mockData.sparklineData)}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            className="text-primary"
-          />
-        </svg>
-        
         <div className="relative p-6 h-full flex flex-col">
           {/* Header with badge */}
           <div className="flex items-start justify-between mb-4">
@@ -102,28 +87,28 @@ export function BrandCard({ storeId }: BrandCardProps) {
 
           {/* Score Section */}
           <div className="flex-1 flex flex-col justify-center items-center">
-            <div className="text-6xl font-bold text-foreground tabular-nums leading-none mb-3">
+            <div className="text-7xl font-bold text-foreground tabular-nums leading-none mb-4">
               {mockData.visibilityScore}
             </div>
             
             <div className="flex items-center justify-center gap-2 mb-2">
               <div className={`flex items-center gap-1.5 ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
                 {isPositive ? (
-                  <TrendingUp className="w-4 h-4" />
+                  <TrendingUp className="w-5 h-5" />
                 ) : (
-                  <TrendingDown className="w-4 h-4" />
+                  <TrendingDown className="w-5 h-5" />
                 )}
-                <span className="text-base font-medium">
+                <span className="text-xl font-medium">
                   {isPositive ? '+' : ''}{mockData.scoreChange}%
                 </span>
               </div>
-              <span className="text-sm text-muted-foreground font-normal">vs yesterday</span>
+              <span className="text-base text-muted-foreground font-normal">vs yesterday</span>
             </div>
 
             {trendDirection !== "stable" && (
               <Badge 
                 variant="outline" 
-                className={`text-xs px-2 py-0.5 ${
+                className={`text-sm px-2.5 py-1 ${
                   trendDirection === "up" 
                     ? 'border-green-500/30 bg-green-500/10 text-green-500' 
                     : 'border-red-500/30 bg-red-500/10 text-red-500'
