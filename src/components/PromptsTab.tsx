@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -10,7 +11,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Loader2, Bot, Eye, Trash2, MoreVertical, Search, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { PromptViewModal } from "./PromptViewModal";
 
 interface SavedPrompt {
   id: string;
@@ -35,12 +35,11 @@ interface PromptsTabProps {
 }
 
 export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
+  const navigate = useNavigate();
   const [prompt, setPrompt] = useState("");
   const [savedPrompts, setSavedPrompts] = useState<SavedPrompt[]>([]);
   const [isLoadingSaved, setIsLoadingSaved] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [selectedPrompt, setSelectedPrompt] = useState<SavedPrompt | null>(null);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedPrompts, setSelectedPrompts] = useState<string[]>([]);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [promptToDelete, setPromptToDelete] = useState<string | null>(null);
@@ -420,7 +419,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
                       onCheckedChange={(checked) => handleSelectPrompt(p.id, !!checked)}
                     />
                   </TableCell>
-                  <TableCell onClick={() => { setSelectedPrompt(p); setIsViewModalOpen(true); }} className="cursor-pointer">
+                  <TableCell onClick={() => navigate(`/prompt/${p.id}`)} className="cursor-pointer">
                     <div className="flex items-center gap-2 p-2 rounded-md border border-transparent hover:border-border hover:bg-accent/50 transition-all duration-200 group">
                       <Eye className="w-4 h-4 text-muted-foreground group-hover:text-primary opacity-60 group-hover:opacity-100" />
                       <p className="text-sm text-foreground/80 group-hover:text-foreground truncate font-medium">
@@ -441,7 +440,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => { setSelectedPrompt(p); setIsViewModalOpen(true); }}>
+                        <DropdownMenuItem onClick={() => navigate(`/prompt/${p.id}`)}>
                           <Eye className="w-4 h-4 mr-2" /> View
                         </DropdownMenuItem>
                         <DropdownMenuItem
@@ -506,14 +505,6 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
           </div>
         </DialogContent>
       </Dialog>
-
-      {selectedPrompt && (
-        <PromptViewModal
-          isOpen={isViewModalOpen}
-          onClose={() => { setIsViewModalOpen(false); setSelectedPrompt(null); }}
-          prompt={selectedPrompt}
-        />
-      )}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
