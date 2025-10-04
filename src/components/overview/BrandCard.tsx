@@ -22,42 +22,38 @@ export function BrandCard({ storeId }: BrandCardProps) {
       {/* Decorative gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none" />
       
-      <div className="relative p-6 h-full flex flex-col justify-between">
+      <div className="relative p-6 h-full flex flex-col">
         {/* Brand Info Section */}
-        <div className="space-y-4">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground mb-1">
-              {mockData.brandName}
-            </h2>
-            <a 
-              href={`https://${mockData.siteUrl}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors group"
-            >
-              <span>{mockData.siteUrl}</span>
-              <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-            </a>
-          </div>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold text-foreground">
+            {mockData.brandName}
+          </h2>
+          <a 
+            href={`https://${mockData.siteUrl}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors group"
+          >
+            <span>{mockData.siteUrl}</span>
+            <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+          </a>
         </div>
 
         {/* Visibility Score Section */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <Badge 
-              variant="outline" 
-              className="px-3 py-1.5 text-xs font-medium border-primary/20 bg-primary/5 text-primary"
-            >
-              Daily Score
-            </Badge>
-          </div>
+        <div className="flex-1 flex flex-col justify-center space-y-3 py-6">
+          <Badge 
+            variant="outline" 
+            className="px-3 py-1.5 text-xs font-medium border-primary/20 bg-primary/5 text-primary w-fit"
+          >
+            Daily Score
+          </Badge>
           
           <div>
-            <div className="text-5xl font-bold text-foreground tabular-nums">
+            <div className="text-5xl font-bold text-foreground tabular-nums leading-none">
               {mockData.visibilityScore}
             </div>
             
-            <div className="flex items-center gap-1.5 mt-2">
+            <div className="flex items-center gap-1.5 mt-3">
               <TrendingUp className="w-4 h-4 text-green-500" />
               <span className="text-base font-medium text-green-500">
                 +{mockData.scoreChange}%
@@ -68,11 +64,13 @@ export function BrandCard({ storeId }: BrandCardProps) {
         </div>
 
         {/* Date Section */}
-        <div className="text-xs text-muted-foreground flex items-center gap-1.5 pt-2 border-t border-border/50">
-          <span>Last updated:</span>
-          <time dateTime={mockData.date.toISOString()}>
-            {format(mockData.date, "MMMM d, yyyy 'at' h:mm a")}
-          </time>
+        <div className="text-xs text-muted-foreground pt-3 border-t border-border/50">
+          <div className="flex items-center gap-1.5">
+            <span>Last updated:</span>
+            <time dateTime={mockData.date.toISOString()}>
+              {format(mockData.date, "MMMM d, yyyy 'at' h:mm a")}
+            </time>
+          </div>
         </div>
       </div>
     </Card>
