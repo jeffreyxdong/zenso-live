@@ -14,6 +14,7 @@ import TopPerformingProducts from "@/components/overview/TopPerformingProducts";
 import RisingStarProducts from "@/components/overview/RisingStarProducts";
 import AtRiskProducts from "@/components/overview/AtRiskProducts";
 import CompetitiveBenchmark from "@/components/overview/CompetitiveBenchmark";
+import { BrandCard } from "@/components/overview/BrandCard";
 import { useNavigate, useLocation, useOutletContext } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -225,6 +226,9 @@ const Dashboard = () => {
       {/* Main tabs for different content */}
       {activeTab === "overview" && activeStore?.id && (
         <div className="space-y-6">
+          {/* Brand Card - Shows brand info and daily score */}
+          <BrandCard storeId={activeStore.id} />
+          
           {/* 1. Brand Visibility Score - Top Section */}
           <BrandVisibilityOverview storeId={activeStore.id} />
 
