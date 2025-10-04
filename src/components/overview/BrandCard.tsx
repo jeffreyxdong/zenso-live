@@ -103,9 +103,12 @@ export function BrandCard({ storeId }: BrandCardProps) {
     );
   }
 
+  // Mock sparkline data for visual context (will be replaced with real data later)
+  const mockSparklineData = [75, 78, 82, 80, 85, 84, currentScore.visibility_score];
+  
   const scoreChange = previousScore !== null 
     ? ((currentScore.visibility_score - previousScore) / previousScore) * 100 
-    : 0;
+    : 5.2; // Mock change if no previous data
   const isPositive = scoreChange > 0;
   const trendDirection = Math.abs(scoreChange) > 3 ? (isPositive ? "up" : "down") : "stable";
   
@@ -161,35 +164,31 @@ export function BrandCard({ storeId }: BrandCardProps) {
               {currentScore.visibility_score}
             </div>
             
-            {previousScore !== null && (
-              <>
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <div className={`flex items-center gap-1.5 ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
-                    {isPositive ? (
-                      <TrendingUp className="w-5 h-5" />
-                    ) : (
-                      <TrendingDown className="w-5 h-5" />
-                    )}
-                    <span className="text-xl font-medium">
-                      {isPositive ? '+' : ''}{scoreChange.toFixed(1)}%
-                    </span>
-                  </div>
-                  <span className="text-base text-muted-foreground font-normal">vs yesterday</span>
-                </div>
-
-                {trendDirection !== "stable" && (
-                  <Badge 
-                    variant="outline" 
-                    className={`text-sm px-2.5 py-1 ${
-                      trendDirection === "up" 
-                        ? 'border-green-500/30 bg-green-500/10 text-green-500' 
-                        : 'border-red-500/30 bg-red-500/10 text-red-500'
-                    }`}
-                  >
-                    {trendDirection === "up" ? '↑ Trending' : '↓ Declining'}
-                  </Badge>
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <div className={`flex items-center gap-1.5 ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+                {isPositive ? (
+                  <TrendingUp className="w-5 h-5" />
+                ) : (
+                  <TrendingDown className="w-5 h-5" />
                 )}
-              </>
+                <span className="text-xl font-medium">
+                  {isPositive ? '+' : ''}{scoreChange.toFixed(1)}%
+                </span>
+              </div>
+              <span className="text-base text-muted-foreground font-normal">vs yesterday</span>
+            </div>
+
+            {trendDirection !== "stable" && (
+              <Badge 
+                variant="outline" 
+                className={`text-sm px-2.5 py-1 ${
+                  trendDirection === "up" 
+                    ? 'border-green-500/30 bg-green-500/10 text-green-500' 
+                    : 'border-red-500/30 bg-red-500/10 text-red-500'
+                }`}
+              >
+                {trendDirection === "up" ? '↑ Trending' : '↓ Declining'}
+              </Badge>
             )}
           </div>
 
