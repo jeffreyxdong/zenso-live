@@ -19,6 +19,7 @@ interface PromptData {
   visibility_score?: number;
   sentiment_score?: number;
   product_id?: string;
+  status?: "active" | "suggested" | "inactive";
 }
 
 interface PromptScores {
@@ -103,7 +104,10 @@ const PromptDetail = () => {
         .single();
 
       if (promptError) throw promptError;
-      setPrompt(promptData);
+      setPrompt({
+        ...promptData,
+        status: (promptData.status as "active" | "suggested" | "inactive") || "active"
+      });
 
       // Fetch responses
       const { data: responsesData, error: responsesError } = await supabase
@@ -228,45 +232,34 @@ const PromptDetail = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/dashboard?tab=prompts')}
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Target className="w-6 h-6" />
-              Prompt Analysis
-            </h1>
-          </div>
-        </div>
+      <div className="flex items-center gap-4">
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={() => navigate('/dashboard?tab=prompts')}
+          className="hover:bg-muted"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Prompts
+        </Button>
       </div>
 
-      {/* Prompt Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Prompt Details</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <p className="text-sm">{prompt.content}</p>
-            {prompt.brand_name && (
-              <p className="text-sm text-muted-foreground">
-                <span className="font-medium">Brand:</span> {prompt.brand_name}
-              </p>
-            )}
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Calendar className="w-3 h-3" />
-              Created {format(new Date(prompt.created_at), 'PPP')}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-between">
+        <div className="flex-1 pr-4">
+          <h1 className="text-3xl font-bold text-foreground">{prompt.content}</h1>
+          {prompt.brand_name && (
+            <p className="text-sm text-muted-foreground mt-2">
+              Brand: {prompt.brand_name}
+            </p>
+          )}
+        </div>
+        <Badge 
+          variant={prompt.status === "active" ? "default" : "secondary"}
+          className="capitalize"
+        >
+          {prompt.status}
+        </Badge>
+      </div>
 
       {/* Prompt Scores */}
       <div className="grid grid-cols-2 gap-6">
