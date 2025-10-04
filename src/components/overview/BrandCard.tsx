@@ -4,43 +4,113 @@ import { ExternalLink, TrendingUp, TrendingDown } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BrandCardProps {
   storeId: string;
 }
 
+interface StoreData {
+  name: string;
+  website: string;
+}
+
+interface BrandScoreData {
+  visibility_score: number;
+  date: string;
+  updated_at: string;
+}
+
 export function BrandCard({ storeId }: BrandCardProps) {
   const navigate = useNavigate();
-  
-  // Mock data - will be replaced with real data later
-  const mockData = {
-    brandName: "Ferrari",
-    siteUrl: "www.ferrari.com",
-    visibilityScore: 87,
-    date: new Date(),
-    scoreChange: 5.2,
-    sparklineData: [75, 78, 82, 80, 85, 84, 87], // 7-day history
+  const [storeData, setStoreData] = useState<StoreData | null>(null);
+  const [currentScore, setCurrentScore] = useState<BrandScoreData | null>(null);
+  const [previousScore, setPreviousScore] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (storeId) {
+      fetchStoreAndScoreData();
+      
+      const channel = supabase
+        .channel('brand-card-updates')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'brand_scores',
+            filter: `store_id=eq.${storeId}`
+          },
+          () => {
+            fetchStoreAndScoreData();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [storeId]);
+
+  const fetchStoreAndScoreData = async () => {
+    try {
+      setIsLoading(true);
+
+      // Fetch store data
+      const { data: store, error: storeError } = await supabase
+        .from('stores')
+        .select('name, website')
+        .eq('id', storeId)
+        .single();
+
+      if (storeError) throw storeError;
+      setStoreData(store);
+
+      // Fetch latest 2 brand scores to calculate change
+      const { data: scores, error: scoresError } = await supabase
+        .from('brand_scores')
+        .select('visibility_score, date, updated_at')
+        .eq('store_id', storeId)
+        .order('date', { ascending: false })
+        .limit(2);
+
+      if (scoresError) throw scoresError;
+
+      if (scores && scores.length > 0) {
+        setCurrentScore(scores[0]);
+        if (scores.length > 1) {
+          setPreviousScore(scores[1].visibility_score);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching brand card data:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const isPositive = mockData.scoreChange > 0;
-  const trendDirection = Math.abs(mockData.scoreChange) > 3 ? (isPositive ? "up" : "down") : "stable";
+  if (isLoading || !storeData || !currentScore) {
+    return (
+      <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card via-card to-card/80 h-full">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none" />
+        <div className="relative p-6 h-full flex items-center justify-center">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </Card>
+    );
+  }
+
+  const scoreChange = previousScore !== null 
+    ? ((currentScore.visibility_score - previousScore) / previousScore) * 100 
+    : 0;
+  const isPositive = scoreChange > 0;
+  const trendDirection = Math.abs(scoreChange) > 3 ? (isPositive ? "up" : "down") : "stable";
   
-  // Generate SVG path for sparkline
-  const generateSparkline = (data: number[]) => {
-    const width = 120;
-    const height = 40;
-    const max = Math.max(...data);
-    const min = Math.min(...data);
-    const range = max - min || 1;
-    
-    const points = data.map((value, index) => {
-      const x = (index / (data.length - 1)) * width;
-      const y = height - ((value - min) / range) * height;
-      return `${x},${y}`;
-    });
-    
-    return `M ${points.join(' L ')}`;
-  };
+  // Clean website URL for display
+  const displayUrl = storeData.website.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
   return (
     <TooltipProvider>
@@ -56,16 +126,16 @@ export function BrandCard({ storeId }: BrandCardProps) {
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
               <h2 className="text-2xl font-bold text-foreground mb-1">
-                {mockData.brandName}
+                {storeData.name}
               </h2>
               <a 
-                href={`https://${mockData.siteUrl}`}
+                href={storeData.website}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors group"
               >
-                <span>{mockData.siteUrl}</span>
+                <span>{displayUrl}</span>
                 <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
               </a>
             </div>
@@ -88,34 +158,38 @@ export function BrandCard({ storeId }: BrandCardProps) {
           {/* Score Section */}
           <div className="flex-1 flex flex-col justify-center items-center">
             <div className="text-7xl font-bold text-foreground tabular-nums leading-none mb-4">
-              {mockData.visibilityScore}
+              {currentScore.visibility_score}
             </div>
             
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <div className={`flex items-center gap-1.5 ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
-                {isPositive ? (
-                  <TrendingUp className="w-5 h-5" />
-                ) : (
-                  <TrendingDown className="w-5 h-5" />
-                )}
-                <span className="text-xl font-medium">
-                  {isPositive ? '+' : ''}{mockData.scoreChange}%
-                </span>
-              </div>
-              <span className="text-base text-muted-foreground font-normal">vs yesterday</span>
-            </div>
+            {previousScore !== null && (
+              <>
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <div className={`flex items-center gap-1.5 ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+                    {isPositive ? (
+                      <TrendingUp className="w-5 h-5" />
+                    ) : (
+                      <TrendingDown className="w-5 h-5" />
+                    )}
+                    <span className="text-xl font-medium">
+                      {isPositive ? '+' : ''}{scoreChange.toFixed(1)}%
+                    </span>
+                  </div>
+                  <span className="text-base text-muted-foreground font-normal">vs yesterday</span>
+                </div>
 
-            {trendDirection !== "stable" && (
-              <Badge 
-                variant="outline" 
-                className={`text-sm px-2.5 py-1 ${
-                  trendDirection === "up" 
-                    ? 'border-green-500/30 bg-green-500/10 text-green-500' 
-                    : 'border-red-500/30 bg-red-500/10 text-red-500'
-                }`}
-              >
-                {trendDirection === "up" ? '↑ Trending' : '↓ Declining'}
-              </Badge>
+                {trendDirection !== "stable" && (
+                  <Badge 
+                    variant="outline" 
+                    className={`text-sm px-2.5 py-1 ${
+                      trendDirection === "up" 
+                        ? 'border-green-500/30 bg-green-500/10 text-green-500' 
+                        : 'border-red-500/30 bg-red-500/10 text-red-500'
+                    }`}
+                  >
+                    {trendDirection === "up" ? '↑ Trending' : '↓ Declining'}
+                  </Badge>
+                )}
+              </>
             )}
           </div>
 
@@ -123,8 +197,8 @@ export function BrandCard({ storeId }: BrandCardProps) {
           <div className="text-xs text-muted-foreground/70 pt-3 border-t border-border/30 mt-4">
             <div className="flex items-center gap-1.5">
               <span>Last updated:</span>
-              <time dateTime={mockData.date.toISOString()}>
-                {format(mockData.date, "MMM d, yyyy 'at' h:mm a")}
+              <time dateTime={currentScore.updated_at}>
+                {format(new Date(currentScore.updated_at), "MMM d, yyyy 'at' h:mm a")}
               </time>
             </div>
           </div>
