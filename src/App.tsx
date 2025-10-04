@@ -13,6 +13,7 @@ import Auth from "./pages/Auth";
 import WelcomeBack from "./pages/WelcomeBack";
 import ProductOverview from "./pages/ProductOverview";
 import PromptDetail from "./pages/PromptDetail";
+import OverviewDraft from "./pages/OverviewDraft";
 import AppLayout from "./components/AppLayout";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/overview-draft" element={<OverviewDraft />} />
             <Route path="/product/:productId" element={<ProductOverview />} />
             <Route path="/prompt/:promptId" element={<PromptDetail />} />
           </Route>
