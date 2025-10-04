@@ -11,8 +11,7 @@ import BrandVisibilityChart from "@/components/BrandVisibilityChart";
 import { CompetitorAnalytics } from "@/components/CompetitorAnalytics";
 import BrandVisibilityOverview from "@/components/overview/BrandVisibilityOverview";
 import TopPerformingProducts from "@/components/overview/TopPerformingProducts";
-import RisingStarProducts from "@/components/overview/RisingStarProducts";
-import AtRiskProducts from "@/components/overview/AtRiskProducts";
+import HighestDailyChange from "@/components/overview/HighestDailyChange";
 import CompetitiveBenchmark from "@/components/overview/CompetitiveBenchmark";
 import { BrandCard } from "@/components/overview/BrandCard";
 import { useNavigate, useLocation, useOutletContext } from "react-router-dom";
@@ -226,18 +225,22 @@ const Dashboard = () => {
       {/* Main tabs for different content */}
       {activeTab === "overview" && activeStore?.id && (
         <div className="space-y-6">
-          {/* Brand Card - Shows brand info and daily score */}
-          <BrandCard storeId={activeStore.id} />
-          
-          {/* 1. Brand Visibility Score - Top Section */}
-          <BrandVisibilityOverview storeId={activeStore.id} />
-
-          {/* 2. Product Health (Left) + Competitive Benchmark (Right) */}
+          {/* Brand Card + Brand Visibility Score - Side by side */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Product Health: Top Performing & Top Changes */}
+            <div className="lg:col-span-1">
+              <BrandCard storeId={activeStore.id} />
+            </div>
+            <div className="lg:col-span-2">
+              <BrandVisibilityOverview storeId={activeStore.id} />
+            </div>
+          </div>
+
+          {/* Product Health (Left) + Competitive Benchmark (Right) */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Product Health: Top Performing & Highest Daily Change */}
             <div className="lg:col-span-2 space-y-6">
               <TopPerformingProducts storeId={activeStore.id} />
-              <AtRiskProducts storeId={activeStore.id} />
+              <HighestDailyChange storeId={activeStore.id} />
             </div>
 
             {/* Competitive Benchmark */}
@@ -245,9 +248,6 @@ const Dashboard = () => {
               <CompetitiveBenchmark storeId={activeStore.id} brandName={activeStore.name} />
             </div>
           </div>
-
-          {/* 3. Product Visibility Drivers - Bottom Section */}
-          <RisingStarProducts storeId={activeStore.id} />
         </div>
       )}
 
