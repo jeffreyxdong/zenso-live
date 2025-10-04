@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BarChart3, MessageCircle, Settings, Package, Target, Plus, ChevronDown } from "lucide-react";
+import { BarChart3, MessageCircle, Settings, Package, Target, Plus, ChevronDown, FileText } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -181,6 +181,17 @@ const AppLayout = () => {
                   >
                     <BarChart3 className="w-4 h-4" />
                     {state !== "collapsed" && <span>Overview</span>}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
+                {/* Overview Draft */}
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    onClick={() => navigate("/overview-draft")}
+                    className={location.pathname === "/overview-draft" ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
+                  >
+                    <FileText className="w-4 h-4" />
+                    {state !== "collapsed" && <span>Overview Draft</span>}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
 
