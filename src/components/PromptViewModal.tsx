@@ -65,14 +65,14 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
       
       // Set up real-time subscription for daily scores
       const subscription = supabase
-        .channel(`user_generated_prompt_daily_scores_${prompt?.id}`)
+        .channel(`prompt_daily_scores_${prompt?.id}`)
         .on('postgres_changes', 
           { 
             event: '*', 
             schema: 'public', 
-            table: 'user_generated_prompt_daily_scores',
+            table: 'prompt_daily_scores',
             filter: `prompt_id=eq.${prompt?.id}`
-          },
+          }, 
           (payload) => {
             console.log('New daily score added:', payload);
             // Refresh the data when a new daily score is inserted
@@ -102,29 +102,28 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
 
       if (responsesError) throw responsesError;
 
-      // Fetch prompt scores from the prompts table
-      const { data: promptData, error: promptError } = await supabase
-        .from('user_generated_prompts')
-        .select('visibility_score, sentiment_score')
-        .eq('id', prompt.id)
-        .single();
-
-      if (promptError) {
-        console.warn('Could not fetch prompt scores:', promptError);
-      } else {
-        setPromptScores({
-          visibility_score: promptData?.visibility_score ?? null,
-          sentiment_score: promptData?.sentiment_score ?? null,
-        });
+     // Load user-generated prompts
+      const { data: promptsData, error: promptsError } = await supabase
+        .from("user_generated_prompts")
+        .select("id, content, product_id, brand_name, status, active, store_id")
+        .eq("store_id", activeStore.id)
+        .eq("active", true)
+        .neq("status", "suggested")
+        .order("created_at", { ascending: false });
+      
+      if (promptsError) {
+        console.error("Error loading prompts:", promptsError);
       }
+      if (promptsData) setPrompts(promptsData);
+
 
       // Fetch daily scores for time series - rolling 7-day window
       const { data: dailyScoresData, error: dailyScoresError } = await supabase
-        .from('user_generated_prompt_daily_scores' as any)
+        .from('prompt_daily_scores')
         .select('date, visibility_score, sentiment_score')
         .eq('prompt_id', prompt.id)
         .order('date', { ascending: false })
-        .limit(7) as { data: DailyScore[] | null; error: any };
+        .limit(7);
 
       if (dailyScoresError) {
         console.warn('Could not fetch daily scores:', dailyScoresError);
