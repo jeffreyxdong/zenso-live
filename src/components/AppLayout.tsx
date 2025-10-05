@@ -237,47 +237,64 @@ const AppLayout = () => {
                 </SidebarMenuItem>
 
                 {/* Products - Collapsible */}
-                <Collapsible open={productsExpanded} onOpenChange={setProductsExpanded}>
-                  <SidebarMenuItem>
-                    <CollapsibleTrigger asChild>
-                      <SidebarMenuButton 
-                        onClick={() => {
-                          handleTabChange("products-overview");
-                          setProductsExpanded(!productsExpanded);
-                        }}
-                        className={activeTab === "products-overview" ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
-                      >
-                        <Package className="w-4 h-4" />
-                        {state !== "collapsed" && (
-                          <>
-                            <span>Products</span>
-                            <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${productsExpanded ? "rotate-180" : ""}`} />
-                          </>
-                        )}
-                      </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      {state !== "collapsed" && products.length > 0 && (
-                        <div className="ml-8 mt-1 space-y-1 pl-2 border-l border-border/50">
-                          {products.slice(0, 10).map((product) => (
-                            <SidebarMenuButton
-                              key={product.id}
-                              className="w-full justify-start text-sm hover:bg-muted/50"
-                              onClick={() => handleProductClick(product.id)}
-                            >
-                              {product.title}
-                            </SidebarMenuButton>
-                          ))}
-                          {products.length > 10 && (
-                            <div className="text-xs text-muted-foreground px-2">
-                              +{products.length - 10} more
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </CollapsibleContent>
-                  </SidebarMenuItem>
-                </Collapsible>
+                {/* Products - Collapsible */}
+<Collapsible 
+  open={productsExpanded || location.pathname.startsWith("/product/")} 
+  onOpenChange={setProductsExpanded}
+>
+  <SidebarMenuItem>
+    <CollapsibleTrigger asChild>
+      <SidebarMenuButton 
+        onClick={() => {
+          handleTabChange("products-overview");
+          setProductsExpanded(!productsExpanded);
+        }}
+        className={activeTab === "products-overview" ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
+      >
+        <Package className="w-4 h-4" />
+        {state !== "collapsed" && (
+          <>
+            <span>Products</span>
+            <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${productsExpanded ? "rotate-180" : ""}`} />
+          </>
+        )}
+      </SidebarMenuButton>
+    </CollapsibleTrigger>
+
+    {/* Product List */}
+    <CollapsibleContent>
+      {state !== "collapsed" && products.length > 0 && (
+        <div className="ml-8 mt-1 space-y-1 pl-2 border-l border-border/50">
+          {products.slice(0, 10).map((product) => {
+            const productMatch = location.pathname.match(/^\/product\/(.+)$/);
+            const activeProductId = productMatch ? productMatch[1] : null;
+            const isActive = activeProductId === product.id;
+
+            return (
+              <SidebarMenuButton
+                key={product.id}
+                className={`w-full justify-start text-sm ${
+                  isActive
+                    ? "bg-muted text-primary font-medium"
+                    : "hover:bg-muted/50"
+                }`}
+                onClick={() => handleProductClick(product.id)}
+              >
+                {product.title}
+              </SidebarMenuButton>
+            );
+          })}
+          {products.length > 10 && (
+            <div className="text-xs text-muted-foreground px-2">
+              +{products.length - 10} more
+            </div>
+          )}
+        </div>
+      )}
+    </CollapsibleContent>
+  </SidebarMenuItem>
+</Collapsible>
+
 
                 {/* Brand */}
                 <SidebarMenuItem>
