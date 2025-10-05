@@ -68,12 +68,12 @@ const PromptDetail = () => {
       
       // Set up real-time subscription for daily scores
       const subscription = supabase
-        .channel(`prompt_daily_scores_${promptId}`)
+        .channel(`user_generated_prompt_daily_scores_${promptId}`)
         .on('postgres_changes', 
           { 
             event: '*', 
             schema: 'public', 
-            table: 'prompt_daily_scores',
+            table: 'user_generated_prompt_daily_scores',
             filter: `prompt_id=eq.${promptId}`
           }, 
           (payload) => {
@@ -125,11 +125,11 @@ const PromptDetail = () => {
 
       // Fetch daily scores for time series - rolling 7-day window
       const { data: dailyScoresData, error: dailyScoresError } = await supabase
-        .from('prompt_daily_scores')
+        .from('user_generated_prompt_daily_scores' as any)
         .select('date, visibility_score, sentiment_score')
         .eq('prompt_id', promptId)
         .order('date', { ascending: false })
-        .limit(7);
+        .limit(7) as { data: DailyScore[] | null; error: any };
 
       if (dailyScoresError) {
         console.warn('Could not fetch daily scores:', dailyScoresError);
@@ -353,8 +353,7 @@ const PromptDetail = () => {
       </div>
 
       {/* Time Series Charts */}
-      {dailyScores.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Visibility Score Chart */}
           <Card>
             <CardHeader>
@@ -541,7 +540,6 @@ const PromptDetail = () => {
             </CardContent>
           </Card>
         </div>
-      )}
 
       {/* AI Responses */}
       {responses.length > 0 && (
