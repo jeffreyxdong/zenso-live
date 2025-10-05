@@ -63,7 +63,7 @@ const PromptDetail = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (promptId) {
+    if (promptId && activeStore) {
       fetchPromptData();
       
       // Set up real-time subscription for daily scores
@@ -89,24 +89,39 @@ const PromptDetail = () => {
         subscription.unsubscribe();
       };
     }
-  }, [promptId]);
+  }, [promptId, activeStore]);
 
   const fetchPromptData = async () => {
-    if (!promptId) return;
+    if (!promptId || !activeStore) return;
     
     setIsLoading(true);
     try {
-      // Fetch prompt data
+      // Fetch prompt data and verify it belongs to the active store
       const { data: promptData, error: promptError } = await supabase
         .from('user_generated_prompts')
         .select('*')
         .eq('id', promptId)
+        .eq('store_id', activeStore.id)
         .single();
 
-      if (promptError) throw promptError;
+      if (promptError) {
+        if (promptError.code === 'PGRST116') {
+          // Prompt doesn't exist or doesn't belong to this store
+          toast({
+            title: "Error",
+            description: "This prompt doesn't belong to the current store",
+            variant: "destructive",
+          });
+          navigate('/dashboard?tab=prompts');
+          return;
+        }
+        throw promptError;
+      }
+      
       setPrompt({
         ...promptData,
-        status: (promptData.status as "active" | "suggested" | "inactive") || "active"
+        status: (promptData.status as "active" | "suggested" | "inactive") || "active",
+        brand_name: activeStore.name, // Use active store's name
       });
 
       // Fetch responses
