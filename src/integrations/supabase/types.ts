@@ -447,36 +447,6 @@ export type Database = {
         }
         Relationships: []
       }
-      prompt_daily_scores: {
-        Row: {
-          created_at: string
-          date: string
-          id: string
-          prompt_id: string
-          sentiment_score: number | null
-          updated_at: string
-          visibility_score: number | null
-        }
-        Insert: {
-          created_at?: string
-          date: string
-          id?: string
-          prompt_id: string
-          sentiment_score?: number | null
-          updated_at?: string
-          visibility_score?: number | null
-        }
-        Update: {
-          created_at?: string
-          date?: string
-          id?: string
-          prompt_id?: string
-          sentiment_score?: number | null
-          updated_at?: string
-          visibility_score?: number | null
-        }
-        Relationships: []
-      }
       prompt_responses: {
         Row: {
           created_at: string
@@ -637,6 +607,44 @@ export type Database = {
           website?: string
         }
         Relationships: []
+      }
+      user_generated_prompt_daily_scores: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          prompt_id: string
+          sentiment_score: number | null
+          updated_at: string
+          visibility_score: number | null
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          id?: string
+          prompt_id: string
+          sentiment_score?: number | null
+          updated_at?: string
+          visibility_score?: number | null
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          prompt_id?: string
+          sentiment_score?: number | null
+          updated_at?: string
+          visibility_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_generated_prompt_daily_scores_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "user_generated_prompts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_generated_prompt_responses: {
         Row: {
