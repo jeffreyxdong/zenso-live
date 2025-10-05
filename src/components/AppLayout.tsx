@@ -38,8 +38,8 @@ const AppLayout = () => {
   const [companyName, setCompanyName] = useState("BrandRefs");
   const [products, setProducts] = useState<any[]>([]);
   const [prompts, setPrompts] = useState<any[]>([]);
-  const [productsExpanded, setProductsExpanded] = useState(false);
-  const [promptsExpanded, setPromptsExpanded] = useState(false);
+  const [productsExpanded, setProductsExpanded] = useState(true);
+  const [promptsExpanded, setPromptsExpanded] = useState(true);
 
   useEffect(() => {
     if (location.pathname === "/dashboard") {
