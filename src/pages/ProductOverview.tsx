@@ -28,7 +28,6 @@ interface Product {
   shopify_id: string;
   product_type?: string;
   vendor?: string;
-  tags?: string[];
   created_at: string;
   visibility_score?: number;
   sentiment_score?: number;
@@ -250,6 +249,7 @@ const ProductOverview = () => {
   const { activeStore } = useOutletContext<{ activeStore: { id: string; name: string; website: string; is_active: boolean } | null }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const [metricsLoading, setMetricsLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewContent, setPreviewContent] = useState("");
   const [previewType, setPreviewType] = useState<string>("");
@@ -422,6 +422,85 @@ const ProductOverview = () => {
         };
 
         setProduct(enhancedProduct);
+        
+        // Set up real-time subscription to listen for score updates
+        const scoresSubscription = supabase
+          .channel('product-scores-changes')
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'product_scores',
+              filter: `product_id=eq.${productId}`
+            },
+            async (payload) => {
+              console.log('Product scores updated:', payload);
+              // Refetch product data
+              const { data: updatedProductData } = await supabase
+                .from("products")
+                .select("*")
+                .eq("id", productId)
+                .single();
+              
+              if (updatedProductData && 
+                  updatedProductData.visibility_score !== null &&
+                  updatedProductData.sentiment_score !== null &&
+                  updatedProductData.position_score !== null) {
+                setMetricsLoading(false);
+                // Update product with new scores
+                setProduct(prev => prev ? {
+                  ...prev,
+                  visibility_score: updatedProductData.visibility_score,
+                  sentiment_score: updatedProductData.sentiment_score,
+                  position_score: updatedProductData.position_score,
+                  currentMetrics: {
+                    ...prev.currentMetrics,
+                    visibilityScore: updatedProductData.visibility_score || 0,
+                    sentimentScore: updatedProductData.sentiment_score || 0,
+                    positionScore: updatedProductData.position_score || 0
+                  }
+                } : null);
+              }
+            }
+          )
+          .subscribe();
+
+        // Set up real-time subscription for recommendations
+        const recommendationsSubscription = supabase
+          .channel('product-recommendations-changes')
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'product_recommendations',
+              filter: `product_id=eq.${productId}`
+            },
+            async (payload) => {
+              console.log('Recommendations updated:', payload);
+              // Refetch recommendations
+              const { data: updatedRecs } = await supabase
+                .from("product_recommendations")
+                .select("*")
+                .eq("product_id", productId)
+                .order("created_at", { ascending: false });
+              
+              if (updatedRecs) {
+                setProduct(prev => prev ? {
+                  ...prev,
+                  recommendations: updatedRecs as Recommendation[]
+                } : null);
+              }
+            }
+          )
+          .subscribe();
+
+        // Cleanup subscriptions on unmount
+        return () => {
+          scoresSubscription.unsubscribe();
+          recommendationsSubscription.unsubscribe();
+        };
       } catch (error: any) {
         console.error("Error fetching product:", error);
         toast({
@@ -640,14 +719,45 @@ Stay focused during calls with noise cancellation and enjoy music during breaks 
       </div>
 
       {/* Metrics Cards */}
-      <ProductMetrics metrics={product.currentMetrics} />
+      {metricsLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Loading metrics...</span>
+                </div>
+                <div className="h-12 bg-muted animate-pulse rounded" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <ProductMetrics metrics={product.currentMetrics} />
+      )}
 
       {/* Charts */}
-      <ProductCharts 
-        visibilityData={product.visibilityHistory}
-        sentimentData={product.sentimentHistory}
-        positionData={product.positionHistory}
-      />
+      {metricsLoading ? (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <Card key={i}>
+              <CardHeader>
+                <div className="h-5 w-32 bg-muted animate-pulse rounded" />
+              </CardHeader>
+              <CardContent>
+                <div className="h-[200px] bg-muted animate-pulse rounded" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <ProductCharts 
+          visibilityData={product.visibilityHistory}
+          sentimentData={product.sentimentHistory}
+          positionData={product.positionHistory}
+        />
+      )}
 
       {/* AI Optimization - Recommendations */}
       <Card>
@@ -679,7 +789,19 @@ Stay focused during calls with noise cancellation and enjoy music during breaks 
           </div>
         </CardHeader>
         <CardContent>
-          {product.recommendations && product.recommendations.length > 0 ? (
+          {recommendationsLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="p-4 border rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    <div className="h-4 w-48 bg-muted animate-pulse rounded" />
+                  </div>
+                  <div className="h-3 w-full bg-muted animate-pulse rounded" />
+                </div>
+              ))}
+            </div>
+          ) : product.recommendations && product.recommendations.length > 0 ? (
             <div className="space-y-4">
               {product.recommendations.map((rec) => (
                 <div

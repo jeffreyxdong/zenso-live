@@ -27,7 +27,6 @@ interface Product {
   status: string;
   product_type?: string;
   vendor?: string;
-  tags?: string[];
   images?: any;
   created_at: string;
   variants?: ProductVariant[];
@@ -61,7 +60,6 @@ interface MyProductsProps {
 const productSchema = z.object({
   title: z.string().min(1, "Product title is required"),
   handle: z.string().optional(),
-  tags: z.string().optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -85,7 +83,6 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
     defaultValues: {
       title: "",
       handle: "",
-      tags: "",
     },
   });
 
@@ -110,7 +107,6 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
         }
 
         const handle = data.handle || generateHandle(data.title);
-        const tags = data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [];
 
         // Create product
         const { data: productData, error: productError } = await supabase
@@ -124,7 +120,6 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
             product_type: null,
             vendor: null,
             status: "active",
-            tags: tags.length > 0 ? tags : null,
           })
           .select()
           .single();
@@ -146,71 +141,77 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
 
       if (variantError) throw variantError;
 
-      // Generate buyer-intent prompts and responses for the new product
-      try {
-        const { data: session } = await supabase.auth.getSession();
-        if (session?.session) {
-          const authHeaders = {
-            Authorization: `Bearer ${session.session.access_token}`,
-          };
-
-          // Step 1: Generate buyer-intent prompts
-          console.log('Generating buyer-intent prompts...');
-          await supabase.functions.invoke('generate-buyer-intent-prompts', {
-            body: {
-              productId: productData.id,
-              storeId: activeStore.id,
-              productTitle: data.title,
-              productType: null,
-              vendor: null,
-              tags: tags
-            },
-            headers: authHeaders,
-          });
-
-          // Step 2: Generate responses for the prompts
-          console.log('Generating responses for prompts...');
-          await supabase.functions.invoke('generate-buyer-intent-outputs', {
-            body: {
-              productId: productData.id,
-            },
-            headers: authHeaders,
-          });
-
-          // Step 3: Score the responses
-          console.log('Scoring the generated responses...');
-          await supabase.functions.invoke('score-buyer-intent-outputs', {
-            body: {
-              productId: productData.id,
-              productTitle: data.title,
-            },
-            headers: authHeaders,
-          });
-
-          // Step 4: Generate PDP recommendations
-          console.log('Generating AI optimization recommendations...');
-          await supabase.functions.invoke('generate-pdp-recommendations', {
-            body: {
-              productId: productData.id,
-            },
-            headers: authHeaders,
-          });
-
-          console.log('Buyer-intent analysis and AI recommendations pipeline completed successfully');
-        }
-      } catch (promptError) {
-        console.error('Error in buyer-intent analysis pipeline:', promptError);
-        // Don't block product creation if analysis pipeline fails
-      }
-
-      toast({
-        title: "Success",
-        description: "Product added successfully with AI optimization recommendations",
-      });
-
+      // Close dialog and redirect immediately to PDP
       form.reset();
       setShowAddProductDialog(false);
-      await fetchProducts();
+      
+      toast({
+        title: "Success",
+        description: "Product created! Redirecting to product page...",
+      });
+
+      // Redirect to product overview page
+      if (onProductClick) {
+        onProductClick(productData.id);
+      }
+
+      // Start background processes (non-blocking)
+      (async () => {
+        try {
+          const { data: session } = await supabase.auth.getSession();
+          if (session?.session) {
+            const authHeaders = {
+              Authorization: `Bearer ${session.session.access_token}`,
+            };
+
+            // Step 1: Generate buyer-intent prompts
+            console.log('Generating buyer-intent prompts...');
+            await supabase.functions.invoke('generate-buyer-intent-prompts', {
+              body: {
+                productId: productData.id,
+                storeId: activeStore.id,
+                productTitle: data.title,
+                productType: null,
+                vendor: null,
+                tags: []
+              },
+              headers: authHeaders,
+            });
+
+            // Step 2: Generate responses for the prompts
+            console.log('Generating responses for prompts...');
+            await supabase.functions.invoke('generate-buyer-intent-outputs', {
+              body: {
+                productId: productData.id,
+              },
+              headers: authHeaders,
+            });
+
+            // Step 3: Score the responses
+            console.log('Scoring the generated responses...');
+            await supabase.functions.invoke('score-buyer-intent-outputs', {
+              body: {
+                productId: productData.id,
+                productTitle: data.title,
+              },
+              headers: authHeaders,
+            });
+
+            // Step 4: Generate PDP recommendations
+            console.log('Generating AI optimization recommendations...');
+            await supabase.functions.invoke('generate-pdp-recommendations', {
+              body: {
+                productId: productData.id,
+              },
+              headers: authHeaders,
+            });
+
+            console.log('Buyer-intent analysis and AI recommendations pipeline completed successfully');
+          }
+        } catch (promptError) {
+          console.error('Error in buyer-intent analysis pipeline:', promptError);
+        }
+      })();
 
     } catch (error: any) {
       console.error("Error adding product:", error);
@@ -828,24 +829,10 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                   control={form.control}
                   name="handle"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="col-span-2">
                       <FormLabel>Handle (URL)</FormLabel>
                       <FormControl>
                         <Input placeholder="auto-generated-if-empty" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="tags"
-                  render={({ field }) => (
-                    <FormItem className="col-span-2">
-                      <FormLabel>Tags</FormLabel>
-                      <FormControl>
-                        <Input placeholder="tag1, tag2, tag3" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -1098,19 +1085,6 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                 </div>
               </div>
 
-              {/* Tags */}
-              {selectedProduct.tags && selectedProduct.tags.length > 0 && (
-                <div>
-                  <h4 className="font-semibold mb-3">Tags</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedProduct.tags.map((tag, index) => (
-                      <Badge key={index} variant="secondary">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </DialogContent>
