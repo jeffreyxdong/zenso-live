@@ -87,7 +87,7 @@ const ProductCharts = ({ visibilityData, sentimentData, positionData }: ProductC
                 <YAxis 
                   className="text-xs fill-muted-foreground"
                   tick={{ fontSize: 10 }}
-                  domain={[0, 10]}
+                  domain={[0, 100]}
                 />
                 <Tooltip 
                   contentStyle={{ 
@@ -95,7 +95,7 @@ const ProductCharts = ({ visibilityData, sentimentData, positionData }: ProductC
                     border: '1px solid hsl(var(--border))',
                     borderRadius: '6px'
                   }}
-                  formatter={(value) => [`${Number(value).toFixed(1)}/10`, 'Sentiment']}
+                  formatter={(value) => [`${value}%`, 'Sentiment']}
                   labelFormatter={(date) => new Date(date).toLocaleDateString()}
                 />
                 <Line 
@@ -137,8 +137,7 @@ const ProductCharts = ({ visibilityData, sentimentData, positionData }: ProductC
                 <YAxis 
                   className="text-xs fill-muted-foreground"
                   tick={{ fontSize: 10 }}
-                  domain={[1, 10]}
-                  reversed
+                  domain={[0, 100]}
                 />
                 <Tooltip 
                   contentStyle={{ 
@@ -146,7 +145,7 @@ const ProductCharts = ({ visibilityData, sentimentData, positionData }: ProductC
                     border: '1px solid hsl(var(--border))',
                     borderRadius: '6px'
                   }}
-                  formatter={(value) => [`#${value}`, 'Position']}
+                  formatter={(value) => [`${value}%`, 'Position']}
                   labelFormatter={(date) => new Date(date).toLocaleDateString()}
                 />
                 <Line 
