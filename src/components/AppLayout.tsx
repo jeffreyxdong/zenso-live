@@ -137,7 +137,20 @@ const AppLayout = () => {
         .neq("status", "suggested")
         .order("created_at", { ascending: false });
       
-      if (promptsData) setPrompts(promptsData);
+      if (promptsData) {
+        // Get last accessed timestamps from localStorage
+        const promptAccessTimes = JSON.parse(localStorage.getItem('promptAccessTimes') || '{}');
+        
+        // Sort by last accessed (most recent first), then by content
+        const sortedPrompts = [...promptsData].sort((a, b) => {
+          const timeA = promptAccessTimes[a.id] || 0;
+          const timeB = promptAccessTimes[b.id] || 0;
+          if (timeB !== timeA) return timeB - timeA;
+          return a.content.localeCompare(b.content);
+        });
+        
+        setPrompts(sortedPrompts);
+      }
     };
 
     loadData();
@@ -216,6 +229,21 @@ const AppLayout = () => {
     };
 
     const handlePromptClick = (promptId: string) => {
+      // Track access time in localStorage
+      const promptAccessTimes = JSON.parse(localStorage.getItem('promptAccessTimes') || '{}');
+      promptAccessTimes[promptId] = Date.now();
+      localStorage.setItem('promptAccessTimes', JSON.stringify(promptAccessTimes));
+      
+      // Re-sort prompts
+      const accessTimesUpdated = promptAccessTimes;
+      const sortedPrompts = [...prompts].sort((a, b) => {
+        const timeA = accessTimesUpdated[a.id] || 0;
+        const timeB = accessTimesUpdated[b.id] || 0;
+        if (timeB !== timeA) return timeB - timeA;
+        return a.content.localeCompare(b.content);
+      });
+      setPrompts(sortedPrompts);
+      
       navigate(`/prompt/${promptId}`);
     };
 
