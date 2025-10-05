@@ -336,7 +336,10 @@ const AppLayout = () => {
                 </SidebarMenuItem>
 
                 {/* Prompts - Collapsible */}
-                <Collapsible open={promptsExpanded} onOpenChange={setPromptsExpanded}>
+                <Collapsible 
+                  open={promptsExpanded || location.pathname.startsWith("/prompt/")} 
+                  onOpenChange={setPromptsExpanded}
+                >
                   <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
                       <SidebarMenuButton 
@@ -358,15 +361,25 @@ const AppLayout = () => {
                     <CollapsibleContent>
                       {state !== "collapsed" && prompts.length > 0 && (
                         <div className="ml-8 mt-1 space-y-1 pl-2 border-l border-border/50">
-                          {prompts.slice(0, 10).map((prompt) => (
-                            <SidebarMenuButton
-                              key={prompt.id}
-                              className="w-full justify-start text-sm hover:bg-muted/50 overflow-hidden"
-                              onClick={() => handlePromptClick(prompt.id)}
-                            >
-                              <span className="truncate">{prompt.content}</span>
-                            </SidebarMenuButton>
-                          ))}
+                          {prompts.slice(0, 10).map((prompt) => {
+                            const promptMatch = location.pathname.match(/^\/prompt\/(.+)$/);
+                            const activePromptId = promptMatch ? promptMatch[1] : null;
+                            const isActive = activePromptId === prompt.id;
+
+                            return (
+                              <SidebarMenuButton
+                                key={prompt.id}
+                                className={`w-full justify-start text-sm ${
+                                  isActive
+                                    ? "bg-muted text-primary font-medium"
+                                    : "hover:bg-muted/50"
+                                } overflow-hidden`}
+                                onClick={() => handlePromptClick(prompt.id)}
+                              >
+                                <span className="truncate">{prompt.content}</span>
+                              </SidebarMenuButton>
+                            );
+                          })}
                           {prompts.length > 10 && (
                             <div className="text-xs text-muted-foreground px-2">
                               +{prompts.length - 10} more
