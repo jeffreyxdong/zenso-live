@@ -77,6 +77,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showProductDetail, setShowProductDetail] = useState(false);
+  const [sortBy, setSortBy] = useState<string>("name-asc");
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -595,12 +596,37 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
     }
   };
 
-  const filteredProducts = products.filter(
-    (product) =>
-      product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.vendor?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.product_type?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProducts = products
+    .filter(
+      (product) =>
+        product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.vendor?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.product_type?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "name-asc":
+          return a.title.localeCompare(b.title);
+        case "name-desc":
+          return b.title.localeCompare(a.title);
+        case "status":
+          return a.status.localeCompare(b.status);
+        case "visibility-high":
+          return (b.visibility_score ?? 0) - (a.visibility_score ?? 0);
+        case "visibility-low":
+          return (a.visibility_score ?? 0) - (b.visibility_score ?? 0);
+        case "sentiment-high":
+          return (b.sentiment_score ?? 0) - (a.sentiment_score ?? 0);
+        case "sentiment-low":
+          return (a.sentiment_score ?? 0) - (b.sentiment_score ?? 0);
+        case "position-high":
+          return (b.position_score ?? 0) - (a.position_score ?? 0);
+        case "position-low":
+          return (a.position_score ?? 0) - (b.position_score ?? 0);
+        default:
+          return 0;
+      }
+    });
 
   if (loading) {
     return (
@@ -657,6 +683,22 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
             className="pl-10"
           />
         </div>
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="w-[240px]">
+            <SelectValue placeholder="Sort by..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="name-asc">Product Name A-Z</SelectItem>
+            <SelectItem value="name-desc">Product Name Z-A</SelectItem>
+            <SelectItem value="status">Product Status</SelectItem>
+            <SelectItem value="visibility-high">Visibility Score (High to Low)</SelectItem>
+            <SelectItem value="visibility-low">Visibility Score (Low to High)</SelectItem>
+            <SelectItem value="sentiment-high">Sentiment Score (High to Low)</SelectItem>
+            <SelectItem value="sentiment-low">Sentiment Score (Low to High)</SelectItem>
+            <SelectItem value="position-high">Position Score (High to Low)</SelectItem>
+            <SelectItem value="position-low">Position Score (Low to High)</SelectItem>
+          </SelectContent>
+        </Select>
         {selectedProducts.length > 0 && (
           <Button
             variant="outline"

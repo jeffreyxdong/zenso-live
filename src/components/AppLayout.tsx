@@ -113,7 +113,20 @@ const AppLayout = () => {
         .eq("store_id", activeStore.id)
         .order("title");
       
-      if (productsData) setProducts(productsData);
+      if (productsData) {
+        // Get last accessed timestamps from localStorage
+        const accessTimes = JSON.parse(localStorage.getItem('productAccessTimes') || '{}');
+        
+        // Sort by last accessed (most recent first), then by title
+        const sortedProducts = [...productsData].sort((a, b) => {
+          const timeA = accessTimes[a.id] || 0;
+          const timeB = accessTimes[b.id] || 0;
+          if (timeB !== timeA) return timeB - timeA;
+          return a.title.localeCompare(b.title);
+        });
+        
+        setProducts(sortedProducts);
+      }
 
       // Load prompts - only show user-entered prompts (not suggested ones)
       const { data: promptsData } = await supabase
@@ -184,6 +197,21 @@ const AppLayout = () => {
     };
 
     const handleProductClick = (productId: string) => {
+      // Track access time in localStorage
+      const accessTimes = JSON.parse(localStorage.getItem('productAccessTimes') || '{}');
+      accessTimes[productId] = Date.now();
+      localStorage.setItem('productAccessTimes', JSON.stringify(accessTimes));
+      
+      // Re-sort products
+      const accessTimesUpdated = accessTimes;
+      const sortedProducts = [...products].sort((a, b) => {
+        const timeA = accessTimesUpdated[a.id] || 0;
+        const timeB = accessTimesUpdated[b.id] || 0;
+        if (timeB !== timeA) return timeB - timeA;
+        return a.title.localeCompare(b.title);
+      });
+      setProducts(sortedProducts);
+      
       navigate(`/product/${productId}`);
     };
 
