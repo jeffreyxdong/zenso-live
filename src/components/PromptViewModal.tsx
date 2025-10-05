@@ -70,9 +70,9 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
           { 
             event: '*', 
             schema: 'public', 
-            table: 'prompt_daily_scores',
+            table: 'user_generated_prompt_daily_scores',
             filter: `prompt_id=eq.${prompt?.id}`
-          }, 
+          },
           (payload) => {
             console.log('New daily score added:', payload);
             // Refresh the data when a new daily score is inserted
@@ -102,24 +102,9 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
 
       if (responsesError) throw responsesError;
 
-     // Load user-generated prompts
-      const { data: promptsData, error: promptsError } = await supabase
-        .from("user_generated_prompts")
-        .select("id, content, product_id, brand_name, status, active, store_id")
-        .eq("store_id", activeStore.id)
-        .eq("active", true)
-        .neq("status", "suggested")
-        .order("created_at", { ascending: false });
-      
-      if (promptsError) {
-        console.error("Error loading prompts:", promptsError);
-      }
-      if (promptsData) setPrompts(promptsData);
-
-
       // Fetch daily scores for time series - rolling 7-day window
       const { data: dailyScoresData, error: dailyScoresError } = await supabase
-        .from('prompt_daily_scores')
+        .from('user_generated_prompt_daily_scores')
         .select('date, visibility_score, sentiment_score')
         .eq('prompt_id', prompt.id)
         .order('date', { ascending: false })

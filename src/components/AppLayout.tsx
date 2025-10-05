@@ -128,13 +128,12 @@ const AppLayout = () => {
         setProducts(sortedProducts);
       }
 
-      // Load prompts - only show user-entered prompts (not suggested ones)
+      // Load active prompts from user_generated_prompts
       const { data: promptsData } = await supabase
-        .from("prompts")
+        .from("user_generated_prompts")
         .select("id, content, product_id, brand_name, status")
         .eq("store_id", activeStore.id)
         .eq("active", true)
-        .neq("status", "suggested")
         .order("created_at", { ascending: false });
       
       if (promptsData) setPrompts(promptsData);
@@ -168,7 +167,7 @@ const AppLayout = () => {
         {
           event: '*',
           schema: 'public',
-          table: 'prompts',
+          table: 'user_generated_prompts',
           filter: `store_id=eq.${activeStore.id}`
         },
         () => {
