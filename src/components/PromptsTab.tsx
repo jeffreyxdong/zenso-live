@@ -160,8 +160,6 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
           content: prompt.trim(),
           brand_name: brandName,
           status: "active",
-          visibility_score: visibilityScore,
-          sentiment_score: sentimentScore,
         })
         .select()
         .single();
@@ -176,6 +174,15 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
             response_text: r.content,
           }))
         );
+
+        // Save initial daily score
+        const today = new Date().toISOString().split('T')[0];
+        await (supabase.from("user_generated_prompt_daily_scores" as any).insert({
+          prompt_id: promptData.id,
+          date: today,
+          visibility_score: visibilityScore,
+          sentiment_score: sentimentScore,
+        }) as any);
       }
 
       fetchSavedPrompts();
@@ -196,14 +203,36 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
 
       const { data, error } = await supabase
         .from("user_generated_prompts")
-        .select("id, content, created_at, status, brand_name, product_id, visibility_score, sentiment_score")
+        .select("id, content, created_at, status, brand_name, product_id")
         .eq("user_id", userData.user.id)
         .eq("store_id", activeStore.id)
         .eq("status", "active")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setSavedPrompts((data ?? []) as SavedPrompt[]);
+
+      // Fetch most recent daily scores for each prompt
+      const promptsWithScores = await Promise.all(
+        (data ?? []).map(async (prompt) => {
+          const { data: dailyScores } = await supabase
+            .from("user_generated_prompt_daily_scores" as any)
+            .select("visibility_score, sentiment_score")
+            .eq("prompt_id", prompt.id)
+            .order("date", { ascending: false })
+            .limit(1) as { 
+              data: { visibility_score: number | null; sentiment_score: number | null } | null; 
+              error: any 
+            };
+
+          return {
+            ...prompt,
+            visibility_score: dailyScores?.visibility_score ?? undefined,
+            sentiment_score: dailyScores?.sentiment_score ?? undefined,
+          };
+        })
+      );
+
+      setSavedPrompts(promptsWithScores as SavedPrompt[]);
     } catch (err) {
       console.error("Error fetching prompts:", err);
       toast({ title: "Error", description: "Failed to load saved prompts", variant: "destructive" });
