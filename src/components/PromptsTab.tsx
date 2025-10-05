@@ -153,7 +153,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
       if (!activeStore?.id) throw new Error("No store selected");
 
       const { data: promptData, error } = await supabase
-        .from("prompts")
+        .from("user_generated_prompts")
         .insert({
           user_id: userData.user.id,
           store_id: activeStore.id,
@@ -169,35 +169,13 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
       if (error) throw error;
 
       if (responses.length > 0 && promptData) {
-        await supabase.from("prompt_responses").insert(
+        await supabase.from("user_generated_prompt_responses").insert(
           responses.map((r) => ({
             prompt_id: promptData.id,
             model_name: r.model,
             response_text: r.content,
           }))
         );
-
-        // Insert initial daily score entry
-        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-        console.log('Inserting initial daily score:', {
-          prompt_id: promptData.id,
-          date: today,
-          visibility_score: visibilityScore,
-          sentiment_score: sentimentScore,
-        });
-        
-        const { error: dailyScoreError } = await supabase.from("prompt_daily_scores").insert({
-          prompt_id: promptData.id,
-          date: today,
-          visibility_score: visibilityScore,
-          sentiment_score: sentimentScore,
-        });
-        
-        if (dailyScoreError) {
-          console.error('Error inserting daily score:', dailyScoreError);
-        } else {
-          console.log('Daily score entry created successfully');
-        }
       }
 
       fetchSavedPrompts();
@@ -217,7 +195,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
       }
 
       const { data, error } = await supabase
-        .from("prompts")
+        .from("user_generated_prompts")
         .select("id, content, created_at, status, brand_name, product_id, visibility_score, sentiment_score")
         .eq("user_id", userData.user.id)
         .eq("store_id", activeStore.id)
@@ -270,7 +248,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
 
       // Delete prompts
       const { error: promptError } = await supabase
-        .from("prompts")
+        .from("user_generated_prompts")
         .delete()
         .in("id", promptIds)
         .eq("user_id", userData.user.id);

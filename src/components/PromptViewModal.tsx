@@ -95,7 +95,7 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
     try {
       // Fetch responses
       const { data: responsesData, error: responsesError } = await supabase
-        .from('prompt_responses')
+        .from('user_generated_prompt_responses')
         .select('id, model_name, response_text, sources, created_at')
         .eq('prompt_id', prompt.id)
         .order('created_at', { ascending: false });
@@ -104,7 +104,7 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
 
       // Fetch prompt scores from the prompts table
       const { data: promptData, error: promptError } = await supabase
-        .from('prompts')
+        .from('user_generated_prompts')
         .select('visibility_score, sentiment_score')
         .eq('id', prompt.id)
         .single();

@@ -638,6 +638,87 @@ export type Database = {
         }
         Relationships: []
       }
+      user_generated_prompt_responses: {
+        Row: {
+          created_at: string
+          id: string
+          model_name: string
+          prompt_id: string
+          response_text: string
+          source: string | null
+          sources: Json | null
+          sources_final: Json | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          model_name: string
+          prompt_id: string
+          response_text: string
+          source?: string | null
+          sources?: Json | null
+          sources_final?: Json | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          model_name?: string
+          prompt_id?: string
+          response_text?: string
+          source?: string | null
+          sources?: Json | null
+          sources_final?: Json | null
+        }
+        Relationships: []
+      }
+      user_generated_prompts: {
+        Row: {
+          active: boolean
+          brand_name: string | null
+          content: string
+          created_at: string
+          id: string
+          position_score: number | null
+          product_id: string | null
+          sentiment_score: number | null
+          status: string | null
+          store_id: string
+          updated_at: string
+          user_id: string
+          visibility_score: number | null
+        }
+        Insert: {
+          active?: boolean
+          brand_name?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          position_score?: number | null
+          product_id?: string | null
+          sentiment_score?: number | null
+          status?: string | null
+          store_id: string
+          updated_at?: string
+          user_id: string
+          visibility_score?: number | null
+        }
+        Update: {
+          active?: boolean
+          brand_name?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          position_score?: number | null
+          product_id?: string | null
+          sentiment_score?: number | null
+          status?: string | null
+          store_id?: string
+          updated_at?: string
+          user_id?: string
+          visibility_score?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       brand_prompt_responses_with_prompts: {

@@ -98,7 +98,7 @@ const PromptDetail = () => {
     try {
       // Fetch prompt data
       const { data: promptData, error: promptError } = await supabase
-        .from('prompts')
+        .from('user_generated_prompts')
         .select('*')
         .eq('id', promptId)
         .single();
@@ -111,7 +111,7 @@ const PromptDetail = () => {
 
       // Fetch responses
       const { data: responsesData, error: responsesError } = await supabase
-        .from('prompt_responses')
+        .from('user_generated_prompt_responses')
         .select('id, model_name, response_text, sources, created_at')
         .eq('prompt_id', promptId)
         .order('created_at', { ascending: false });
