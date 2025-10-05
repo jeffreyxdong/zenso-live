@@ -101,11 +101,11 @@ const AppLayout = () => {
     setupRealtimeSubscription();
   }, []);
 
-  // Load products and prompts for sidebar
+  // Load products and prompts for sidebar with real-time updates
   useEffect(() => {
-    const loadData = async () => {
-      if (!activeStore) return;
+    if (!activeStore) return;
 
+    const loadData = async () => {
       // Load products
       const { data: productsData } = await supabase
         .from("products")
@@ -128,6 +128,47 @@ const AppLayout = () => {
     };
 
     loadData();
+
+    // Set up real-time subscription for products
+    const productsChannel = supabase
+      .channel('sidebar-products-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'products',
+          filter: `store_id=eq.${activeStore.id}`
+        },
+        () => {
+          // Reload products when any change occurs
+          loadData();
+        }
+      )
+      .subscribe();
+
+    // Set up real-time subscription for prompts
+    const promptsChannel = supabase
+      .channel('sidebar-prompts-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'prompts',
+          filter: `store_id=eq.${activeStore.id}`
+        },
+        () => {
+          // Reload prompts when any change occurs
+          loadData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(productsChannel);
+      supabase.removeChannel(promptsChannel);
+    };
   }, [activeStore]);
 
   const AppSidebar = () => {
