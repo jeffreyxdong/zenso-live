@@ -118,11 +118,6 @@ const PromptDetail = () => {
 
       if (responsesError) throw responsesError;
 
-      setPromptScores({
-        visibility_score: promptData?.visibility_score ?? null,
-        sentiment_score: promptData?.sentiment_score ?? null,
-      });
-
       // Fetch daily scores for time series - rolling 7-day window
       const { data: dailyScoresData, error: dailyScoresError } = await supabase
         .from('user_generated_prompt_daily_scores' as any)
@@ -137,6 +132,21 @@ const PromptDetail = () => {
         // Reverse the array so oldest date appears first for chart rendering
         const reversedData = (dailyScoresData || []).reverse();
         setDailyScores(reversedData);
+        
+        // Set prompt scores from the most recent daily score
+        const mostRecentScore = dailyScoresData?.[0]; // First item is most recent (ordered by date desc)
+        if (mostRecentScore) {
+          setPromptScores({
+            visibility_score: mostRecentScore.visibility_score ?? null,
+            sentiment_score: mostRecentScore.sentiment_score ?? null,
+          });
+        } else {
+          // No daily scores yet
+          setPromptScores({
+            visibility_score: null,
+            sentiment_score: null,
+          });
+        }
       }
 
       setResponses(responsesData || []);
