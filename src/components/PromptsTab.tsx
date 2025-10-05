@@ -113,17 +113,11 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
 
     setIsProcessing(true);
     try {
-      // Get company name for brand references
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("User not authenticated");
 
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("company_name")
-        .eq("user_id", userData.user.id)
-        .single();
-
-      const brandName = profileData?.company_name || activeStore.name;
+      // Always use the active store's name for brand scoring
+      const brandName = activeStore.name;
 
       const responses = await fetchAIResponses(prompt);
       if (responses.length === 0) throw new Error("No AI responses received.");
