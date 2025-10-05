@@ -141,8 +141,8 @@ const AddStoreModal = ({ open, onOpenChange, onStoreAdded }: AddStoreModalProps)
             <Label htmlFor="website">Website URL</Label>
             <Input
               id="website"
-              type="url"
-              placeholder="https://your-store.com"
+              type="text"
+              placeholder="honda.com"
               value={formData.website}
               onChange={(e) => handleInputChange("website", e.target.value)}
               disabled={loading}
