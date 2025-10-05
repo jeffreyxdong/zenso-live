@@ -264,29 +264,37 @@ const AppLayout = () => {
                 </SidebarMenuItem>
 
                 {/* Products - Collapsible */}
-                {/* Products - Collapsible */}
 <Collapsible 
   open={productsExpanded || location.pathname.startsWith("/product/")} 
   onOpenChange={setProductsExpanded}
 >
   <SidebarMenuItem>
-    <CollapsibleTrigger asChild>
+    <div className="relative">
       <SidebarMenuButton 
-        onClick={() => {
-          handleTabChange("products-overview");
-          setProductsExpanded(!productsExpanded);
-        }}
+        onClick={() => handleTabChange("products-overview")}
         className={activeTab === "products-overview" ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
       >
         <Package className="w-4 h-4" />
         {state !== "collapsed" && (
           <>
             <span>Products</span>
-            <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${productsExpanded ? "rotate-180" : ""}`} />
           </>
         )}
       </SidebarMenuButton>
-    </CollapsibleTrigger>
+      {state !== "collapsed" && (
+        <CollapsibleTrigger asChild>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setProductsExpanded(!productsExpanded);
+            }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded transition-colors"
+          >
+            <ChevronDown className={`h-4 w-4 transition-transform ${productsExpanded ? "rotate-180" : ""}`} />
+          </button>
+        </CollapsibleTrigger>
+      )}
+    </div>
 
     {/* Product List */}
     <CollapsibleContent>
@@ -340,23 +348,32 @@ const AppLayout = () => {
                   onOpenChange={setPromptsExpanded}
                 >
                   <SidebarMenuItem>
-                    <CollapsibleTrigger asChild>
+                    <div className="relative">
                       <SidebarMenuButton 
-                        onClick={() => {
-                          handleTabChange("prompts");
-                          setPromptsExpanded(!promptsExpanded);
-                        }}
+                        onClick={() => handleTabChange("prompts")}
                         className={activeTab === "prompts" ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
                       >
                         <MessageCircle className="w-4 h-4" />
                         {state !== "collapsed" && (
                           <>
                             <span>Prompts</span>
-                            <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${promptsExpanded ? "rotate-180" : ""}`} />
                           </>
                         )}
                       </SidebarMenuButton>
-                    </CollapsibleTrigger>
+                      {state !== "collapsed" && (
+                        <CollapsibleTrigger asChild>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPromptsExpanded(!promptsExpanded);
+                            }}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded transition-colors"
+                          >
+                            <ChevronDown className={`h-4 w-4 transition-transform ${promptsExpanded ? "rotate-180" : ""}`} />
+                          </button>
+                        </CollapsibleTrigger>
+                      )}
+                    </div>
                     <CollapsibleContent>
                       {state !== "collapsed" && prompts.length > 0 && (
                         <div className="ml-8 mt-1 space-y-1 pl-2 border-l border-border/50">
