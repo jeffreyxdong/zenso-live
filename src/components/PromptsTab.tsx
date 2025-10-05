@@ -214,21 +214,37 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
       // Fetch most recent daily scores for each prompt
       const promptsWithScores = await Promise.all(
         (data ?? []).map(async (prompt) => {
-          const { data: dailyScores } = await supabase
-            .from("user_generated_prompt_daily_scores" as any)
-            .select("visibility_score, sentiment_score")
-            .eq("prompt_id", prompt.id)
-            .order("date", { ascending: false })
-            .limit(1) as { 
-              data: { visibility_score: number | null; sentiment_score: number | null } | null; 
-              error: any 
-            };
+          try {
+            const { data: dailyScores, error: scoresError } = await supabase
+              .from("user_generated_prompt_daily_scores" as any)
+              .select("visibility_score, sentiment_score")
+              .eq("prompt_id", prompt.id)
+              .order("date", { ascending: false })
+              .limit(1)
+              .maybeSingle() as { 
+                data: { visibility_score: number | null; sentiment_score: number | null } | null; 
+                error: any 
+              };
 
-          return {
-            ...prompt,
-            visibility_score: dailyScores?.visibility_score ?? undefined,
-            sentiment_score: dailyScores?.sentiment_score ?? undefined,
-          };
+            if (scoresError) {
+              console.warn(`Error fetching scores for prompt ${prompt.id}:`, scoresError);
+            }
+
+            console.log(`Scores for prompt ${prompt.id}:`, dailyScores);
+
+            return {
+              ...prompt,
+              visibility_score: dailyScores?.visibility_score ?? undefined,
+              sentiment_score: dailyScores?.sentiment_score ?? undefined,
+            };
+          } catch (err) {
+            console.error(`Failed to fetch scores for prompt ${prompt.id}:`, err);
+            return {
+              ...prompt,
+              visibility_score: undefined,
+              sentiment_score: undefined,
+            };
+          }
         })
       );
 
