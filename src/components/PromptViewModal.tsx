@@ -65,14 +65,14 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
       
       // Set up real-time subscription for daily scores
       const subscription = supabase
-        .channel(`prompt_daily_scores_${prompt?.id}`)
+        .channel(`user_generated_prompt_daily_scores_${prompt?.id}`)
         .on('postgres_changes', 
           { 
             event: '*', 
             schema: 'public', 
-            table: 'prompt_daily_scores',
+            table: 'user_generated_prompt_daily_scores',
             filter: `prompt_id=eq.${prompt?.id}`
-          }, 
+          },
           (payload) => {
             console.log('New daily score added:', payload);
             // Refresh the data when a new daily score is inserted
@@ -120,11 +120,11 @@ export const PromptViewModal = ({ isOpen, onClose, prompt }: PromptViewModalProp
 
       // Fetch daily scores for time series - rolling 7-day window
       const { data: dailyScoresData, error: dailyScoresError } = await supabase
-        .from('prompt_daily_scores')
+        .from('user_generated_prompt_daily_scores' as any)
         .select('date, visibility_score, sentiment_score')
         .eq('prompt_id', prompt.id)
         .order('date', { ascending: false })
-        .limit(7);
+        .limit(7) as { data: DailyScore[] | null; error: any };
 
       if (dailyScoresError) {
         console.warn('Could not fetch daily scores:', dailyScoresError);

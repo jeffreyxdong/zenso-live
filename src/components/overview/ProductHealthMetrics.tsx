@@ -108,7 +108,7 @@ const ProductHealthMetrics = ({ storeId }: ProductHealthMetricsProps) => {
       const changesPromises = (products || []).map(async (product) => {
         const [todayScores, yesterdayScores] = await Promise.all([
           supabase
-            .from('prompt_daily_scores')
+            .from('user_generated_prompt_daily_scores' as any)
             .select('visibility_score, prompt_id')
             .eq('date', todayStr)
             .in('prompt_id', 
@@ -118,9 +118,9 @@ const ProductHealthMetrics = ({ storeId }: ProductHealthMetricsProps) => {
                 .eq('product_id', product.id)
                 .eq('active', true))
                 .data?.map(p => p.id) || []
-            ),
+            ) as any,
           supabase
-            .from('prompt_daily_scores')
+            .from('user_generated_prompt_daily_scores' as any)
             .select('visibility_score, prompt_id')
             .eq('date', yesterdayStr)
             .in('prompt_id',
@@ -130,7 +130,7 @@ const ProductHealthMetrics = ({ storeId }: ProductHealthMetricsProps) => {
                 .eq('product_id', product.id)
                 .eq('active', true))
                 .data?.map(p => p.id) || []
-            )
+            ) as any
         ]);
 
         const todayAvg = todayScores.data && todayScores.data.length > 0
