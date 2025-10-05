@@ -128,12 +128,13 @@ const AppLayout = () => {
         setProducts(sortedProducts);
       }
 
-      // Load prompts - match My Prompts list exactly (active status only)
+      // Load prompts - only show user-entered prompts (not suggested ones)
       const { data: promptsData } = await supabase
-        .from("user_generated_prompts")
+        .from("prompts")
         .select("id, content, product_id, brand_name, status")
         .eq("store_id", activeStore.id)
-        .eq("status", "active")
+        .eq("active", true)
+        .neq("status", "suggested")
         .order("created_at", { ascending: false });
       
       if (promptsData) setPrompts(promptsData);
@@ -167,7 +168,7 @@ const AppLayout = () => {
         {
           event: '*',
           schema: 'public',
-          table: 'user_generated_prompts',
+          table: 'prompts',
           filter: `store_id=eq.${activeStore.id}`
         },
         () => {
@@ -264,37 +265,29 @@ const AppLayout = () => {
                 </SidebarMenuItem>
 
                 {/* Products - Collapsible */}
+                {/* Products - Collapsible */}
 <Collapsible 
   open={productsExpanded || location.pathname.startsWith("/product/")} 
   onOpenChange={setProductsExpanded}
 >
   <SidebarMenuItem>
-    <div className="relative">
+    <CollapsibleTrigger asChild>
       <SidebarMenuButton 
-        onClick={() => handleTabChange("products-overview")}
+        onClick={() => {
+          handleTabChange("products-overview");
+          setProductsExpanded(!productsExpanded);
+        }}
         className={activeTab === "products-overview" ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
       >
         <Package className="w-4 h-4" />
         {state !== "collapsed" && (
           <>
             <span>Products</span>
+            <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${productsExpanded ? "rotate-180" : ""}`} />
           </>
         )}
       </SidebarMenuButton>
-      {state !== "collapsed" && (
-        <CollapsibleTrigger asChild>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setProductsExpanded(!productsExpanded);
-            }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded transition-colors"
-          >
-            <ChevronDown className={`h-4 w-4 transition-transform ${productsExpanded ? "rotate-180" : ""}`} />
-          </button>
-        </CollapsibleTrigger>
-      )}
-    </div>
+    </CollapsibleTrigger>
 
     {/* Product List */}
     <CollapsibleContent>
@@ -315,7 +308,13 @@ const AppLayout = () => {
                 }`}
                 onClick={() => handleProductClick(product.id)}
               >
-                {product.title}
+                <span
+                  title={product.title}
+                  className="truncate whitespace-nowrap overflow-hidden block w-full"
+                >
+                  {product.title}
+                </span>
+
               </SidebarMenuButton>
             );
           })}
@@ -343,59 +342,37 @@ const AppLayout = () => {
                 </SidebarMenuItem>
 
                 {/* Prompts - Collapsible */}
-                <Collapsible 
-                  open={promptsExpanded || location.pathname.startsWith("/prompt/")} 
-                  onOpenChange={setPromptsExpanded}
-                >
+                <Collapsible open={promptsExpanded} onOpenChange={setPromptsExpanded}>
                   <SidebarMenuItem>
-                    <div className="relative">
+                    <CollapsibleTrigger asChild>
                       <SidebarMenuButton 
-                        onClick={() => handleTabChange("prompts")}
+                        onClick={() => {
+                          handleTabChange("prompts");
+                          setPromptsExpanded(!promptsExpanded);
+                        }}
                         className={activeTab === "prompts" ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
                       >
                         <MessageCircle className="w-4 h-4" />
                         {state !== "collapsed" && (
                           <>
                             <span>Prompts</span>
+                            <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${promptsExpanded ? "rotate-180" : ""}`} />
                           </>
                         )}
                       </SidebarMenuButton>
-                      {state !== "collapsed" && (
-                        <CollapsibleTrigger asChild>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPromptsExpanded(!promptsExpanded);
-                            }}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded transition-colors"
-                          >
-                            <ChevronDown className={`h-4 w-4 transition-transform ${promptsExpanded ? "rotate-180" : ""}`} />
-                          </button>
-                        </CollapsibleTrigger>
-                      )}
-                    </div>
+                    </CollapsibleTrigger>
                     <CollapsibleContent>
                       {state !== "collapsed" && prompts.length > 0 && (
                         <div className="ml-8 mt-1 space-y-1 pl-2 border-l border-border/50">
-                          {prompts.slice(0, 10).map((prompt) => {
-                            const promptMatch = location.pathname.match(/^\/prompt\/(.+)$/);
-                            const activePromptId = promptMatch ? promptMatch[1] : null;
-                            const isActive = activePromptId === prompt.id;
-
-                            return (
-                              <SidebarMenuButton
-                                key={prompt.id}
-                                className={`w-full justify-start text-sm ${
-                                  isActive
-                                    ? "bg-muted text-primary font-medium"
-                                    : "hover:bg-muted/50"
-                                } overflow-hidden`}
-                                onClick={() => handlePromptClick(prompt.id)}
-                              >
-                                <span className="truncate">{prompt.content}</span>
-                              </SidebarMenuButton>
-                            );
-                          })}
+                          {prompts.slice(0, 10).map((prompt) => (
+                            <SidebarMenuButton
+                              key={prompt.id}
+                              className="w-full justify-start text-sm hover:bg-muted/50 overflow-hidden"
+                              onClick={() => handlePromptClick(prompt.id)}
+                            >
+                              <span className="truncate">{prompt.content}</span>
+                            </SidebarMenuButton>
+                          ))}
                           {prompts.length > 10 && (
                             <div className="text-xs text-muted-foreground px-2">
                               +{prompts.length - 10} more
