@@ -353,7 +353,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
     if (score == null) {
       if (isRecentlyCreated) {
         return (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground px-2 py-1">
+          <div className="flex items-center justify-center gap-2 text-sm font-semibold px-3 py-1.5 rounded-md border text-muted-foreground bg-muted/50 border-muted">
             <Loader2 className="w-3 h-3 animate-spin" />
             <span>Processing...</span>
           </div>
