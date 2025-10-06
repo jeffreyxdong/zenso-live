@@ -326,8 +326,19 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
     fetchSavedPrompts();
   }, [activeStore]);
 
-  const getScoreDisplay = (score: number | undefined, type: "visibility" | "sentiment") => {
+  const getScoreDisplay = (score: number | undefined, type: "visibility" | "sentiment", promptCreatedAt: string) => {
+    // Check if prompt was created recently (within last 5 minutes) and has no score
+    const isRecentlyCreated = new Date().getTime() - new Date(promptCreatedAt).getTime() < 5 * 60 * 1000;
+    
     if (score == null) {
+      if (isRecentlyCreated) {
+        return (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground px-2 py-1">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            <span>Processing...</span>
+          </div>
+        );
+      }
       return <span className="text-xs text-muted-foreground px-2 py-1 rounded bg-muted/50">No Data</span>;
     }
     if (score === 0) {
@@ -444,8 +455,8 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
                       </p>
                     </div>
                   </TableCell>
-                  <TableCell className="text-center">{getScoreDisplay(p.visibility_score, "visibility")}</TableCell>
-                  <TableCell className="text-center">{getScoreDisplay(p.sentiment_score, "sentiment")}</TableCell>
+                  <TableCell className="text-center">{getScoreDisplay(p.visibility_score, "visibility", p.created_at)}</TableCell>
+                  <TableCell className="text-center">{getScoreDisplay(p.sentiment_score, "sentiment", p.created_at)}</TableCell>
                   <TableCell className="text-sm text-muted-foreground text-center">
                     {new Date(p.created_at).toLocaleDateString()}
                   </TableCell>

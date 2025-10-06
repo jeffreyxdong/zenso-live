@@ -299,36 +299,58 @@ const PromptDetail = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="relative pt-2">
-            {isLoading ? (
-              <div className="h-20 flex items-center justify-center">
-                <div className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
-              </div>
-            ) : promptScores.visibility_score !== null && promptScores.visibility_score !== undefined ? (
-              <div className="space-y-3">
-                <div className="flex items-baseline gap-2">
-                  <div className="text-3xl font-bold text-primary">
-                    {promptScores.visibility_score}
+            {(() => {
+              const isRecentlyCreated = prompt && new Date().getTime() - new Date(prompt.created_at).getTime() < 5 * 60 * 1000;
+              const hasNoScore = promptScores.visibility_score === null || promptScores.visibility_score === undefined;
+              
+              if (isLoading) {
+                return (
+                  <div className="h-20 flex items-center justify-center">
+                    <div className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
                   </div>
-                  <div className="text-lg font-medium text-primary/70">%</div>
+                );
+              }
+              
+              if (hasNoScore && isRecentlyCreated) {
+                return (
+                  <div className="h-20 flex flex-col items-center justify-center space-y-2">
+                    <div className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+                    <span className="text-sm text-muted-foreground">Processing...</span>
+                  </div>
+                );
+              }
+              
+              if (!hasNoScore) {
+                return (
+                  <div className="space-y-3">
+                    <div className="flex items-baseline gap-2">
+                      <div className="text-3xl font-bold text-primary">
+                        {promptScores.visibility_score}
+                      </div>
+                      <div className="text-lg font-medium text-primary/70">%</div>
+                    </div>
+                    <div className="w-full bg-primary/10 rounded-full h-2">
+                      <div 
+                        className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-1000 ease-out"
+                        style={{ width: `${promptScores.visibility_score}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground font-medium">
+                      Brand visibility rating
+                    </p>
+                  </div>
+                );
+              }
+              
+              return (
+                <div className="h-20 flex flex-col items-center justify-center space-y-2">
+                  <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center">
+                    <span className="text-xs text-muted-foreground">?</span>
+                  </div>
+                  <span className="text-sm text-muted-foreground">No Data Available</span>
                 </div>
-                <div className="w-full bg-primary/10 rounded-full h-2">
-                  <div 
-                    className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-1000 ease-out"
-                    style={{ width: `${promptScores.visibility_score}%` }}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground font-medium">
-                  Brand visibility rating
-                </p>
-              </div>
-            ) : (
-              <div className="h-20 flex flex-col items-center justify-center space-y-2">
-                <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center">
-                  <span className="text-xs text-muted-foreground">?</span>
-                </div>
-                <span className="text-sm text-muted-foreground">No Data Available</span>
-              </div>
-            )}
+              );
+            })()}
           </CardContent>
         </Card>
 
@@ -343,36 +365,58 @@ const PromptDetail = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="relative pt-2">
-            {isLoading ? (
-              <div className="h-20 flex items-center justify-center">
-                <div className="w-6 h-6 border-2 border-success/20 border-t-success rounded-full animate-spin" />
-              </div>
-            ) : promptScores.sentiment_score !== null && promptScores.sentiment_score !== undefined ? (
-              <div className="space-y-3">
-                <div className="flex items-baseline gap-2">
-                  <div className="text-3xl font-bold text-success">
-                    {promptScores.sentiment_score}
+            {(() => {
+              const isRecentlyCreated = prompt && new Date().getTime() - new Date(prompt.created_at).getTime() < 5 * 60 * 1000;
+              const hasNoScore = promptScores.sentiment_score === null || promptScores.sentiment_score === undefined;
+              
+              if (isLoading) {
+                return (
+                  <div className="h-20 flex items-center justify-center">
+                    <div className="w-6 h-6 border-2 border-success/20 border-t-success rounded-full animate-spin" />
                   </div>
-                  <div className="text-lg font-medium text-success/70">%</div>
+                );
+              }
+              
+              if (hasNoScore && isRecentlyCreated) {
+                return (
+                  <div className="h-20 flex flex-col items-center justify-center space-y-2">
+                    <div className="w-6 h-6 border-2 border-success/20 border-t-success rounded-full animate-spin" />
+                    <span className="text-sm text-muted-foreground">Processing...</span>
+                  </div>
+                );
+              }
+              
+              if (!hasNoScore) {
+                return (
+                  <div className="space-y-3">
+                    <div className="flex items-baseline gap-2">
+                      <div className="text-3xl font-bold text-success">
+                        {promptScores.sentiment_score}
+                      </div>
+                      <div className="text-lg font-medium text-success/70">%</div>
+                    </div>
+                    <div className="w-full bg-success/10 rounded-full h-2">
+                      <div 
+                        className="bg-gradient-to-r from-success to-success/80 h-2 rounded-full transition-all duration-1000 ease-out"
+                        style={{ width: `${promptScores.sentiment_score}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground font-medium">
+                      Sentiment analysis rating
+                    </p>
+                  </div>
+                );
+              }
+              
+              return (
+                <div className="h-20 flex flex-col items-center justify-center space-y-2">
+                  <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center">
+                    <span className="text-xs text-muted-foreground">?</span>
+                  </div>
+                  <span className="text-sm text-muted-foreground">No Data Available</span>
                 </div>
-                <div className="w-full bg-success/10 rounded-full h-2">
-                  <div 
-                    className="bg-gradient-to-r from-success to-success/80 h-2 rounded-full transition-all duration-1000 ease-out"
-                    style={{ width: `${promptScores.sentiment_score}%` }}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground font-medium">
-                  Sentiment analysis rating
-                </p>
-              </div>
-            ) : (
-              <div className="h-20 flex flex-col items-center justify-center space-y-2">
-                <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center">
-                  <span className="text-xs text-muted-foreground">?</span>
-                </div>
-                <span className="text-sm text-muted-foreground">No Data Available</span>
-              </div>
-            )}
+              );
+            })()}
           </CardContent>
         </Card>
       </div>
@@ -388,87 +432,103 @@ const PromptDetail = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={chartConfig} className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart 
-                    data={prepareChartData('visibility')} 
-                    margin={{ top: 10, right: 20, left: -10, bottom: 10 }}
-                  >
-                    <XAxis 
-                      dataKey="formattedDate" 
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                      tick={{
-                        fill: 'hsl(var(--muted-foreground))',
-                        dy: 10,
-                      }}
-                      interval={0}
-                      angle={0}
-                      textAnchor="middle"
-                      height={40}
-                    />
-                    <YAxis
-                      domain={[0, 100]}
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                      tick={{
-                        fill: 'hsl(var(--muted-foreground))',
-                        dx: -5,
-                      }}
-                      tickFormatter={(value) => `${value}%`}
-                      width={50}
-                      orientation="left"
-                    />
-                    <CartesianGrid 
-                      strokeDasharray="1 1" 
-                      stroke="hsl(var(--muted-foreground))" 
-                      opacity={0.3}
-                      horizontal={true}
-                      vertical={false}
-                    />
-                    <defs>
-                      <linearGradient id="visibilityGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.1} />
-                        <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <ChartTooltip 
-                      content={<ChartTooltipContent />}
-                      labelFormatter={(value, payload) => {
-                        if (payload && payload[0] && payload[0].payload.date) {
-                          const date = new Date(payload[0].payload.date + 'T00:00:00');
-                          return format(date, 'PPP');
-                        }
-                        return value;
-                      }}
-                    />
-                    <Line 
-                      type="basis" 
-                      dataKey="score" 
-                      stroke="hsl(var(--primary))"
-                      strokeWidth={2}
-                      connectNulls={true}
-                      dot={(props) => {
-                        const { payload } = props;
-                        if (payload && payload.score !== null) {
-                          return <circle 
-                            cx={props.cx} 
-                            cy={props.cy} 
-                            r={3} 
-                            fill="hsl(var(--primary))" 
-                            strokeWidth={2}
-                            stroke="hsl(var(--background))"
-                          />;
-                        }
-                        return null;
-                      }}
-                      activeDot={{ r: 4, fill: "hsl(var(--primary))" }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </ChartContainer>
+              {(() => {
+                const isRecentlyCreated = prompt && new Date().getTime() - new Date(prompt.created_at).getTime() < 5 * 60 * 1000;
+                const hasNoData = dailyScores.length === 0;
+                
+                if (hasNoData && isRecentlyCreated) {
+                  return (
+                    <div className="h-64 flex flex-col items-center justify-center space-y-3">
+                      <div className="w-8 h-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+                      <span className="text-sm text-muted-foreground">Generating chart data...</span>
+                    </div>
+                  );
+                }
+                
+                return (
+                  <ChartContainer config={chartConfig} className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart 
+                        data={prepareChartData('visibility')} 
+                        margin={{ top: 10, right: 20, left: -10, bottom: 10 }}
+                      >
+                        <XAxis 
+                          dataKey="formattedDate" 
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                          tick={{
+                            fill: 'hsl(var(--muted-foreground))',
+                            dy: 10,
+                          }}
+                          interval={0}
+                          angle={0}
+                          textAnchor="middle"
+                          height={40}
+                        />
+                        <YAxis
+                          domain={[0, 100]}
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                          tick={{
+                            fill: 'hsl(var(--muted-foreground))',
+                            dx: -5,
+                          }}
+                          tickFormatter={(value) => `${value}%`}
+                          width={50}
+                          orientation="left"
+                        />
+                        <CartesianGrid 
+                          strokeDasharray="1 1" 
+                          stroke="hsl(var(--muted-foreground))" 
+                          opacity={0.3}
+                          horizontal={true}
+                          vertical={false}
+                        />
+                        <defs>
+                          <linearGradient id="visibilityGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.1} />
+                            <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <ChartTooltip 
+                          content={<ChartTooltipContent />}
+                          labelFormatter={(value, payload) => {
+                            if (payload && payload[0] && payload[0].payload.date) {
+                              const date = new Date(payload[0].payload.date + 'T00:00:00');
+                              return format(date, 'PPP');
+                            }
+                            return value;
+                          }}
+                        />
+                        <Line 
+                          type="basis" 
+                          dataKey="score" 
+                          stroke="hsl(var(--primary))"
+                          strokeWidth={2}
+                          connectNulls={true}
+                          dot={(props) => {
+                            const { payload } = props;
+                            if (payload && payload.score !== null) {
+                              return <circle 
+                                cx={props.cx} 
+                                cy={props.cy} 
+                                r={3} 
+                                fill="hsl(var(--primary))" 
+                                strokeWidth={2}
+                                stroke="hsl(var(--background))"
+                              />;
+                            }
+                            return null;
+                          }}
+                          activeDot={{ r: 4, fill: "hsl(var(--primary))" }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                );
+              })()}
             </CardContent>
           </Card>
 
@@ -481,87 +541,103 @@ const PromptDetail = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={chartConfig} className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart 
-                    data={prepareChartData('sentiment')} 
-                    margin={{ top: 10, right: 20, left: -10, bottom: 10 }}
-                  >
-                    <XAxis 
-                      dataKey="formattedDate" 
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                      tick={{
-                        fill: 'hsl(var(--muted-foreground))',
-                        dy: 10,
-                      }}
-                      interval={0}
-                      angle={0}
-                      textAnchor="middle"
-                      height={40}
-                    />
-                    <YAxis
-                      domain={[0, 100]}
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                      tick={{
-                        fill: 'hsl(var(--muted-foreground))',
-                        dx: -5,
-                      }}
-                      tickFormatter={(value) => `${value}%`}
-                      width={50}
-                      orientation="left"
-                    />
-                    <CartesianGrid 
-                      strokeDasharray="1 1" 
-                      stroke="hsl(var(--muted-foreground))" 
-                      opacity={0.3}
-                      horizontal={true}
-                      vertical={false}
-                    />
-                    <defs>
-                      <linearGradient id="sentimentGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="hsl(var(--success))" stopOpacity={0.1} />
-                        <stop offset="100%" stopColor="hsl(var(--success))" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <ChartTooltip 
-                      content={<ChartTooltipContent />}
-                      labelFormatter={(value, payload) => {
-                        if (payload && payload[0] && payload[0].payload.date) {
-                          const date = new Date(payload[0].payload.date + 'T00:00:00');
-                          return format(date, 'PPP');
-                        }
-                        return value;
-                      }}
-                    />
-                    <Line 
-                      type="basis" 
-                      dataKey="score" 
-                      stroke="hsl(var(--success))"
-                      strokeWidth={2}
-                      connectNulls={true}
-                      dot={(props) => {
-                        const { payload } = props;
-                        if (payload && payload.score !== null) {
-                          return <circle 
-                            cx={props.cx} 
-                            cy={props.cy} 
-                            r={3} 
-                            fill="hsl(var(--success))" 
-                            strokeWidth={2}
-                            stroke="hsl(var(--background))"
-                          />;
-                        }
-                        return null;
-                      }}
-                      activeDot={{ r: 4, fill: "hsl(var(--success))" }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </ChartContainer>
+              {(() => {
+                const isRecentlyCreated = prompt && new Date().getTime() - new Date(prompt.created_at).getTime() < 5 * 60 * 1000;
+                const hasNoData = dailyScores.length === 0;
+                
+                if (hasNoData && isRecentlyCreated) {
+                  return (
+                    <div className="h-64 flex flex-col items-center justify-center space-y-3">
+                      <div className="w-8 h-8 border-2 border-success/20 border-t-success rounded-full animate-spin" />
+                      <span className="text-sm text-muted-foreground">Generating chart data...</span>
+                    </div>
+                  );
+                }
+                
+                return (
+                  <ChartContainer config={chartConfig} className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart 
+                        data={prepareChartData('sentiment')} 
+                        margin={{ top: 10, right: 20, left: -10, bottom: 10 }}
+                      >
+                        <XAxis 
+                          dataKey="formattedDate" 
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                          tick={{
+                            fill: 'hsl(var(--muted-foreground))',
+                            dy: 10,
+                          }}
+                          interval={0}
+                          angle={0}
+                          textAnchor="middle"
+                          height={40}
+                        />
+                        <YAxis
+                          domain={[0, 100]}
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                          tick={{
+                            fill: 'hsl(var(--muted-foreground))',
+                            dx: -5,
+                          }}
+                          tickFormatter={(value) => `${value}%`}
+                          width={50}
+                          orientation="left"
+                        />
+                        <CartesianGrid 
+                          strokeDasharray="1 1" 
+                          stroke="hsl(var(--muted-foreground))" 
+                          opacity={0.3}
+                          horizontal={true}
+                          vertical={false}
+                        />
+                        <defs>
+                          <linearGradient id="sentimentGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="hsl(var(--success))" stopOpacity={0.1} />
+                            <stop offset="100%" stopColor="hsl(var(--success))" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <ChartTooltip 
+                          content={<ChartTooltipContent />}
+                          labelFormatter={(value, payload) => {
+                            if (payload && payload[0] && payload[0].payload.date) {
+                              const date = new Date(payload[0].payload.date + 'T00:00:00');
+                              return format(date, 'PPP');
+                            }
+                            return value;
+                          }}
+                        />
+                        <Line 
+                          type="basis" 
+                          dataKey="score" 
+                          stroke="hsl(var(--success))"
+                          strokeWidth={2}
+                          connectNulls={true}
+                          dot={(props) => {
+                            const { payload } = props;
+                            if (payload && payload.score !== null) {
+                              return <circle 
+                                cx={props.cx} 
+                                cy={props.cy} 
+                                r={3} 
+                                fill="hsl(var(--success))" 
+                                strokeWidth={2}
+                                stroke="hsl(var(--background))"
+                              />;
+                            }
+                            return null;
+                          }}
+                          activeDot={{ r: 4, fill: "hsl(var(--success))" }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                );
+              })()}
             </CardContent>
           </Card>
         </div>
