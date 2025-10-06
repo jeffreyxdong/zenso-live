@@ -17,11 +17,11 @@ const Settings = () => {
   // Account data
   const [profile, setProfile] = useState({
     company_name: "",
-    company_website: "",
-    username: ""
+    company_website: ""
   });
   
   const [userEmail, setUserEmail] = useState("");
+  const [newEmail, setNewEmail] = useState("");
   
   // Password change
   const [passwordData, setPasswordData] = useState({
@@ -60,8 +60,7 @@ const Settings = () => {
       if (profileData) {
         setProfile({
           company_name: profileData.company_name || "",
-          company_website: profileData.company_website || "",
-          username: profileData.username || ""
+          company_website: profileData.company_website || ""
         });
       }
 
@@ -103,8 +102,7 @@ const Settings = () => {
           .from("profiles")
           .update({
             company_name: profile.company_name,
-            company_website: profile.company_website,
-            username: profile.username
+            company_website: profile.company_website
           })
           .eq("user_id", session.user.id);
         
@@ -116,8 +114,7 @@ const Settings = () => {
           .insert({
             user_id: session.user.id,
             company_name: profile.company_name,
-            company_website: profile.company_website,
-            username: profile.username
+            company_website: profile.company_website
           });
         
         if (error) throw error;
@@ -170,47 +167,125 @@ const Settings = () => {
     }
   };
 
-  const handleChangePassword = async () => {
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "New passwords do not match.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (passwordData.newPassword.length < 6) {
-      toast({
-        title: "Error",
-        description: "Password must be at least 6 characters long.",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const handleChangeEmail = async () => {
     setLoading(true);
     try {
+      if (!newEmail || !newEmail.trim()) {
+        toast({
+          title: "Error",
+          description: "Please enter a new email address",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (newEmail === userEmail) {
+        toast({
+          title: "Error",
+          description: "New email must be different from current email",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Email format validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(newEmail)) {
+        toast({
+          title: "Error",
+          description: "Please enter a valid email address",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const { error } = await supabase.auth.updateUser({
-        password: passwordData.newPassword
+        email: newEmail,
+      });
+
+      if (error) {
+        // Handle specific error for email already in use
+        if (error.message.includes("already registered") || error.message.includes("already been registered")) {
+          toast({
+            title: "Error",
+            description: "This email is already taken",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: error.message || "Failed to change email",
+            variant: "destructive"
+          });
+        }
+        return;
+      }
+
+      toast({
+        title: "Email update initiated",
+        description: "Please check your inbox to confirm the change."
+      });
+      setNewEmail("");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to change email",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    setLoading(true);
+    try {
+      if (!passwordData.newPassword || !passwordData.confirmPassword) {
+        toast({
+          title: "Error",
+          description: "Please fill in all password fields",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (passwordData.newPassword !== passwordData.confirmPassword) {
+        toast({
+          title: "Error",
+          description: "New passwords do not match",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (passwordData.newPassword.length < 6) {
+        toast({
+          title: "Error",
+          description: "Password must be at least 6 characters long",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const { error } = await supabase.auth.updateUser({
+        password: passwordData.newPassword,
       });
 
       if (error) throw error;
 
+      toast({
+        title: "Password changed",
+        description: "Your password has been updated successfully."
+      });
       setPasswordData({
         currentPassword: "",
         newPassword: "",
-        confirmPassword: ""
-      });
-
-      toast({
-        title: "Password updated",
-        description: "Your password has been changed successfully."
+        confirmPassword: "",
       });
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to change password.",
+        description: error.message || "Failed to change password",
         variant: "destructive"
       });
     } finally {
@@ -281,15 +356,6 @@ const Settings = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="username">Username</Label>
-                      <Input
-                        id="username"
-                        value={profile.username}
-                        onChange={(e) => setProfile({ ...profile, username: e.target.value })}
-                        placeholder="Enter your username"
-                      />
-                    </div>
-                    <div className="space-y-2">
                       <Label htmlFor="companyName">Company Name</Label>
                       <Input
                         id="companyName"
@@ -309,6 +375,37 @@ const Settings = () => {
                     </div>
                     <Button onClick={handleSaveAccount} disabled={loading}>
                       {loading ? "Saving..." : "Save Changes"}
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Change Email</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="currentEmail">Current Email</Label>
+                      <Input
+                        id="currentEmail"
+                        type="email"
+                        value={userEmail}
+                        disabled
+                        className="bg-muted/30"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="newEmail">New Email</Label>
+                      <Input
+                        id="newEmail"
+                        type="email"
+                        value={newEmail}
+                        onChange={(e) => setNewEmail(e.target.value)}
+                        placeholder="Enter new email address"
+                      />
+                    </div>
+                    <Button onClick={handleChangeEmail} disabled={loading}>
+                      {loading ? "Updating..." : "Change Email"}
                     </Button>
                   </CardContent>
                 </Card>
