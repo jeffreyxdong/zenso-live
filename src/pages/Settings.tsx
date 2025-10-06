@@ -17,7 +17,17 @@ const Settings = () => {
   // Account data
   const [profile, setProfile] = useState({
     company_name: "",
-    company_website: ""
+    company_website: "",
+    username: ""
+  });
+  
+  const [userEmail, setUserEmail] = useState("");
+  
+  // Password change
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
   });
   
   // Store data
@@ -38,6 +48,8 @@ const Settings = () => {
         return;
       }
 
+      setUserEmail(session.user.email || "");
+
       // Load profile
       const { data: profileData } = await supabase
         .from("profiles")
@@ -48,7 +60,8 @@ const Settings = () => {
       if (profileData) {
         setProfile({
           company_name: profileData.company_name || "",
-          company_website: profileData.company_website || ""
+          company_website: profileData.company_website || "",
+          username: profileData.username || ""
         });
       }
 
@@ -90,7 +103,8 @@ const Settings = () => {
           .from("profiles")
           .update({
             company_name: profile.company_name,
-            company_website: profile.company_website
+            company_website: profile.company_website,
+            username: profile.username
           })
           .eq("user_id", session.user.id);
         
@@ -102,7 +116,8 @@ const Settings = () => {
           .insert({
             user_id: session.user.id,
             company_name: profile.company_name,
-            company_website: profile.company_website
+            company_website: profile.company_website,
+            username: profile.username
           });
         
         if (error) throw error;
@@ -148,6 +163,54 @@ const Settings = () => {
       toast({
         title: "Error",
         description: "Failed to save store information.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "New passwords do not match.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: passwordData.newPassword
+      });
+
+      if (error) throw error;
+
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+      });
+
+      toast({
+        title: "Password updated",
+        description: "Your password has been changed successfully."
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to change password.",
         variant: "destructive"
       });
     } finally {
@@ -209,6 +272,24 @@ const Settings = () => {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        value={userEmail}
+                        disabled
+                        className="bg-muted/30"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="username">Username</Label>
+                      <Input
+                        id="username"
+                        value={profile.username}
+                        onChange={(e) => setProfile({ ...profile, username: e.target.value })}
+                        placeholder="Enter your username"
+                      />
+                    </div>
+                    <div className="space-y-2">
                       <Label htmlFor="companyName">Company Name</Label>
                       <Input
                         id="companyName"
@@ -228,6 +309,37 @@ const Settings = () => {
                     </div>
                     <Button onClick={handleSaveAccount} disabled={loading}>
                       {loading ? "Saving..." : "Save Changes"}
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Change Password</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="newPassword">New Password</Label>
+                      <Input
+                        id="newPassword"
+                        type="password"
+                        value={passwordData.newPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                        placeholder="Enter new password"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        value={passwordData.confirmPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                        placeholder="Confirm new password"
+                      />
+                    </div>
+                    <Button onClick={handleChangePassword} disabled={loading}>
+                      {loading ? "Updating..." : "Change Password"}
                     </Button>
                   </CardContent>
                 </Card>
