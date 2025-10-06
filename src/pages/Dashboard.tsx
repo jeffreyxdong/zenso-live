@@ -284,14 +284,13 @@ const Dashboard = () => {
                 <div className="flex items-center justify-center py-8">
                   <div className="text-center">
                     {isLoadingAnalytics ? (
-                      <>
-                        <div className="text-6xl font-bold text-muted-foreground mb-2">
-                          ...
+                      <div className="flex flex-col items-center space-y-4">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                        <div className="space-y-2">
+                          <p className="font-medium">Calculating AI visibility score...</p>
+                          <p className="text-sm text-muted-foreground">This may take a moment</p>
                         </div>
-                        <p className="text-muted-foreground">
-                          Analyzing brand visibility...
-                        </p>
-                      </>
+                      </div>
                     ) : (
                       <>
                         <div className="text-6xl font-bold text-primary mb-2">
@@ -358,9 +357,9 @@ const Dashboard = () => {
               <CardContent>
                 {isLoadingRecommendations ? (
                   <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                    <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
                     <div className="text-center space-y-2">
-                      <p className="font-medium">Generating AI Optimization Suggestions...</p>
+                      <p className="font-medium">Generating AI optimization suggestions...</p>
                       <p className="text-sm text-muted-foreground">This may take a moment</p>
                     </div>
                   </div>

@@ -128,7 +128,7 @@ export const CompetitorAnalytics = ({ storeId }: CompetitorAnalyticsProps) => {
       <CardContent>
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-12 space-y-4">
-            <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             <div className="text-center space-y-2">
               <p className="font-medium">Analyzing competitors...</p>
               <p className="text-sm text-muted-foreground">This may take a moment</p>
