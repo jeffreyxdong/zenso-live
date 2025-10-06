@@ -7,9 +7,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Store, Plus } from "lucide-react";
+import { ChevronDown, Store, Plus, Check, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Store {
   id: string;
@@ -27,6 +37,8 @@ const StoreSelector = ({ onStoreChange, onAddStore }: StoreSelectorProps) => {
   const [stores, setStores] = useState<Store[]>([]);
   const [activeStore, setActiveStore] = useState<Store | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [storeToDelete, setStoreToDelete] = useState<Store | null>(null);
 
   const loadStores = async () => {
     try {
@@ -112,6 +124,65 @@ const StoreSelector = ({ onStoreChange, onAddStore }: StoreSelectorProps) => {
         description: "Failed to switch store",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleDeleteClick = (store: Store, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (stores.length <= 1) {
+      toast({
+        title: "Cannot delete store",
+        description: "You must have at least one store",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (store.is_active) {
+      toast({
+        title: "Cannot delete active store",
+        description: "Please switch to another store first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setStoreToDelete(store);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!storeToDelete) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from("stores")
+        .delete()
+        .eq("id", storeToDelete.id)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Store "${storeToDelete.name}" deleted successfully`,
+      });
+
+      await loadStores();
+    } catch (error: any) {
+      console.error("Error deleting store:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete store",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setStoreToDelete(null);
     }
   };
 
@@ -230,15 +301,25 @@ const StoreSelector = ({ onStoreChange, onAddStore }: StoreSelectorProps) => {
           <DropdownMenuItem
             key={store.id}
             onClick={() => switchToStore(store)}
-            className={`cursor-pointer ${
-              store.is_active ? "bg-muted" : ""
-            }`}
+            className="group flex items-center justify-between cursor-pointer"
           >
-            <div className="flex flex-col gap-1 w-full">
+            <div className="flex flex-col gap-1">
               <div className="font-medium">{store.name}</div>
               <div className="text-xs text-muted-foreground truncate">
                 {store.website}
               </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {store.is_active && <Check className="w-4 h-4 text-primary" />}
+              {stores.length > 1 && !store.is_active && (
+                <button
+                  onClick={(e) => handleDeleteClick(store, e)}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-destructive/10 rounded-sm"
+                  title="Delete store"
+                >
+                  <Trash2 className="w-3 h-3 text-destructive" />
+                </button>
+              )}
             </div>
           </DropdownMenuItem>
         ))}
@@ -255,6 +336,22 @@ const StoreSelector = ({ onStoreChange, onAddStore }: StoreSelectorProps) => {
           </>
         )}
       </DropdownMenuContent>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Store</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{storeToDelete?.name}"? This action cannot be undone and will delete all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DropdownMenu>
   );
 };
