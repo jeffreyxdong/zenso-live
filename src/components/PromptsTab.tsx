@@ -116,75 +116,95 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("User not authenticated");
 
-      // Always use the active store's name for brand scoring
       const brandName = activeStore.name;
+      const promptContent = prompt.trim();
 
-      const responses = await fetchAIResponses(prompt);
-      if (responses.length === 0) throw new Error("No AI responses received.");
-
-      const { avgVisibility, avgSentiment } = await scoreResponses(responses, brandName);
-      await savePromptWithScores(avgVisibility, avgSentiment, responses, brandName);
-
-      toast({
-        title: "Success",
-        description: `Visibility: ${avgVisibility}/100, Sentiment: ${avgSentiment}/100`,
-      });
-
-      setPrompt("");
-      setShowAddPromptDialog(false);
-    } catch (err: any) {
-      console.error("Error processing prompt:", err);
-      toast({ title: "Error", description: err.message || "Failed to process prompt", variant: "destructive" });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const savePromptWithScores = async (visibilityScore: number, sentimentScore: number, responses: any[], brandName: string) => {
-    try {
-      const { data: userData, error: userErr } = await supabase.auth.getUser();
-      if (userErr || !userData?.user) throw new Error("Not signed in");
-      if (!activeStore?.id) throw new Error("No store selected");
-
-      const { data: promptData, error } = await supabase
+      // Save prompt immediately without scores
+      const { data: promptData, error: promptError } = await supabase
         .from("user_generated_prompts")
         .insert({
           user_id: userData.user.id,
           store_id: activeStore.id,
-          content: prompt.trim(),
+          content: promptContent,
           brand_name: brandName,
           status: "active",
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (promptError) throw promptError;
 
-      if (responses.length > 0 && promptData) {
-        await supabase.from("user_generated_prompt_responses").insert(
-          responses.map((r) => ({
-            prompt_id: promptData.id,
-            model_name: r.model,
-            response_text: r.content,
-          }))
-        );
+      // Close dialog and clear input immediately
+      setPrompt("");
+      setShowAddPromptDialog(false);
+      setIsProcessing(false);
 
-        // Save initial daily score
-        const today = new Date().toISOString().split('T')[0];
-        await (supabase.from("user_generated_prompt_daily_scores" as any).insert({
-          prompt_id: promptData.id,
-          date: today,
-          visibility_score: visibilityScore,
-          sentiment_score: sentimentScore,
-        }) as any);
-      }
-
+      // Refresh the list to show the new prompt with loading state
       fetchSavedPrompts();
+
+      toast({
+        title: "Prompt Added",
+        description: "Processing AI responses in the background...",
+      });
+
+      // Process AI responses and scores in the background
+      processPromptInBackground(promptData.id, promptContent, brandName);
+
     } catch (err: any) {
-      console.error("Error saving prompt:", err);
-      toast({ title: "Error", description: err.message || "Failed to save prompt", variant: "destructive" });
+      console.error("Error adding prompt:", err);
+      toast({ title: "Error", description: err.message || "Failed to add prompt", variant: "destructive" });
+      setIsProcessing(false);
     }
   };
+
+  const processPromptInBackground = async (promptId: string, promptContent: string, brandName: string) => {
+    try {
+      // Fetch AI responses
+      const responses = await fetchAIResponses(promptContent);
+      if (responses.length === 0) {
+        console.error("No AI responses received for prompt:", promptId);
+        return;
+      }
+
+      // Save responses
+      await supabase.from("user_generated_prompt_responses").insert(
+        responses.map((r) => ({
+          prompt_id: promptId,
+          model_name: r.model,
+          response_text: r.content,
+        }))
+      );
+
+      // Score responses
+      const { avgVisibility, avgSentiment } = await scoreResponses(responses, brandName);
+
+      // Save scores
+      const today = new Date().toISOString().split('T')[0];
+      await supabase.from("user_generated_prompt_daily_scores" as any).insert({
+        prompt_id: promptId,
+        date: today,
+        visibility_score: avgVisibility,
+        sentiment_score: avgSentiment,
+      });
+
+      // Refresh to show updated scores
+      fetchSavedPrompts();
+
+      toast({
+        title: "Processing Complete",
+        description: `Visibility: ${avgVisibility}/100, Sentiment: ${avgSentiment}/100`,
+      });
+
+    } catch (err: any) {
+      console.error("Error processing prompt in background:", err);
+      toast({ 
+        title: "Processing Error", 
+        description: "Failed to process AI responses. Please try regenerating scores.", 
+        variant: "destructive" 
+      });
+    }
+  };
+
 
   const fetchSavedPrompts = async () => {
     try {
@@ -527,7 +547,8 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
                 disabled={isProcessing || !prompt.trim() || !activeStore} 
                 className="flex-1"
               >
-                {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Process & Score Prompt"}
+                {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                Add Prompt
               </Button>
             </div>
           </div>
