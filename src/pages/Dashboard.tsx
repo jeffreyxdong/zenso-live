@@ -44,9 +44,16 @@ const Dashboard = () => {
     }
   }, [activeTab, activeStore?.id]);
 
-  // Set up realtime subscription for brand recommendations
+  // Set up realtime subscription and polling fallback for brand recommendations
   useEffect(() => {
     if (!activeStore?.id) return;
+
+    // Set up polling fallback (every 3 seconds while loading)
+    const pollInterval = setInterval(() => {
+      if (isLoadingRecommendations) {
+        loadBrandRecommendations();
+      }
+    }, 3000);
 
     const channel = supabase
       .channel('brand-recommendations-changes')
@@ -60,16 +67,17 @@ const Dashboard = () => {
         },
         (payload) => {
           console.log('New recommendation added:', payload);
-          setIsLoadingRecommendations(false); // Stop loading when data arrives
+          setIsLoadingRecommendations(false);
           loadBrandRecommendations();
         }
       )
       .subscribe();
 
     return () => {
+      clearInterval(pollInterval);
       supabase.removeChannel(channel);
     };
-  }, [activeStore?.id]);
+  }, [activeStore?.id, isLoadingRecommendations]);
 
   const loadBrandRecommendations = async () => {
     if (!activeStore?.id) return;

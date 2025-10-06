@@ -73,12 +73,19 @@ export const CompetitorAnalytics = ({ storeId }: CompetitorAnalyticsProps) => {
     }
   };
 
-  // Set up realtime subscription
+  // Set up realtime subscription and polling fallback
   useEffect(() => {
     if (!storeId) return;
 
     // Load initial data
     loadCompetitors();
+
+    // Set up polling fallback (every 3 seconds while loading)
+    const pollInterval = setInterval(() => {
+      if (isLoading) {
+        loadCompetitors();
+      }
+    }, 3000);
 
     // Subscribe to changes
     const channel = supabase
@@ -93,16 +100,17 @@ export const CompetitorAnalytics = ({ storeId }: CompetitorAnalyticsProps) => {
         },
         (payload) => {
           console.log('New competitor added:', payload);
-          setIsLoading(false); // Stop loading when data arrives
+          setIsLoading(false);
           loadCompetitors();
         }
       )
       .subscribe();
 
     return () => {
+      clearInterval(pollInterval);
       supabase.removeChannel(channel);
     };
-  }, [storeId]);
+  }, [storeId, isLoading]);
 
   const getMarketPositionColor = (position: string) => {
     const pos = position.toLowerCase();
