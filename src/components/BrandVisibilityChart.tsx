@@ -18,6 +18,7 @@ interface BrandVisibilityChartProps {
 const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
   const [visibilityData, setVisibilityData] = useState<ChartDataPoint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     if (storeId) {
@@ -33,7 +34,9 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
             schema: 'public',
             table: 'brand_scores'
           },
-          () => {
+          (payload) => {
+            console.log('Brand scores updated:', payload);
+            setIsGenerating(false); // Stop generating state when data arrives
             fetchVisibilityData();
           }
         )
@@ -58,6 +61,11 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
         .limit(7);
 
       if (error) throw error;
+
+      // If no data exists, set generating state
+      if (!brandScores || brandScores.length === 0) {
+        setIsGenerating(true);
+      }
 
       // Reverse so oldest date is first
       const reversedScores = (brandScores || []).reverse();
@@ -146,6 +154,26 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
         <CardContent>
           <div className="h-[200px] flex items-center justify-center">
             <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isGenerating) {
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-base font-medium">Brand Visibility Trend</CardTitle>
+          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="h-[200px] flex flex-col items-center justify-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <div className="text-center space-y-2">
+              <p className="font-medium">Calculating brand visibility...</p>
+              <p className="text-sm text-muted-foreground">This may take a moment</p>
+            </div>
           </div>
         </CardContent>
       </Card>

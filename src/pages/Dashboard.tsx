@@ -60,6 +60,7 @@ const Dashboard = () => {
         },
         (payload) => {
           console.log('New recommendation added:', payload);
+          setIsLoadingRecommendations(false); // Stop loading when data arrives
           loadBrandRecommendations();
         }
       )
@@ -74,7 +75,6 @@ const Dashboard = () => {
     if (!activeStore?.id) return;
     
     try {
-      setIsLoadingRecommendations(true);
       const { data, error } = await supabase
         .from('brand_recommendations')
         .select('*')
@@ -83,10 +83,15 @@ const Dashboard = () => {
 
       if (error) throw error;
       
-      setBrandRecommendations(data || []);
+      // If no data, keep loading state active (will show generating UI)
+      if (!data || data.length === 0) {
+        setIsLoadingRecommendations(true);
+      } else {
+        setBrandRecommendations(data);
+        setIsLoadingRecommendations(false);
+      }
     } catch (error) {
       console.error('Error loading brand recommendations:', error);
-    } finally {
       setIsLoadingRecommendations(false);
     }
   };

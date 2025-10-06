@@ -27,7 +27,6 @@ export const CompetitorAnalytics = ({ storeId }: CompetitorAnalyticsProps) => {
   const loadCompetitors = async () => {
     if (!storeId) return;
 
-    setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('competitor_analytics')
@@ -37,10 +36,15 @@ export const CompetitorAnalytics = ({ storeId }: CompetitorAnalyticsProps) => {
 
       if (error) throw error;
 
-      setCompetitors(data || []);
+      // If no data, set loading state (will show generating UI)
+      if (!data || data.length === 0) {
+        setIsLoading(true);
+      } else {
+        setCompetitors(data);
+        setIsLoading(false);
+      }
     } catch (error: any) {
       console.error('Error loading competitors:', error);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -89,6 +93,7 @@ export const CompetitorAnalytics = ({ storeId }: CompetitorAnalyticsProps) => {
         },
         (payload) => {
           console.log('New competitor added:', payload);
+          setIsLoading(false); // Stop loading when data arrives
           loadCompetitors();
         }
       )

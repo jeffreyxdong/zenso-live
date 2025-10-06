@@ -72,19 +72,28 @@ const AddStoreModal = ({ open, onOpenChange, onStoreAdded }: AddStoreModalProps)
 
       if (error) throw error;
 
-      // Trigger brand recommendations generation (fire and forget)
-      supabase.functions.invoke('generate-brand-recommendations', {
-        body: { storeId: newStore.id }
-      }).then(() => {
-        console.log('Brand recommendations generation started');
-      }).catch(err => console.error('Failed to start brand recommendations:', err));
+      // Trigger all AI processes in parallel
+      const aiProcesses = [
+        // Generate brand recommendations
+        supabase.functions.invoke('generate-brand-recommendations', {
+          body: { storeId: newStore.id }
+        }),
+        // Generate competitor analytics
+        supabase.functions.invoke('analyze-competitors', {
+          body: { storeId: newStore.id }
+        }),
+        // Generate brand visibility score
+        supabase.functions.invoke('score-brand-visibility', {
+          body: { storeId: newStore.id }
+        })
+      ];
 
-      // Trigger competitor analytics generation (fire and forget)
-      supabase.functions.invoke('analyze-competitors', {
-        body: { storeId: newStore.id }
-      }).then(() => {
-        console.log('Competitor analytics generation started');
-      }).catch(err => console.error('Failed to start competitor analytics:', err));
+      // Fire and forget all AI processes
+      Promise.all(aiProcesses)
+        .then(() => {
+          console.log('All AI processes started successfully');
+        })
+        .catch(err => console.error('Failed to start AI processes:', err));
 
       toast({
         title: "Success",
