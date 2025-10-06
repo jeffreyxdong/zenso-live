@@ -344,6 +344,29 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
 
   useEffect(() => {
     fetchSavedPrompts();
+    
+    // Set up real-time subscription for daily scores updates
+    if (activeStore?.id) {
+      const subscription = supabase
+        .channel(`prompt_scores_${activeStore.id}`)
+        .on('postgres_changes', 
+          { 
+            event: '*', 
+            schema: 'public', 
+            table: 'user_generated_prompt_daily_scores'
+          }, 
+          (payload) => {
+            console.log('Prompt score updated:', payload);
+            // Refresh the list when scores are updated
+            fetchSavedPrompts();
+          }
+        )
+        .subscribe();
+      
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
   }, [activeStore]);
 
   const getScoreDisplay = (score: number | undefined, type: "visibility" | "sentiment", promptCreatedAt: string) => {

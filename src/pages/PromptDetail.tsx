@@ -84,9 +84,47 @@ const PromptDetail = () => {
         )
         .subscribe();
 
-      // Cleanup subscription on unmount or when prompt changes
+      // Set up polling fallback for recently created prompts (within 5 minutes)
+      // This ensures updates happen even if realtime has delays
+      let pollInterval: NodeJS.Timeout | null = null;
+      
+      const startPolling = async () => {
+        // Check if prompt was created recently
+        const { data: promptData } = await supabase
+          .from('user_generated_prompts')
+          .select('created_at')
+          .eq('id', promptId)
+          .single();
+          
+        if (promptData) {
+          const isRecentlyCreated = new Date().getTime() - new Date(promptData.created_at).getTime() < 5 * 60 * 1000;
+          
+          if (isRecentlyCreated) {
+            console.log('Starting polling for recent prompt updates...');
+            // Poll every 3 seconds for the first 5 minutes
+            pollInterval = setInterval(() => {
+              fetchPromptData();
+            }, 3000);
+            
+            // Stop polling after 5 minutes
+            setTimeout(() => {
+              if (pollInterval) {
+                clearInterval(pollInterval);
+                console.log('Stopped polling for prompt updates');
+              }
+            }, 5 * 60 * 1000);
+          }
+        }
+      };
+      
+      startPolling();
+
+      // Cleanup subscription and polling on unmount or when prompt changes
       return () => {
         subscription.unsubscribe();
+        if (pollInterval) {
+          clearInterval(pollInterval);
+        }
       };
     }
   }, [promptId, activeStore]);
