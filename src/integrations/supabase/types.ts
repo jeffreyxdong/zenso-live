@@ -90,7 +90,15 @@ export type Database = {
           user_id?: string
           visibility_score?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "brand_prompts_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       brand_recommendations: {
         Row: {
@@ -214,7 +222,15 @@ export type Database = {
           updated_at?: string
           website?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "competitor_analytics_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       product_recommendations: {
         Row: {
@@ -725,7 +741,15 @@ export type Database = {
           user_id?: string
           visibility_score?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_generated_prompts_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -751,7 +775,15 @@ export type Database = {
           user_id: string | null
           visibility_score: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "brand_prompts_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       product_scores_with_titles: {
         Row: {
