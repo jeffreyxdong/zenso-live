@@ -65,6 +65,8 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
       // If no data exists, set generating state
       if (!brandScores || brandScores.length === 0) {
         setIsGenerating(true);
+      } else {
+        setIsGenerating(false);
       }
 
       // Reverse so oldest date is first
