@@ -182,7 +182,6 @@ ${responseText}`;
         brand_prompt_id: prompt.id,
         response_text: responseText,
         model_name: "gpt-4o-mini",
-        visibility_score: visibilityScore,
       });
       if (respInsertError) console.error("DB insert error:", respInsertError);
 
