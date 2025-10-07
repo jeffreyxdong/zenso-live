@@ -249,7 +249,17 @@ const ProductOverview = () => {
   const { activeStore } = useOutletContext<{ activeStore: { id: string; name: string; website: string; is_active: boolean } | null }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
-  const [metricsLoading, setMetricsLoading] = useState(false);
+  
+  // Individual loading states for metrics
+  const [visibilityScoreLoading, setVisibilityScoreLoading] = useState(false);
+  const [sentimentScoreLoading, setSentimentScoreLoading] = useState(false);
+  const [positionScoreLoading, setPositionScoreLoading] = useState(false);
+  
+  // Individual loading states for charts
+  const [visibilityTrendLoading, setVisibilityTrendLoading] = useState(false);
+  const [sentimentTrendLoading, setSentimentTrendLoading] = useState(false);
+  const [positionTrendLoading, setPositionTrendLoading] = useState(false);
+  
   const [showPreview, setShowPreview] = useState(false);
   const [previewContent, setPreviewContent] = useState("");
   const [previewType, setPreviewType] = useState<string>("");
@@ -438,9 +448,18 @@ const ProductOverview = () => {
 
         setProduct(enhancedProduct);
         
-        // Check if metrics are still loading (null scores indicate processing)
-        if (visibilityScore === 0 || sentimentScore === 0 || positionScore === 0) {
-          setMetricsLoading(true);
+        // Check if individual metrics are still loading (0 scores indicate processing)
+        if (visibilityScore === 0) {
+          setVisibilityScoreLoading(true);
+          setVisibilityTrendLoading(true);
+        }
+        if (sentimentScore === 0) {
+          setSentimentScoreLoading(true);
+          setSentimentTrendLoading(true);
+        }
+        if (positionScore === 0) {
+          setPositionScoreLoading(true);
+          setPositionTrendLoading(true);
         }
 
         // Set up polling fallback for metrics (every 3 seconds while loading)
@@ -449,44 +468,68 @@ const ProductOverview = () => {
         const metricsInterval = setInterval(async () => {
           metricsAttempts++;
           if (metricsAttempts >= maxAttempts) {
-            setMetricsLoading(false);
+            setVisibilityScoreLoading(false);
+            setSentimentScoreLoading(false);
+            setPositionScoreLoading(false);
+            setVisibilityTrendLoading(false);
+            setSentimentTrendLoading(false);
+            setPositionTrendLoading(false);
             clearInterval(metricsInterval);
             return;
           }
           
-          if (metricsLoading) {
+          if (visibilityScoreLoading || sentimentScoreLoading || positionScoreLoading) {
             const { data: updatedProductData } = await supabase
               .from("products")
               .select("*")
               .eq("id", productId)
               .single();
             
-            if (updatedProductData && 
-                updatedProductData.visibility_score !== null &&
-                updatedProductData.sentiment_score !== null &&
-                updatedProductData.position_score !== null) {
-              setMetricsLoading(false);
-              clearInterval(metricsInterval);
-              
-              // Update product with new scores
+            if (updatedProductData) {
               const visScore = updatedProductData.visibility_score;
               const sentScore = updatedProductData.sentiment_score;
               const posScore = updatedProductData.position_score;
               
-              setProduct(prev => prev ? {
-                ...prev,
-                visibility_score: visScore,
-                sentiment_score: sentScore,
-                position_score: posScore,
-                currentMetrics: {
-                  visibility: visScore >= 80 ? "High" : visScore >= 60 ? "Medium" : "Low",
-                  sentiment: sentScore >= 70 ? "Positive" : sentScore >= 30 ? "Neutral" : "Negative",
-                  position: posScore || 5,
-                  visibilityScore: visScore,
-                  sentimentScore: sentScore,
-                  positionScore: posScore
-                }
-              } : null);
+              // Update individual loading states
+              if (visScore !== null && visScore > 0) {
+                setVisibilityScoreLoading(false);
+                setVisibilityTrendLoading(false);
+              }
+              if (sentScore !== null && sentScore > 0) {
+                setSentimentScoreLoading(false);
+                setSentimentTrendLoading(false);
+              }
+              if (posScore !== null && posScore > 0) {
+                setPositionScoreLoading(false);
+                setPositionTrendLoading(false);
+              }
+              
+              // Update product with new scores
+              if ((visScore !== null && visScore > 0) || 
+                  (sentScore !== null && sentScore > 0) || 
+                  (posScore !== null && posScore > 0)) {
+                setProduct(prev => prev ? {
+                  ...prev,
+                  visibility_score: visScore || prev.visibility_score,
+                  sentiment_score: sentScore || prev.sentiment_score,
+                  position_score: posScore || prev.position_score,
+                  currentMetrics: {
+                    visibility: (visScore || prev.currentMetrics.visibilityScore) >= 80 ? "High" : (visScore || prev.currentMetrics.visibilityScore) >= 60 ? "Medium" : "Low",
+                    sentiment: (sentScore || prev.currentMetrics.sentimentScore) >= 70 ? "Positive" : (sentScore || prev.currentMetrics.sentimentScore) >= 30 ? "Neutral" : "Negative",
+                    position: posScore || prev.currentMetrics.position,
+                    visibilityScore: visScore || prev.currentMetrics.visibilityScore,
+                    sentimentScore: sentScore || prev.currentMetrics.sentimentScore,
+                    positionScore: posScore || prev.currentMetrics.positionScore
+                  }
+                } : null);
+              }
+              
+              // Clear interval if all metrics are loaded
+              if ((visScore !== null && visScore > 0) && 
+                  (sentScore !== null && sentScore > 0) && 
+                  (posScore !== null && posScore > 0)) {
+                clearInterval(metricsInterval);
+              }
             }
           }
         }, 3000);
@@ -512,7 +555,19 @@ const ProductOverview = () => {
                 const sentScore = newScore.sentiment_score || 0;
                 const posScore = newScore.position_score || 0;
                 
-                setMetricsLoading(false);
+                // Update individual loading states
+                if (visScore > 0) {
+                  setVisibilityScoreLoading(false);
+                  setVisibilityTrendLoading(false);
+                }
+                if (sentScore > 0) {
+                  setSentimentScoreLoading(false);
+                  setSentimentTrendLoading(false);
+                }
+                if (posScore > 0) {
+                  setPositionScoreLoading(false);
+                  setPositionTrendLoading(false);
+                }
                 
                 // Update product with new scores
                 setProduct(prev => prev ? {
@@ -934,42 +989,22 @@ Stay focused during calls with noise cancellation and enjoy music during breaks 
       </div>
 
       {/* Metrics Cards */}
-      {metricsLoading ? (
-        <Card>
-          <CardContent className="p-12">
-            <div className="flex flex-col items-center justify-center space-y-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-              <div className="text-center space-y-2">
-                <p className="font-medium">Calculating product metrics...</p>
-                <p className="text-sm text-muted-foreground">This may take a moment</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <ProductMetrics metrics={product.currentMetrics} />
-      )}
+      <ProductMetrics 
+        metrics={product.currentMetrics}
+        visibilityLoading={visibilityScoreLoading}
+        sentimentLoading={sentimentScoreLoading}
+        positionLoading={positionScoreLoading}
+      />
 
       {/* Charts */}
-      {metricsLoading ? (
-        <Card>
-          <CardContent className="p-12">
-            <div className="flex flex-col items-center justify-center space-y-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-              <div className="text-center space-y-2">
-                <p className="font-medium">Loading performance trends...</p>
-                <p className="text-sm text-muted-foreground">This may take a moment</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <ProductCharts 
-          visibilityData={product.visibilityHistory}
-          sentimentData={product.sentimentHistory}
-          positionData={product.positionHistory}
-        />
-      )}
+      <ProductCharts 
+        visibilityData={product.visibilityHistory}
+        sentimentData={product.sentimentHistory}
+        positionData={product.positionHistory}
+        visibilityLoading={visibilityTrendLoading}
+        sentimentLoading={sentimentTrendLoading}
+        positionLoading={positionTrendLoading}
+      />
 
       {/* AI Optimization - Recommendations */}
       <Card>
