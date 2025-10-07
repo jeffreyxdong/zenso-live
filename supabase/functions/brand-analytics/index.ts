@@ -87,7 +87,7 @@ Rules:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-5o",
+        model: "gpt-4o-mini",
         input: promptGenPrompt,
       }),
     });
@@ -145,7 +145,7 @@ Rules:
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "gpt-5o",
+          model: "gpt-4o-mini",
           tools: [{ type: "web_search_preview" }], // ✅ web-augmented
           input: `${p.content}\n\nProvide a comprehensive, up-to-date answer as if responding to a customer's search query. Use current web information if relevant.`,
         }),
@@ -170,7 +170,7 @@ Rules:
         .insert({
           brand_prompt_id: p.id,
           response_text: responseText,
-          model_name: "gpt-5o",
+          model_name: "gpt-4o-mini",
         })
         .select("id");
 
@@ -210,7 +210,7 @@ ${combinedText}
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-5o",
+        model: "gpt-4o-mini",
         input: scoringPrompt,
       }),
     });
