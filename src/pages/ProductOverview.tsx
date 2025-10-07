@@ -10,7 +10,7 @@ import PreviewModal from "@/components/PreviewModal";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-// ---- Types ----
+// Interfaces
 interface Source {
   domain: string;
   used_percentage: number;
@@ -45,6 +45,9 @@ interface Product {
   title: string;
   handle: string;
   status: "active" | "draft" | "archived";
+  shopify_id: string;
+  product_type?: string;
+  vendor?: string;
   created_at: string;
   visibility_score?: number;
   sentiment_score?: number;
@@ -65,48 +68,25 @@ interface Product {
   };
 }
 
-// ---- Utils ----
 const generateScoreHistoryFromData = (
-  scoresData: any[],
-  scoreField: "visibility_score" | "sentiment_score" | "position_score",
+  scores: any[],
+  field: "visibility_score" | "sentiment_score" | "position_score",
 ) => {
-  const data = [];
   const today = new Date();
-  const scoreMap = new Map();
-  scoresData.forEach((score) => {
-    const dateKey = new Date(score.created_at).toDateString();
-    scoreMap.set(dateKey, score[scoreField] || 0);
-  });
+  const result = [];
 
   for (let i = 6; i >= 0; i--) {
     const date = new Date(today);
-    date.setDate(date.getDate() - i);
-    const dateKey = date.toDateString();
-    const value =
-      scoreMap.get(dateKey) ||
-      (i === 0 && scoresData.length > 0 ? scoresData[scoresData.length - 1][scoreField] : null);
-    data.push({ date: date.toISOString().split("T")[0], value });
+    date.setDate(today.getDate() - i);
+    const matching = scores.find((s) => new Date(s.created_at).toDateString() === date.toDateString());
+    result.push({
+      date: date.toISOString().split("T")[0],
+      value: matching ? matching[field] : null,
+    });
   }
-  return data;
+  return result;
 };
 
-const parseSources = (sourcesFinal: any[]): Source[] => {
-  const domainCounts = new Map<string, number>();
-  sourcesFinal.forEach((item: any) => {
-    const domain = typeof item === "string" ? item : item.domain || item.name || "Unknown";
-    domainCounts.set(domain, (domainCounts.get(domain) || 0) + 1);
-  });
-  const total = sourcesFinal.length;
-  return Array.from(domainCounts.entries()).map(([domain, count]) => ({
-    domain,
-    used_percentage: Math.round((count / total) * 100),
-    avg_citations: count,
-    type: "Other",
-    is_own_domain: false,
-  }));
-};
-
-// ---- Component ----
 const ProductOverview = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
@@ -114,115 +94,188 @@ const ProductOverview = () => {
     activeStore: { id: string; name: string; website: string; is_active: boolean } | null;
   }>();
 
+  // State
   const [product, setProduct] = useState<Product | null>(null);
-
-  // Loading states per section
   const [loading, setLoading] = useState(true);
-  const [metricsLoading, setMetricsLoading] = useState(true);
+  const [visibilityScoreLoading, setVisibilityScoreLoading] = useState(true);
+  const [sentimentScoreLoading, setSentimentScoreLoading] = useState(true);
+  const [positionScoreLoading, setPositionScoreLoading] = useState(true);
+  const [visibilityTrendLoading, setVisibilityTrendLoading] = useState(true);
+  const [sentimentTrendLoading, setSentimentTrendLoading] = useState(true);
+  const [positionTrendLoading, setPositionTrendLoading] = useState(true);
   const [recommendationsLoading, setRecommendationsLoading] = useState(true);
   const [sourcesLoading, setSourcesLoading] = useState(true);
-
   const [showPreview, setShowPreview] = useState(false);
   const [previewContent, setPreviewContent] = useState("");
-  const [previewType, setPreviewType] = useState("");
+  const [previewType, setPreviewType] = useState<string>("");
 
+  // --- Initial Fetch ---
   useEffect(() => {
     if (!productId) return;
+
     let mounted = true;
 
-    // --- Step 1: Initial Load ---
-    const loadProduct = async () => {
+    const fetchInitialData = async () => {
+      setLoading(true);
+
       try {
-        const { data: base } = await supabase.from("products").select("*").eq("id", productId).maybeSingle();
+        const { data: productData, error: productError } = await supabase
+          .from("products")
+          .select("*")
+          .eq("id", productId)
+          .maybeSingle();
 
-        if (!mounted || !base) return;
+        if (productError || !productData) throw productError;
 
-        setProduct({
-          ...base,
-          visibilityHistory: [],
-          sentimentHistory: [],
-          positionHistory: [],
-          sources: [],
-          recommendations: [],
+        const { data: scores } = await supabase
+          .from("product_scores")
+          .select("*")
+          .eq("product_id", productId)
+          .order("created_at", { ascending: true });
+
+        const { data: recs } = await supabase
+          .from("product_recommendations")
+          .select("*")
+          .eq("product_id", productId)
+          .order("created_at", { ascending: false });
+
+        const { data: prompts } = await supabase.from("prompts").select("id").eq("product_id", productId).limit(1);
+
+        let sources: Source[] = [];
+        if (prompts?.length) {
+          const { data: responses } = await supabase
+            .from("prompt_responses")
+            .select("sources_final")
+            .eq("prompt_id", prompts[0].id)
+            .order("created_at", { ascending: false })
+            .limit(1);
+
+          if (responses?.[0]?.sources_final) {
+            const raw = responses[0].sources_final;
+            const counts = new Map<string, number>();
+            raw.forEach((r: any) => {
+              const domain = typeof r === "string" ? r : r.domain || "Unknown";
+              counts.set(domain, (counts.get(domain) || 0) + 1);
+            });
+            const total = raw.length;
+            sources = Array.from(counts.entries()).map(([domain, count]) => ({
+              domain,
+              used_percentage: Math.round((count / total) * 100),
+              avg_citations: count,
+              type: "Other",
+              is_own_domain: false,
+            }));
+          }
+        }
+
+        if (!mounted) return;
+
+        const latest = scores?.[scores.length - 1];
+        const visibilityScore = latest?.visibility_score || productData.visibility_score || 0;
+        const sentimentScore = latest?.sentiment_score || productData.sentiment_score || 0;
+        const positionScore = latest?.position_score || productData.position_score || 0;
+
+        const getVisibilityLevel = (s: number) => (s >= 80 ? "High" : s >= 60 ? "Medium" : "Low");
+        const getSentimentLevel = (s: number) => (s >= 70 ? "Positive" : s >= 30 ? "Neutral" : "Negative");
+
+        const updatedProduct: Product = {
+          ...productData,
+          visibilityHistory: generateScoreHistoryFromData(scores || [], "visibility_score"),
+          sentimentHistory: generateScoreHistoryFromData(scores || [], "sentiment_score"),
+          positionHistory: generateScoreHistoryFromData(scores || [], "position_score"),
           suggestions: [],
+          sources,
+          recommendations: recs || [],
           currentMetrics: {
-            visibility: "Low",
-            sentiment: "Neutral",
-            position: 10,
-            visibilityScore: 0,
-            sentimentScore: 0,
-            positionScore: 0,
+            visibility: getVisibilityLevel(visibilityScore),
+            sentiment: getSentimentLevel(sentimentScore),
+            position: positionScore || 5,
+            visibilityScore,
+            sentimentScore,
+            positionScore: positionScore || 5,
           },
-        });
+        };
+
+        setProduct(updatedProduct);
+        setVisibilityScoreLoading(!visibilityScore);
+        setSentimentScoreLoading(!sentimentScore);
+        setPositionScoreLoading(!positionScore);
+        setVisibilityTrendLoading(!scores?.length);
+        setSentimentTrendLoading(!scores?.length);
+        setPositionTrendLoading(!scores?.length);
+        setRecommendationsLoading(!recs?.length);
+        setSourcesLoading(!sources?.length);
       } catch (e) {
-        toast({ title: "Error", description: "Failed to fetch product", variant: "destructive" });
+        console.error(e);
+        toast({
+          title: "Error loading product",
+          description: "Failed to fetch product data",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
     };
 
-    loadProduct();
+    fetchInitialData();
 
-    // --- Step 2: Scores / Metrics ---
-    const loadScores = async () => {
-      const { data } = await supabase
-        .from("product_scores")
-        .select("*")
-        .eq("product_id", productId)
-        .order("created_at", { ascending: true });
+    // --- Realtime updates ---
+    const scoreSub = supabase
+      .channel(`scores-${productId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "product_scores", filter: `product_id=eq.${productId}` },
+        (payload) => {
+          const newScore = payload.new;
+          if (!newScore) return;
+          setProduct((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  visibility_score: newScore.visibility_score,
+                  sentiment_score: newScore.sentiment_score,
+                  position_score: newScore.position_score,
+                  currentMetrics: {
+                    ...prev.currentMetrics,
+                    visibilityScore: newScore.visibility_score,
+                    sentimentScore: newScore.sentiment_score,
+                    positionScore: newScore.position_score,
+                  },
+                }
+              : prev,
+          );
+          setVisibilityScoreLoading(false);
+          setSentimentScoreLoading(false);
+          setPositionScoreLoading(false);
+          setVisibilityTrendLoading(false);
+          setSentimentTrendLoading(false);
+          setPositionTrendLoading(false);
+        },
+      )
+      .subscribe();
 
-      if (!mounted) return;
+    const recSub = supabase
+      .channel(`recs-${productId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "product_recommendations", filter: `product_id=eq.${productId}` },
+        async () => {
+          const { data: recs } = await supabase
+            .from("product_recommendations")
+            .select("*")
+            .eq("product_id", productId)
+            .order("created_at", { ascending: false });
+          setProduct((p) => (p ? { ...p, recommendations: recs || [] } : p));
+          setRecommendationsLoading(false);
+        },
+      )
+      .subscribe();
 
-      if (data?.length) {
-        const latest = data[data.length - 1];
-        setProduct(
-          (prev) =>
-            prev && {
-              ...prev,
-              visibility_score: latest.visibility_score,
-              sentiment_score: latest.sentiment_score,
-              position_score: latest.position_score,
-              visibilityHistory: generateScoreHistoryFromData(data, "visibility_score"),
-              sentimentHistory: generateScoreHistoryFromData(data, "sentiment_score"),
-              positionHistory: generateScoreHistoryFromData(data, "position_score"),
-              currentMetrics: {
-                visibility: latest.visibility_score >= 80 ? "High" : latest.visibility_score >= 60 ? "Medium" : "Low",
-                sentiment:
-                  latest.sentiment_score >= 70 ? "Positive" : latest.sentiment_score >= 30 ? "Neutral" : "Negative",
-                position: latest.position_score,
-                visibilityScore: latest.visibility_score,
-                sentimentScore: latest.sentiment_score,
-                positionScore: latest.position_score,
-              },
-            },
-        );
-      }
-
-      setMetricsLoading(false);
-    };
-
-    loadScores();
-
-    // --- Step 3: Recommendations ---
-    const loadRecs = async () => {
-      const { data } = await supabase
-        .from("product_recommendations")
-        .select("*")
-        .eq("product_id", productId)
-        .order("created_at", { ascending: false });
-
-      if (!mounted) return;
-      setProduct((prev) => prev && { ...prev, recommendations: data || [] });
-      setRecommendationsLoading(false);
-    };
-
-    loadRecs();
-
-    // --- Step 4: Sources ---
-    const loadSources = async () => {
-      const { data: prompts } = await supabase.from("prompts").select("id").eq("product_id", productId).limit(1);
-
-      if (prompts?.length) {
+    const sourceSub = supabase
+      .channel(`sources-${productId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "prompt_responses" }, async () => {
+        const { data: prompts } = await supabase.from("prompts").select("id").eq("product_id", productId).limit(1);
+        if (!prompts?.length) return;
         const { data: responses } = await supabase
           .from("prompt_responses")
           .select("sources_final")
@@ -230,65 +283,26 @@ const ProductOverview = () => {
           .order("created_at", { ascending: false })
           .limit(1);
 
-        if (responses?.length && responses[0].sources_final) {
-          const parsed = parseSources(responses[0].sources_final);
-          setProduct((prev) => prev && { ...prev, sources: parsed });
+        if (responses?.[0]?.sources_final) {
+          const raw = responses[0].sources_final;
+          const counts = new Map<string, number>();
+          raw.forEach((r: any) => {
+            const domain = typeof r === "string" ? r : r.domain || "Unknown";
+            counts.set(domain, (counts.get(domain) || 0) + 1);
+          });
+          const total = raw.length;
+          const sources = Array.from(counts.entries()).map(([domain, count]) => ({
+            domain,
+            used_percentage: Math.round((count / total) * 100),
+            avg_citations: count,
+            type: "Other",
+            is_own_domain: false,
+          }));
+
+          setProduct((p) => (p ? { ...p, sources } : p));
+          setSourcesLoading(false);
         }
-      }
-
-      setSourcesLoading(false);
-    };
-
-    loadSources();
-
-    // --- Step 5: Realtime Subscriptions ---
-    const scoreSub = supabase
-      .channel(`product-scores-${productId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "product_scores", filter: `product_id=eq.${productId}` },
-        (payload) => {
-          const newScore = payload.new;
-          setMetricsLoading(false);
-          setProduct(
-            (prev) =>
-              prev && {
-                ...prev,
-                visibility_score: newScore.visibility_score,
-                sentiment_score: newScore.sentiment_score,
-                position_score: newScore.position_score,
-                currentMetrics: {
-                  visibility:
-                    newScore.visibility_score >= 80 ? "High" : newScore.visibility_score >= 60 ? "Medium" : "Low",
-                  sentiment:
-                    newScore.sentiment_score >= 70
-                      ? "Positive"
-                      : newScore.sentiment_score >= 30
-                        ? "Neutral"
-                        : "Negative",
-                  position: newScore.position_score,
-                  visibilityScore: newScore.visibility_score,
-                  sentimentScore: newScore.sentiment_score,
-                  positionScore: newScore.position_score,
-                },
-              },
-          );
-        },
-      )
-      .subscribe();
-
-    const recSub = supabase
-      .channel(`product-recs-${productId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "product_recommendations", filter: `product_id=eq.${productId}` },
-        () => loadRecs(),
-      )
-      .subscribe();
-
-    const sourceSub = supabase
-      .channel(`prompt-responses-${productId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "prompt_responses" }, () => loadSources())
+      })
       .subscribe();
 
     return () => {
@@ -299,8 +313,7 @@ const ProductOverview = () => {
     };
   }, [productId]);
 
-  // ---- Render ----
-  if (loading || !product) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-muted-foreground">Loading product details...</div>
@@ -308,9 +321,17 @@ const ProductOverview = () => {
     );
   }
 
+  if (!product) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-muted-foreground">Product not found</div>
+      </div>
+    );
+  }
+
+  // === UI (unchanged) ===
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-4">
         <Button
           variant="ghost"
@@ -318,51 +339,55 @@ const ProductOverview = () => {
           onClick={() => navigate("/dashboard?tab=products-overview")}
           className="hover:bg-muted"
         >
-          <ArrowLeft className="h-4 w-4 mr-2" /> Back to Products
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Products
         </Button>
       </div>
 
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-foreground">{product.title}</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">{product.title}</h1>
+        </div>
         <Badge variant={product.status === "active" ? "default" : "secondary"} className="capitalize">
           {product.status}
         </Badge>
       </div>
 
-      {/* Metrics */}
       <ProductMetrics
         metrics={product.currentMetrics}
-        visibilityLoading={metricsLoading}
-        sentimentLoading={metricsLoading}
-        positionLoading={metricsLoading}
+        visibilityLoading={visibilityScoreLoading}
+        sentimentLoading={sentimentScoreLoading}
+        positionLoading={positionScoreLoading}
       />
 
-      {/* Charts */}
       <ProductCharts
         visibilityData={product.visibilityHistory}
         sentimentData={product.sentimentHistory}
         positionData={product.positionHistory}
-        visibilityLoading={metricsLoading}
-        sentimentLoading={metricsLoading}
-        positionLoading={metricsLoading}
+        visibilityLoading={visibilityTrendLoading}
+        sentimentLoading={sentimentTrendLoading}
+        positionLoading={positionTrendLoading}
       />
 
-      {/* Recommendations */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              <Search className="h-5 w-5 text-primary" /> AI Optimization Suggestions
+              <Search className="h-5 w-5 text-primary" />
+              AI Optimization Suggestions
             </CardTitle>
           </div>
         </CardHeader>
         <CardContent>
           {recommendationsLoading ? (
             <div className="flex flex-col items-center justify-center py-12 space-y-4">
-              <Loader2 className="h-8 w-8 animate-spin" />
-              <p>Generating AI optimization suggestions...</p>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              <div className="text-center space-y-2">
+                <p className="font-medium">Generating AI optimization suggestions...</p>
+                <p className="text-sm text-muted-foreground">This may take a moment</p>
+              </div>
             </div>
-          ) : product.recommendations?.length ? (
+          ) : product.recommendations && product.recommendations.length > 0 ? (
             <div className="space-y-4">
               {product.recommendations.map((rec) => (
                 <div key={rec.id} className="p-4 border rounded-lg hover:bg-accent/50 transition-colors">
@@ -393,7 +418,8 @@ const ProductOverview = () => {
                           rel="noopener noreferrer"
                           className="text-xs text-primary hover:underline flex items-center gap-1"
                         >
-                          View product page <ExternalLink className="h-3 w-3" />
+                          View product page
+                          <ExternalLink className="h-3 w-3" />
                         </a>
                       )}
                     </div>
@@ -402,52 +428,57 @@ const ProductOverview = () => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">No AI optimization recommendations yet.</div>
+            <div className="text-center py-8">
+              <p className="text-muted-foreground mb-4">
+                No AI optimization recommendations yet. Generate recommendations to improve your product's visibility in
+                AI-powered search.
+              </p>
+            </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Sources */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Globe className="h-5 w-5 text-primary" /> Sources
+            <Globe className="h-5 w-5 text-primary" />
+            Sources
           </CardTitle>
         </CardHeader>
         <CardContent>
           {sourcesLoading ? (
             <div className="flex flex-col items-center justify-center py-12 space-y-4">
-              <Loader2 className="h-8 w-8 animate-spin" />
-              <p>Loading source data...</p>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              <div className="text-center space-y-2">
+                <p className="font-medium">Loading source data...</p>
+                <p className="text-sm text-muted-foreground">This may take a moment</p>
+              </div>
             </div>
-          ) : product.sources?.length ? (
+          ) : product.sources && product.sources.length > 0 ? (
             <div className="flex flex-wrap gap-3">
-              {product.sources.map((source, index) => {
-                const displayName = source.domain.replace(
-                  /\.(com|org|net|io|co|edu|gov|uk|us|ca|au|de|fr|jp|cn|in)$/i,
-                  "",
-                );
+              {product.sources.map((source, i) => {
+                const name = source.domain.replace(/\.(com|org|net|io|co|edu|gov)$/i, "");
                 return (
                   <div
-                    key={index}
+                    key={i}
                     className="flex items-center gap-2 px-4 py-2 rounded-lg border bg-card hover:bg-accent transition-colors"
                   >
                     <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center overflow-hidden">
                       <img
                         src={`https://www.google.com/s2/favicons?domain=${source.domain}&sz=32`}
-                        alt={`${source.domain} icon`}
+                        alt={source.domain}
                         className="w-5 h-5"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.style.display = "none";
                           const parent = target.parentElement;
                           if (parent) {
-                            parent.innerHTML = `<span class="text-sm font-semibold text-primary">${displayName.charAt(0).toUpperCase()}</span>`;
+                            parent.innerHTML = `<span class='text-sm font-semibold text-primary'>${name.charAt(0).toUpperCase()}</span>`;
                           }
                         }}
                       />
                     </div>
-                    <span className="font-medium text-sm capitalize">{displayName}</span>
+                    <span className="font-medium text-sm capitalize">{name}</span>
                   </div>
                 );
               })}
