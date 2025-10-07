@@ -208,15 +208,15 @@ Instructions:
     const combinedText = responses.map((r) => r.responseText).join("\n\n---\n\n");
 
     const scoringPrompt = `
-Analyze the following combined customer-facing responses and assign one overall visibility score (0–100) for how prominently the brand "${store.name}" is represented across them.
+You are an AI analyst. Review the following customer-facing content about "${store.name}" and assign
+ONE overall "brand visibility" score between 0–100.
 
-Rules:
-- 0 → brand absent
-- 1–30 → indirect / minimal
-- 31–70 → moderate or mixed presence
-- 71–100 → strong, central, highly positive representation
-
-Respond ONLY with a single number.
+Guidelines:
+- 0–10 → brand not mentioned
+- 11–30 → minimal or indirect mentions
+- 31–70 → moderate visibility
+- 71–100 → strong, central, positive brand presence
+Return ONLY a single integer (no words, no explanation).
 
 Content:
 ${combinedText}
@@ -229,7 +229,7 @@ ${combinedText}
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-5o", // ✅ use up-to-date reasoning model
         input: scoringPrompt,
       }),
     });
@@ -237,12 +237,14 @@ ${combinedText}
     let avgVisibility = 0;
     if (scoreResp.ok) {
       const scoreJson = await scoreResp.json();
-      const scoreText = extractText(scoreJson);
-      avgVisibility = parseInt(scoreText) || 0;
-      console.log(`🎯 Overall brand visibility score: ${avgVisibility}`);
+      const scoreText = extractText(scoreJson).trim();
+      const match = scoreText.match(/\d+/);
+      avgVisibility = match ? parseInt(match[0]) : 0;
+      console.log(`🎯 Final brand visibility score: ${avgVisibility}`);
     } else {
       const err = await scoreResp.text();
       console.error("❌ Scoring API error:", err);
+      throw new Error("Failed to compute visibility score");
     }
 
     // === 7. Store today's brand score ===
