@@ -258,6 +258,7 @@ const ProductOverview = () => {
   const [pdpLoading, setPdpLoading] = useState(false);
   const [pdpFetching, setPdpFetching] = useState(false);
   const [recommendationsLoading, setRecommendationsLoading] = useState(false);
+  const [sourcesLoading, setSourcesLoading] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -356,6 +357,16 @@ const ProductOverview = () => {
               is_own_domain: false
             }));
           }
+        }
+
+        // Check if sources are loading (no sources yet)
+        if (sources.length === 0) {
+          setSourcesLoading(true);
+        }
+
+        // Check if recommendations are loading (no recommendations yet)
+        if (!recommendationsData || recommendationsData.length === 0) {
+          setRecommendationsLoading(true);
         }
 
         // Use the latest scores or fallback to product table scores
@@ -501,7 +512,58 @@ const ProductOverview = () => {
             
             if (updatedRecs && updatedRecs.length > 0) {
               setRecommendationsLoading(false);
-              clearInterval(recsInterval);
+              setProduct(prev => prev ? {
+                ...prev,
+                recommendations: updatedRecs as Recommendation[]
+              } : null);
+            }
+          }
+        }, 3000);
+
+        // Set up polling fallback for sources (every 3 seconds while loading)
+        const sourcesInterval = setInterval(async () => {
+          if (sourcesLoading) {
+            const { data: promptsData } = await supabase
+              .from("prompts")
+              .select("id")
+              .eq("product_id", productId)
+              .limit(1);
+
+            if (promptsData && promptsData.length > 0) {
+              const { data, error: promptResponsesError } = await supabase
+                .from("prompt_responses")
+                .select("sources_final")
+                .eq("prompt_id", promptsData[0].id)
+                .order("created_at", { ascending: false })
+                .limit(1);
+
+              if (!promptResponsesError && data && data.length > 0 && data[0].sources_final) {
+                const sourcesFinal = data[0].sources_final as any;
+                if (Array.isArray(sourcesFinal) && sourcesFinal.length > 0) {
+                  setSourcesLoading(false);
+                  
+                  // Parse and update sources
+                  const domainCounts = new Map<string, number>();
+                  sourcesFinal.forEach((item: any) => {
+                    const domain = typeof item === 'string' ? item : (item.domain || item.name || "Unknown");
+                    domainCounts.set(domain, (domainCounts.get(domain) || 0) + 1);
+                  });
+                  
+                  const totalSources = sourcesFinal.length;
+                  const parsedSources = Array.from(domainCounts.entries()).map(([domain, count]) => ({
+                    domain: domain,
+                    used_percentage: Math.round((count / totalSources) * 100),
+                    avg_citations: count,
+                    type: "Other",
+                    is_own_domain: false
+                  }));
+
+                  setProduct(prev => prev ? {
+                    ...prev,
+                    sources: parsedSources
+                  } : null);
+                }
+              }
             }
           }
         }, 3000);
@@ -541,6 +603,7 @@ const ProductOverview = () => {
         return () => {
           clearInterval(metricsInterval);
           clearInterval(recsInterval);
+          clearInterval(sourcesInterval);
           scoresSubscription.unsubscribe();
           recommendationsSubscription.unsubscribe();
         };
@@ -894,7 +957,15 @@ Stay focused during calls with noise cancellation and enjoy music during breaks 
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {product.sources && product.sources.length > 0 ? (
+          {sourcesLoading ? (
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              <div className="text-center space-y-2">
+                <p className="font-medium">Loading source data...</p>
+                <p className="text-sm text-muted-foreground">This may take a moment</p>
+              </div>
+            </div>
+          ) : product.sources && product.sources.length > 0 ? (
             <div className="flex flex-wrap gap-3">
               {product.sources.map((source, index) => {
                 // Remove common domain extensions
