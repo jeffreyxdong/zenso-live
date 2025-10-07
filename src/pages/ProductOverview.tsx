@@ -467,6 +467,26 @@ const ProductOverview = () => {
                 updatedProductData.position_score !== null) {
               setMetricsLoading(false);
               clearInterval(metricsInterval);
+              
+              // Update product with new scores
+              const visScore = updatedProductData.visibility_score;
+              const sentScore = updatedProductData.sentiment_score;
+              const posScore = updatedProductData.position_score;
+              
+              setProduct(prev => prev ? {
+                ...prev,
+                visibility_score: visScore,
+                sentiment_score: sentScore,
+                position_score: posScore,
+                currentMetrics: {
+                  visibility: visScore >= 80 ? "High" : visScore >= 60 ? "Medium" : "Low",
+                  sentiment: sentScore >= 70 ? "Positive" : sentScore >= 30 ? "Neutral" : "Negative",
+                  position: posScore || 5,
+                  visibilityScore: visScore,
+                  sentimentScore: sentScore,
+                  positionScore: posScore
+                }
+              } : null);
             }
           }
         }, 3000);
