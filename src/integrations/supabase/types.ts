@@ -45,7 +45,22 @@ export type Database = {
           sources?: Json | null
           sources_final?: Json | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "brand_prompt_responses_brand_prompt_id_fkey"
+            columns: ["brand_prompt_id"]
+            isOneToOne: false
+            referencedRelation: "brand_prompt_responses_with_prompts"
+            referencedColumns: ["prompt_id"]
+          },
+          {
+            foreignKeyName: "brand_prompt_responses_brand_prompt_id_fkey"
+            columns: ["brand_prompt_id"]
+            isOneToOne: false
+            referencedRelation: "brand_prompts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       brand_prompts: {
         Row: {
@@ -377,9 +392,7 @@ export type Database = {
           handle: string
           id: string
           images: Json | null
-          position_score: number | null
           product_type: string | null
-          sentiment_score: number | null
           shopify_id: string
           status: string
           store_id: string | null
@@ -388,16 +401,13 @@ export type Database = {
           updated_at: string
           user_id: string
           vendor: string | null
-          visibility_score: number | null
         }
         Insert: {
           created_at?: string
           handle: string
           id?: string
           images?: Json | null
-          position_score?: number | null
           product_type?: string | null
-          sentiment_score?: number | null
           shopify_id: string
           status?: string
           store_id?: string | null
@@ -406,16 +416,13 @@ export type Database = {
           updated_at?: string
           user_id: string
           vendor?: string | null
-          visibility_score?: number | null
         }
         Update: {
           created_at?: string
           handle?: string
           id?: string
           images?: Json | null
-          position_score?: number | null
           product_type?: string | null
-          sentiment_score?: number | null
           shopify_id?: string
           status?: string
           store_id?: string | null
@@ -424,7 +431,6 @@ export type Database = {
           updated_at?: string
           user_id?: string
           vendor?: string | null
-          visibility_score?: number | null
         }
         Relationships: [
           {
