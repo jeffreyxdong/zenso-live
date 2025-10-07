@@ -444,7 +444,16 @@ const ProductOverview = () => {
         }
 
         // Set up polling fallback for metrics (every 3 seconds while loading)
+        let metricsAttempts = 0;
+        const maxAttempts = 60; // 3 minutes (60 attempts * 3 seconds)
         const metricsInterval = setInterval(async () => {
+          metricsAttempts++;
+          if (metricsAttempts >= maxAttempts) {
+            setMetricsLoading(false);
+            clearInterval(metricsInterval);
+            return;
+          }
+          
           if (metricsLoading) {
             const { data: updatedProductData } = await supabase
               .from("products")
@@ -506,7 +515,15 @@ const ProductOverview = () => {
           .subscribe();
 
         // Set up polling fallback for recommendations (every 3 seconds while loading)
+        let recsAttempts = 0;
         const recsInterval = setInterval(async () => {
+          recsAttempts++;
+          if (recsAttempts >= maxAttempts) {
+            setRecommendationsLoading(false);
+            clearInterval(recsInterval);
+            return;
+          }
+          
           if (recommendationsLoading) {
             const { data: updatedRecs } = await supabase
               .from("product_recommendations")
@@ -526,7 +543,15 @@ const ProductOverview = () => {
         }, 3000);
 
         // Set up polling fallback for sources (every 3 seconds while loading)
+        let sourcesAttempts = 0;
         const sourcesInterval = setInterval(async () => {
+          sourcesAttempts++;
+          if (sourcesAttempts >= maxAttempts) {
+            setSourcesLoading(false);
+            clearInterval(sourcesInterval);
+            return;
+          }
+          
           if (sourcesLoading) {
             const { data: promptsData } = await supabase
               .from("prompts")
