@@ -464,7 +464,7 @@ const ProductOverview = () => {
 
         // Set up real-time subscription to listen for score updates
         const scoresSubscription = supabase
-          .channel('product-scores-changes')
+          .channel(`product-scores-${productId}`)
           .on(
             'postgres_changes',
             {
@@ -475,29 +475,29 @@ const ProductOverview = () => {
             },
             async (payload) => {
               console.log('Product scores updated:', payload);
-              // Refetch product data
-              const { data: updatedProductData } = await supabase
-                .from("products")
-                .select("*")
-                .eq("id", productId)
-                .single();
               
-              if (updatedProductData && 
-                  updatedProductData.visibility_score !== null &&
-                  updatedProductData.sentiment_score !== null &&
-                  updatedProductData.position_score !== null) {
+              // Use the payload data directly instead of refetching
+              if (payload.new) {
+                const newScore = payload.new as any;
+                const visScore = newScore.visibility_score || 0;
+                const sentScore = newScore.sentiment_score || 0;
+                const posScore = newScore.position_score || 0;
+                
                 setMetricsLoading(false);
+                
                 // Update product with new scores
                 setProduct(prev => prev ? {
                   ...prev,
-                  visibility_score: updatedProductData.visibility_score,
-                  sentiment_score: updatedProductData.sentiment_score,
-                  position_score: updatedProductData.position_score,
+                  visibility_score: visScore,
+                  sentiment_score: sentScore,
+                  position_score: posScore,
                   currentMetrics: {
-                    ...prev.currentMetrics,
-                    visibilityScore: updatedProductData.visibility_score || 0,
-                    sentimentScore: updatedProductData.sentiment_score || 0,
-                    positionScore: updatedProductData.position_score || 0
+                    visibility: visScore >= 80 ? "High" : visScore >= 60 ? "Medium" : "Low",
+                    sentiment: sentScore >= 70 ? "Positive" : sentScore >= 30 ? "Neutral" : "Negative",
+                    position: posScore || 5,
+                    visibilityScore: visScore,
+                    sentimentScore: sentScore,
+                    positionScore: posScore
                   }
                 } : null);
               }
@@ -576,7 +576,7 @@ const ProductOverview = () => {
 
         // Set up real-time subscription for recommendations
         const recommendationsSubscription = supabase
-          .channel('product-recommendations-changes')
+          .channel(`product-recommendations-${productId}`)
           .on(
             'postgres_changes',
             {
@@ -605,13 +605,71 @@ const ProductOverview = () => {
           )
           .subscribe();
 
+        // Set up real-time subscription for prompt responses (sources)
+        const promptResponsesSubscription = supabase
+          .channel(`prompt-responses-${productId}`)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'prompt_responses'
+            },
+            async (payload) => {
+              console.log('Prompt responses updated:', payload);
+              
+              // Check if this response belongs to our product
+              if (payload.new) {
+                const newResponse = payload.new as any;
+                
+                // Get the prompt to verify it's for our product
+                const { data: promptData } = await supabase
+                  .from("prompts")
+                  .select("id, product_id")
+                  .eq("id", newResponse.prompt_id)
+                  .single();
+                
+                if (promptData && promptData.product_id === productId && newResponse.sources_final) {
+                  const sourcesFinal = newResponse.sources_final;
+                  
+                  if (Array.isArray(sourcesFinal) && sourcesFinal.length > 0) {
+                    setSourcesLoading(false);
+                    
+                    // Parse and update sources
+                    const domainCounts = new Map<string, number>();
+                    sourcesFinal.forEach((item: any) => {
+                      const domain = typeof item === 'string' ? item : (item.domain || item.name || "Unknown");
+                      domainCounts.set(domain, (domainCounts.get(domain) || 0) + 1);
+                    });
+                    
+                    const totalSources = sourcesFinal.length;
+                    const parsedSources = Array.from(domainCounts.entries()).map(([domain, count]) => ({
+                      domain: domain,
+                      used_percentage: Math.round((count / totalSources) * 100),
+                      avg_citations: count,
+                      type: "Other",
+                      is_own_domain: false
+                    }));
+
+                    setProduct(prev => prev ? {
+                      ...prev,
+                      sources: parsedSources
+                    } : null);
+                  }
+                }
+              }
+            }
+          )
+          .subscribe();
+
         // Cleanup subscriptions and intervals on unmount
         return () => {
           clearInterval(metricsInterval);
           clearInterval(recsInterval);
           clearInterval(sourcesInterval);
-          scoresSubscription.unsubscribe();
-          recommendationsSubscription.unsubscribe();
+          supabase.removeChannel(scoresSubscription);
+          supabase.removeChannel(recommendationsSubscription);
+          supabase.removeChannel(promptResponsesSubscription);
         };
       } catch (error: any) {
         console.error("Error fetching product:", error);
