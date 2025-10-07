@@ -24,14 +24,23 @@ const corsHeaders = {
 // Helper to safely extract text from OpenAI Responses API
 function extractText(json: any): string {
   try {
-    if (json?.output && Array.isArray(json.output)) {
+    if (Array.isArray(json?.output)) {
       return json.output
-        .map((o: any) => (Array.isArray(o.content) ? o.content.map((c: any) => c.text ?? "").join(" ") : ""))
+        .map((o: any) =>
+          Array.isArray(o?.content)
+            ? o.content
+                .filter((c: any) => c.type === "output_text" || typeof c.text === "string")
+                .map((c: any) => c.text ?? "")
+                .join(" ")
+            : "",
+        )
         .join(" ")
         .trim();
     }
     if (typeof json?.output_text === "string") return json.output_text.trim();
-  } catch (_) {}
+  } catch (err) {
+    console.error("extractText() error:", err, "Raw JSON:", JSON.stringify(json, null, 2));
+  }
   return "";
 }
 
