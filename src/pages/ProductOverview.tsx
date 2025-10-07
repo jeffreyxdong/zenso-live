@@ -458,18 +458,29 @@ const ProductOverview = () => {
 
         setProduct(enhancedProduct);
         
-        // Check if individual metrics are still loading (0 scores indicate processing)
-        if (visibilityScore === 0) {
+        // Check if individual metrics are still loading (0 or null scores indicate processing)
+        if (!visibilityScore || visibilityScore === 0) {
           setVisibilityScoreLoading(true);
           setVisibilityTrendLoading(true);
+        } else {
+          setVisibilityScoreLoading(false);
+          setVisibilityTrendLoading(false);
         }
-        if (sentimentScore === 0) {
+        
+        if (!sentimentScore || sentimentScore === 0) {
           setSentimentScoreLoading(true);
           setSentimentTrendLoading(true);
+        } else {
+          setSentimentScoreLoading(false);
+          setSentimentTrendLoading(false);
         }
-        if (positionScore === 0) {
+        
+        if (!positionScore || positionScore === 0) {
           setPositionScoreLoading(true);
           setPositionTrendLoading(true);
+        } else {
+          setPositionScoreLoading(false);
+          setPositionTrendLoading(false);
         }
 
         // Set up polling fallback for metrics (every 3 seconds while loading)
@@ -489,16 +500,19 @@ const ProductOverview = () => {
           }
           
           if (visibilityScoreLoading || sentimentScoreLoading || positionScoreLoading) {
-            const { data: updatedProductData } = await supabase
-              .from("products")
+            // Check product_scores table instead of products table
+            const { data: scoresData } = await supabase
+              .from("product_scores")
               .select("*")
-              .eq("id", productId)
-              .single();
+              .eq("product_id", productId)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
             
-            if (updatedProductData) {
-              const visScore = updatedProductData.visibility_score;
-              const sentScore = updatedProductData.sentiment_score;
-              const posScore = updatedProductData.position_score;
+            if (scoresData) {
+              const visScore = scoresData.visibility_score;
+              const sentScore = scoresData.sentiment_score;
+              const posScore = scoresData.position_score;
               
               // Update individual loading states
               if (visScore !== null && visScore > 0) {
@@ -514,24 +528,11 @@ const ProductOverview = () => {
                 setPositionTrendLoading(false);
               }
               
-              // Update product with new scores
+              // Refetch product to get all updated data
               if ((visScore !== null && visScore > 0) || 
                   (sentScore !== null && sentScore > 0) || 
                   (posScore !== null && posScore > 0)) {
-                setProduct(prev => prev ? {
-                  ...prev,
-                  visibility_score: visScore || prev.visibility_score,
-                  sentiment_score: sentScore || prev.sentiment_score,
-                  position_score: posScore || prev.position_score,
-                  currentMetrics: {
-                    visibility: (visScore || prev.currentMetrics.visibilityScore) >= 80 ? "High" : (visScore || prev.currentMetrics.visibilityScore) >= 60 ? "Medium" : "Low",
-                    sentiment: (sentScore || prev.currentMetrics.sentimentScore) >= 70 ? "Positive" : (sentScore || prev.currentMetrics.sentimentScore) >= 30 ? "Neutral" : "Negative",
-                    position: posScore || prev.currentMetrics.position,
-                    visibilityScore: visScore || prev.currentMetrics.visibilityScore,
-                    sentimentScore: sentScore || prev.currentMetrics.sentimentScore,
-                    positionScore: posScore || prev.currentMetrics.positionScore
-                  }
-                } : null);
+                await fetchProduct();
               }
               
               // Clear interval if all metrics are loaded
