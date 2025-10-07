@@ -38,11 +38,9 @@ const TopPerformingProducts = ({ storeId }: TopPerformingProductsProps) => {
       setIsLoading(true);
       
       // Get products for this store with their latest visibility scores
-      const { data: products, error } = await supabase
-        .from('products')
-        .select('id, handle, title, visibility_score')
-        .eq('store_id', storeId)
-        .eq('status', 'active')
+      const { data: scores, error } = await supabase
+        .from('product_scores_with_titles')
+        .select('*')
         .not('visibility_score', 'is', null)
         .order('visibility_score', { ascending: false })
         .limit(5);
@@ -51,14 +49,17 @@ const TopPerformingProducts = ({ storeId }: TopPerformingProductsProps) => {
 
       // For each product, count AI mentions from prompt responses
       const productsWithMentions = await Promise.all(
-        (products || []).map(async (product) => {
+        (scores || []).map(async (score) => {
           const { count } = await supabase
             .from('prompt_responses_with_prompts')
             .select('*', { count: 'exact', head: true })
-            .eq('product_id', product.id);
+            .eq('product_id', score.product_id);
 
           return {
-            ...product,
+            id: score.product_id,
+            handle: score.product_handle || '',
+            title: score.product_title || '',
+            visibility_score: score.visibility_score || 0,
             mention_count: count || 0
           };
         })

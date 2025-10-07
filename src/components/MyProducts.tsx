@@ -577,9 +577,9 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
 
         return {
           ...product,
-          visibility_score: latestScore?.visibility_score || product.visibility_score,
-          sentiment_score: latestScore?.sentiment_score || product.sentiment_score,
-          position_score: latestScore?.position_score || product.position_score,
+          visibility_score: latestScore?.visibility_score || 0,
+          sentiment_score: latestScore?.sentiment_score || 0,
+          position_score: latestScore?.position_score || 0,
         };
       }));
 
