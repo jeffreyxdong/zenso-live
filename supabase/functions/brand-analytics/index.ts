@@ -1,3 +1,13 @@
+/**
+ * Brand Analytics Edge Function
+ * -----------------------------
+ * 1. Generates 5 purchase-intent prompts per store
+ * 2. Generates web-augmented responses for each prompt
+ * 3. Stores responses in brand_prompt_responses
+ * 4. Combines all responses → single brand visibility score
+ * 5. Saves score in brand_scores table
+ */
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
@@ -11,15 +21,17 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// --- Robust helper to safely extract text from Responses API ---
+// Helper to safely extract text from OpenAI Responses API
 function extractText(json: any): string {
-  if (json?.output && Array.isArray(json.output)) {
-    return json.output
-      .map((o: any) => o.content?.map((c: any) => c.text ?? "").join(" "))
-      .join(" ")
-      .trim();
-  }
-  if (json?.output_text) return json.output_text.trim();
+  try {
+    if (json?.output && Array.isArray(json.output)) {
+      return json.output
+        .map((o: any) => (Array.isArray(o.content) ? o.content.map((c: any) => c.text ?? "").join(" ") : ""))
+        .join(" ")
+        .trim();
+    }
+    if (typeof json?.output_text === "string") return json.output_text.trim();
+  } catch (_) {}
   return "";
 }
 
@@ -29,42 +41,44 @@ serve(async (req) => {
   }
 
   try {
+    // === 1. Auth ===
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("Missing authorization header");
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const token = authHeader.replace("Bearer ", "");
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser(token);
+    const { data: userData, error: userError } = await supabase.auth.getUser(token);
+    const user = userData?.user;
     if (userError || !user) throw new Error("Unauthorized");
 
+    // === 2. Input ===
     const { storeId } = await req.json();
     if (!storeId) throw new Error("Store ID is required");
 
-    console.log(`Generating brand analytics for store: ${storeId}`);
+    console.log(`▶ Brand analytics started — storeId=${storeId}`);
 
-    // === Fetch store info
+    // === 3. Fetch store info ===
     const { data: store, error: storeError } = await supabase
       .from("stores")
-      .select("name, website")
+      .select("id, user_id, name, website")
       .eq("id", storeId)
       .eq("user_id", user.id)
       .single();
 
-    if (storeError || !store) throw new Error("Store not found");
-    console.log(`Store found: ${store.name} - ${store.website}`);
+    if (storeError || !store) throw new Error("Store not found or not owned by user");
+    console.log(`✓ Store found: ${store.name} (${store.website})`);
 
-    // === Step 1: Generate purchase-intent prompts
-    const promptGenPrompt = `You are an AI research assistant.
+    // === 4. Generate 5 purchase-intent prompts ===
+    const promptGenPrompt = `
+You are an AI research assistant.
 
 Generate exactly 5 realistic search queries that a customer would type when shopping for products from ${store.website}.
 Rules:
 - Do NOT mention the brand "${store.name}" explicitly.
 - At least one query should strongly allude to ${store.name}, without explicitly mentioning it.
-- Focus on purchase-intent queries. 
-- Output ONLY a JSON array of strings.`;
+- Focus on purchase-intent queries.
+- Output ONLY a JSON array of strings.
+`;
 
     const promptResp = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
@@ -73,15 +87,17 @@ Rules:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-5o",
         input: promptGenPrompt,
       }),
     });
 
-    if (!promptResp.ok) throw new Error(`Prompt generation error: ${promptResp.statusText}`);
-    const promptJson = await promptResp.json();
-    console.log("Prompt JSON:", JSON.stringify(promptJson, null, 2));
+    if (!promptResp.ok) {
+      const t = await promptResp.text();
+      throw new Error(`Prompt generation error ${promptResp.status}: ${t}`);
+    }
 
+    const promptJson = await promptResp.json();
     const generatedText = extractText(promptJson);
     if (!generatedText) throw new Error("No prompt text returned from OpenAI");
 
@@ -96,9 +112,9 @@ Rules:
       console.error("Prompt parse error:", e, "Raw text:", generatedText);
       throw new Error("Failed to parse generated prompts");
     }
-    console.log(`Generated ${prompts.length} prompts`);
 
-    // Store prompts in DB
+    console.log(`✅ Generated ${prompts.length} prompts`);
+
     const { data: insertedPrompts, error: insertError } = await supabase
       .from("brand_prompts")
       .insert(
@@ -111,16 +127,16 @@ Rules:
           active: true,
         })),
       )
-      .select();
+      .select("id, content");
 
-    if (insertError) throw new Error("Failed to store prompts");
-    console.log(`Stored ${insertedPrompts.length} prompts`);
+    if (insertError) throw new Error(`Failed to store prompts: ${insertError.message}`);
+    console.log(`🧾 Stored ${insertedPrompts.length} prompts`);
 
-    // === Step 2: Generate response + score for each prompt
-    const responses: Array<{ promptId: string; responseText: string; visibilityScore: number }> = [];
+    // === 5. Generate web-augmented responses and store each ===
+    const responses: Array<{ promptId: string; responseText: string }> = [];
 
-    for (const prompt of insertedPrompts) {
-      console.log(`Generating response for prompt: ${prompt.content}`);
+    for (const p of insertedPrompts) {
+      console.log(`🌐 Generating response for promptId=${p.id}: "${p.content}"`);
 
       const resp = await fetch("https://api.openai.com/v1/responses", {
         method: "POST",
@@ -129,79 +145,88 @@ Rules:
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
-          tools: [{ type: "web_search_preview" }], // ✅ allow GPT to pull live info
-          input: `${prompt.content}\n\nPlease provide a comprehensive, up-to-date response as if answering a customer's search query. Use current web information if relevant.`,
+          model: "gpt-5o",
+          tools: [{ type: "web_search_preview" }], // ✅ web-augmented
+          input: `${p.content}\n\nProvide a comprehensive, up-to-date answer as if responding to a customer's search query. Use current web information if relevant.`,
         }),
       });
 
       if (!resp.ok) {
-        console.error(`Failed response for prompt ${prompt.id}`);
+        const txt = await resp.text();
+        console.error(`❌ OpenAI error for prompt ${p.id}:`, resp.status, txt);
         continue;
       }
 
       const json = await resp.json();
       const responseText = extractText(json);
-      console.log(`Response generated (${responseText.length} chars)`);
 
-      // Scoring
-      const scoringPrompt = `Analyze the following content and assign a visibility score (0–100) for how prominently the brand "${store.name}" is represented overall.
-
-Rules:
-- If not mentioned at all → 0.
-- If mentioned indirectly or briefly → 1–30.
-- If mentioned moderately or in comparisons → 31–70.
-- If central or heavily positive → 71–100.
-
-Respond ONLY with a number.
-
-Content:
-${responseText}`;
-
-      const scoreResp = await fetch("https://api.openai.com/v1/responses", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${openAIApiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          input: scoringPrompt,
-        }),
-      });
-
-      let visibilityScore = 0;
-      if (scoreResp.ok) {
-        const scoreJson = await scoreResp.json();
-        const scoreText = extractText(scoreJson);
-        visibilityScore = parseInt(scoreText) || 0;
+      if (!responseText?.trim()) {
+        console.error(`⚠️ Empty response text for prompt ${p.id}. Raw JSON:`, JSON.stringify(json, null, 2));
+        continue;
       }
 
-      // Store GPT response
-      const { error: respInsertError } = await supabase.from("brand_prompt_responses").insert({
-        brand_prompt_id: prompt.id,
-        response_text: responseText,
-        model_name: "gpt-4o-mini",
-        visibility_score: visibilityScore,
-      });
-      if (respInsertError) console.error("DB insert error:", respInsertError);
+      const { data: insertedResponse, error: respInsertError } = await supabase
+        .from("brand_prompt_responses")
+        .insert({
+          brand_prompt_id: p.id,
+          response_text: responseText,
+          model_name: "gpt-5o",
+        })
+        .select("id");
 
-      // Update prompt with score
-      await supabase.from("brand_prompts").update({ visibility_score: visibilityScore }).eq("id", prompt.id);
+      if (respInsertError) {
+        console.error("❌ DB insert error:", JSON.stringify(respInsertError, null, 2));
+        continue;
+      }
 
-      responses.push({
-        promptId: prompt.id,
-        responseText,
-        visibilityScore,
-      });
+      console.log(`✓ Stored response row id=${insertedResponse?.[0]?.id ?? "unknown"}`);
+      responses.push({ promptId: p.id, responseText });
     }
 
-    // === Step 3: Aggregate and store brand score
-    const avgVisibility = responses.length
-      ? Math.round(responses.reduce((sum, r) => sum + r.visibilityScore, 0) / responses.length)
-      : 0;
+    // === 6. Combine all responses and compute single visibility score ===
+    if (responses.length === 0) throw new Error("No responses generated; aborting score computation.");
 
-    // Store today's brand score
+    const combinedText = responses.map((r) => r.responseText).join("\n\n---\n\n");
+
+    const scoringPrompt = `
+Analyze the following combined customer-facing responses and assign one overall visibility score (0–100) for how prominently the brand "${store.name}" is represented across them.
+
+Rules:
+- 0 → brand absent
+- 1–30 → indirect / minimal
+- 31–70 → moderate or mixed presence
+- 71–100 → strong, central, highly positive representation
+
+Respond ONLY with a single number.
+
+Content:
+${combinedText}
+`;
+
+    const scoreResp = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${openAIApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-5o",
+        input: scoringPrompt,
+      }),
+    });
+
+    let avgVisibility = 0;
+    if (scoreResp.ok) {
+      const scoreJson = await scoreResp.json();
+      const scoreText = extractText(scoreJson);
+      avgVisibility = parseInt(scoreText) || 0;
+      console.log(`🎯 Overall brand visibility score: ${avgVisibility}`);
+    } else {
+      const err = await scoreResp.text();
+      console.error("❌ Scoring API error:", err);
+    }
+
+    // === 7. Store today's brand score ===
     const today = new Date().toISOString().split("T")[0];
     const { error: brandScoreError } = await supabase.from("brand_scores").upsert(
       {
@@ -209,29 +234,24 @@ ${responseText}`;
         date: today,
         visibility_score: avgVisibility,
       },
-      {
-        onConflict: "store_id,date",
-      },
+      { onConflict: "store_id,date" },
     );
 
-    if (brandScoreError) {
-      console.error("Error storing brand score:", brandScoreError);
-    }
+    if (brandScoreError) console.error("Error storing brand score:", brandScoreError);
+
+    console.log(`✅ Brand analytics completed successfully for store: ${store.name}`);
 
     return new Response(
       JSON.stringify({
         success: true,
         promptsGenerated: prompts.length,
         responsesGenerated: responses.length,
-        averageVisibility: avgVisibility,
-        responses,
+        visibilityScore: avgVisibility,
       }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (error) {
-    console.error("Error in brand-analytics function:", error);
+    console.error("❌ Error in brand-analytics function:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
