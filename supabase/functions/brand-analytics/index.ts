@@ -74,7 +74,6 @@ Rules:
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
-        tools: [{ type: "web_search_preview" }],
         input: promptGenPrompt,
       }),
     });
@@ -130,8 +129,9 @@ Rules:
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "gpt-5o",
-          input: `${prompt.content}\n\nPlease provide a comprehensive response as if answering a customer's search query.`,
+          model: "gpt-4o-mini",
+          tools: [{ type: "web_search_preview" }], // ✅ allow GPT to pull live info
+          input: `${prompt.content}\n\nPlease provide a comprehensive, up-to-date response as if answering a customer's search query. Use current web information if relevant.`,
         }),
       });
 
@@ -165,7 +165,7 @@ ${responseText}`;
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "gpt-5o",
+          model: "gpt-4o-mini",
           input: scoringPrompt,
         }),
       });
@@ -182,6 +182,7 @@ ${responseText}`;
         brand_prompt_id: prompt.id,
         response_text: responseText,
         model_name: "gpt-4o-mini",
+        visibility_score: visibilityScore,
       });
       if (respInsertError) console.error("DB insert error:", respInsertError);
 
