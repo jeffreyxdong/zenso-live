@@ -423,6 +423,30 @@ const ProductOverview = () => {
 
         setProduct(enhancedProduct);
         
+        // Check if metrics are still loading (null scores indicate processing)
+        if (visibilityScore === 0 || sentimentScore === 0 || positionScore === 0) {
+          setMetricsLoading(true);
+        }
+
+        // Set up polling fallback for metrics (every 3 seconds while loading)
+        const metricsInterval = setInterval(async () => {
+          if (metricsLoading) {
+            const { data: updatedProductData } = await supabase
+              .from("products")
+              .select("*")
+              .eq("id", productId)
+              .single();
+            
+            if (updatedProductData && 
+                updatedProductData.visibility_score !== null &&
+                updatedProductData.sentiment_score !== null &&
+                updatedProductData.position_score !== null) {
+              setMetricsLoading(false);
+              clearInterval(metricsInterval);
+            }
+          }
+        }, 3000);
+
         // Set up real-time subscription to listen for score updates
         const scoresSubscription = supabase
           .channel('product-scores-changes')
@@ -466,6 +490,22 @@ const ProductOverview = () => {
           )
           .subscribe();
 
+        // Set up polling fallback for recommendations (every 3 seconds while loading)
+        const recsInterval = setInterval(async () => {
+          if (recommendationsLoading) {
+            const { data: updatedRecs } = await supabase
+              .from("product_recommendations")
+              .select("*")
+              .eq("product_id", productId)
+              .order("created_at", { ascending: false });
+            
+            if (updatedRecs && updatedRecs.length > 0) {
+              setRecommendationsLoading(false);
+              clearInterval(recsInterval);
+            }
+          }
+        }, 3000);
+
         // Set up real-time subscription for recommendations
         const recommendationsSubscription = supabase
           .channel('product-recommendations-changes')
@@ -479,6 +519,7 @@ const ProductOverview = () => {
             },
             async (payload) => {
               console.log('Recommendations updated:', payload);
+              setRecommendationsLoading(false);
               // Refetch recommendations
               const { data: updatedRecs } = await supabase
                 .from("product_recommendations")
@@ -496,8 +537,10 @@ const ProductOverview = () => {
           )
           .subscribe();
 
-        // Cleanup subscriptions on unmount
+        // Cleanup subscriptions and intervals on unmount
         return () => {
+          clearInterval(metricsInterval);
+          clearInterval(recsInterval);
           scoresSubscription.unsubscribe();
           recommendationsSubscription.unsubscribe();
         };
@@ -720,37 +763,34 @@ Stay focused during calls with noise cancellation and enjoy music during breaks 
 
       {/* Metrics Cards */}
       {metricsLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Loading metrics...</span>
-                </div>
-                <div className="h-12 bg-muted animate-pulse rounded" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <Card>
+          <CardContent className="p-12">
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              <div className="text-center space-y-2">
+                <p className="font-medium">Calculating product metrics...</p>
+                <p className="text-sm text-muted-foreground">This may take a moment</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       ) : (
         <ProductMetrics metrics={product.currentMetrics} />
       )}
 
       {/* Charts */}
       {metricsLoading ? (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <Card key={i}>
-              <CardHeader>
-                <div className="h-5 w-32 bg-muted animate-pulse rounded" />
-              </CardHeader>
-              <CardContent>
-                <div className="h-[200px] bg-muted animate-pulse rounded" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <Card>
+          <CardContent className="p-12">
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              <div className="text-center space-y-2">
+                <p className="font-medium">Loading performance trends...</p>
+                <p className="text-sm text-muted-foreground">This may take a moment</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       ) : (
         <ProductCharts 
           visibilityData={product.visibilityHistory}
@@ -790,16 +830,12 @@ Stay focused during calls with noise cancellation and enjoy music during breaks 
         </CardHeader>
         <CardContent>
           {recommendationsLoading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="p-4 border rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                    <div className="h-4 w-48 bg-muted animate-pulse rounded" />
-                  </div>
-                  <div className="h-3 w-full bg-muted animate-pulse rounded" />
-                </div>
-              ))}
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              <div className="text-center space-y-2">
+                <p className="font-medium">Generating AI optimization suggestions...</p>
+                <p className="text-sm text-muted-foreground">This may take a moment</p>
+              </div>
             </div>
           ) : product.recommendations && product.recommendations.length > 0 ? (
             <div className="space-y-4">
