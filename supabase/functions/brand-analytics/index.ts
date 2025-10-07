@@ -66,7 +66,7 @@ Rules:
 - Focus on purchase-intent queries. 
 - Output ONLY a JSON array of strings.`;
 
-    const resp = await fetch("https://api.openai.com/v1/responses", {
+    const promptResp = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${openAIApiKey}`,
@@ -74,9 +74,8 @@ Rules:
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
-        tools: [{ type: "web_search_preview" }], // ✅ allow web augmentation here
-        input: `${prompt.content}\n\nPlease provide a comprehensive, web-informed response as if answering a customer's search query. 
-Use the latest web information if relevant.`,
+        tools: [{ type: "web_search_preview" }],
+        input: promptGenPrompt,
       }),
     });
 
