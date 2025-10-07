@@ -75,20 +75,16 @@ const generateScoreHistoryFromData = (
   const today = new Date();
   const result = [];
 
-  // Sort oldest → newest
+  // Sort scores oldest → newest
   const sorted = [...(scores || [])].sort(
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   );
 
-  // Determine latest score value
-  const lastKnownValue = sorted.length > 0 ? (sorted[sorted.length - 1][field] ?? 0) : 0;
-
-  // Normalize DB timestamps to date strings
+  // Build a map of existing date → value
   const dateMap = new Map<string, number>();
   for (const s of sorted) {
-    const d = new Date(s.created_at);
-    const dateKey = d.toISOString().split("T")[0];
-    dateMap.set(dateKey, s[field]);
+    const key = new Date(s.created_at).toISOString().split("T")[0];
+    dateMap.set(key, s[field]);
   }
 
   // Generate exactly 7 days: today → +6
@@ -97,13 +93,10 @@ const generateScoreHistoryFromData = (
     date.setDate(today.getDate() + i);
     const dateKey = date.toISOString().split("T")[0];
 
-    // Use value if it exists for that date; otherwise project latest known
-    const value = dateMap.has(dateKey) ? dateMap.get(dateKey) : lastKnownValue || 0;
+    // Only plot if score exists for that date
+    const value = dateMap.has(dateKey) ? dateMap.get(dateKey)! : null;
 
-    result.push({
-      date: dateKey,
-      value,
-    });
+    result.push({ date: dateKey, value });
   }
 
   return result;
