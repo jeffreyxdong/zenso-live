@@ -154,7 +154,7 @@ Rules:
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "gpt-5o", // ✅ latest model with live browsing
+          model: "gpt-4o", // ✅ latest model with live browsing
           tools: [{ type: "web_search_preview" }],
           input: `
 The current date is ${new Date().toISOString().split("T")[0]}.
