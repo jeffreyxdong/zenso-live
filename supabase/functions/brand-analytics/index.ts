@@ -15,9 +15,7 @@ const corsHeaders = {
 function extractText(json: any): string {
   if (json?.output && Array.isArray(json.output)) {
     return json.output
-      .map((o: any) =>
-        o.content?.map((c: any) => (c.text ?? "")).join(" ")
-      )
+      .map((o: any) => o.content?.map((c: any) => c.text ?? "").join(" "))
       .join(" ")
       .trim();
   }
@@ -36,7 +34,10 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser(token);
     if (userError || !user) throw new Error("Unauthorized");
 
     const { storeId } = await req.json();
@@ -61,13 +62,14 @@ serve(async (req) => {
 Generate exactly 5 realistic search queries that a customer would type when shopping for products from ${store.website}.
 Rules:
 - Do NOT mention the brand "${store.name}" explicitly.
-- Focus on purchase-intent queries (comparisons, reviews, best options, reliability, deals).
+- At least one query should strongly allude to ${store.name}, without explicitly mentioning it.
+- Focus on purchase-intent queries. 
 - Output ONLY a JSON array of strings.`;
 
     const promptResp = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${openAIApiKey}`,
+        Authorization: `Bearer ${openAIApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -85,7 +87,10 @@ Rules:
 
     let prompts: string[] = [];
     try {
-      const cleaned = generatedText.replace(/```json\n?/g, "").replace(/```/g, "").trim();
+      const cleaned = generatedText
+        .replace(/```json\n?/g, "")
+        .replace(/```/g, "")
+        .trim();
       prompts = JSON.parse(cleaned);
     } catch (e) {
       console.error("Prompt parse error:", e, "Raw text:", generatedText);
@@ -104,7 +109,7 @@ Rules:
           brand_name: store.name,
           status: "active",
           active: true,
-        }))
+        })),
       )
       .select();
 
@@ -120,7 +125,7 @@ Rules:
       const resp = await fetch("https://api.openai.com/v1/responses", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${openAIApiKey}`,
+          Authorization: `Bearer ${openAIApiKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -155,7 +160,7 @@ ${responseText}`;
       const scoreResp = await fetch("https://api.openai.com/v1/responses", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${openAIApiKey}`,
+          Authorization: `Bearer ${openAIApiKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -172,21 +177,16 @@ ${responseText}`;
       }
 
       // Store GPT response
-      const { error: respInsertError } = await supabase
-        .from("brand_prompt_responses")
-        .insert({
-          brand_prompt_id: prompt.id,
-          response_text: responseText,
-          model_name: "gpt-4o-mini",
-          visibility_score: visibilityScore,
-        });
+      const { error: respInsertError } = await supabase.from("brand_prompt_responses").insert({
+        brand_prompt_id: prompt.id,
+        response_text: responseText,
+        model_name: "gpt-4o-mini",
+        visibility_score: visibilityScore,
+      });
       if (respInsertError) console.error("DB insert error:", respInsertError);
 
       // Update prompt with score
-      await supabase
-        .from("brand_prompts")
-        .update({ visibility_score: visibilityScore })
-        .eq("id", prompt.id);
+      await supabase.from("brand_prompts").update({ visibility_score: visibilityScore }).eq("id", prompt.id);
 
       responses.push({
         promptId: prompt.id,
@@ -201,31 +201,34 @@ ${responseText}`;
       : 0;
 
     // Store today's brand score
-    const today = new Date().toISOString().split('T')[0];
-    const { error: brandScoreError } = await supabase
-      .from('brand_scores')
-      .upsert({
+    const today = new Date().toISOString().split("T")[0];
+    const { error: brandScoreError } = await supabase.from("brand_scores").upsert(
+      {
         store_id: storeId,
         date: today,
         visibility_score: avgVisibility,
-      }, {
-        onConflict: 'store_id,date'
-      });
+      },
+      {
+        onConflict: "store_id,date",
+      },
+    );
 
     if (brandScoreError) {
-      console.error('Error storing brand score:', brandScoreError);
+      console.error("Error storing brand score:", brandScoreError);
     }
 
-    return new Response(JSON.stringify({
-      success: true,
-      promptsGenerated: prompts.length,
-      responsesGenerated: responses.length,
-      averageVisibility: avgVisibility,
-      responses,
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-
+    return new Response(
+      JSON.stringify({
+        success: true,
+        promptsGenerated: prompts.length,
+        responsesGenerated: responses.length,
+        averageVisibility: avgVisibility,
+        responses,
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   } catch (error) {
     console.error("Error in brand-analytics function:", error);
     return new Response(JSON.stringify({ error: error.message }), {
