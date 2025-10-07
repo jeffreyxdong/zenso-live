@@ -282,15 +282,25 @@ const ProductOverview = () => {
         const { data: userData, error: userError } = await supabase.auth.getUser();
         if (userError) throw userError;
 
-        // Fetch the actual product from Supabase
+        // Fetch the actual product from Supabase with store filter
         const { data: productData, error: productError } = await supabase
           .from("products")
           .select("*")
           .eq("id", productId)
-          .eq("user_id", userData.user.id)
-          .single();
+          .maybeSingle();
 
         if (productError) throw productError;
+        
+        if (!productData) {
+          console.error("Product not found");
+          toast({
+            title: "Product not found",
+            description: "The product you're looking for doesn't exist",
+            variant: "destructive",
+          });
+          navigate("/dashboard?tab=products-overview");
+          return;
+        }
 
         // Fetch the most recent 7 days of product scores
         const sevenDaysAgo = new Date();
@@ -548,131 +558,11 @@ const ProductOverview = () => {
             async (payload) => {
               console.log('Product scores updated:', payload);
               
-              // Use the payload data directly instead of refetching
-              if (payload.new) {
-                const newScore = payload.new as any;
-                const visScore = newScore.visibility_score || 0;
-                const sentScore = newScore.sentiment_score || 0;
-                const posScore = newScore.position_score || 0;
-                
-                // Update individual loading states
-                if (visScore > 0) {
-                  setVisibilityScoreLoading(false);
-                  setVisibilityTrendLoading(false);
-                }
-                if (sentScore > 0) {
-                  setSentimentScoreLoading(false);
-                  setSentimentTrendLoading(false);
-                }
-                if (posScore > 0) {
-                  setPositionScoreLoading(false);
-                  setPositionTrendLoading(false);
-                }
-                
-                // Update product with new scores
-                setProduct(prev => prev ? {
-                  ...prev,
-                  visibility_score: visScore,
-                  sentiment_score: sentScore,
-                  position_score: posScore,
-                  currentMetrics: {
-                    visibility: visScore >= 80 ? "High" : visScore >= 60 ? "Medium" : "Low",
-                    sentiment: sentScore >= 70 ? "Positive" : sentScore >= 30 ? "Neutral" : "Negative",
-                    position: posScore || 5,
-                    visibilityScore: visScore,
-                    sentimentScore: sentScore,
-                    positionScore: posScore
-                  }
-                } : null);
-              }
+              // Refetch the product to get updated scores
+              fetchProduct();
             }
           )
           .subscribe();
-
-        // Set up polling fallback for recommendations (every 3 seconds while loading)
-        let recsAttempts = 0;
-        const recsInterval = setInterval(async () => {
-          recsAttempts++;
-          if (recsAttempts >= maxAttempts) {
-            setRecommendationsLoading(false);
-            clearInterval(recsInterval);
-            return;
-          }
-          
-          if (recommendationsLoading) {
-            const { data: updatedRecs } = await supabase
-              .from("product_recommendations")
-              .select("*")
-              .eq("product_id", productId)
-              .order("created_at", { ascending: false });
-            
-            if (updatedRecs && updatedRecs.length > 0) {
-              setRecommendationsLoading(false);
-              clearInterval(recsInterval);
-              setProduct(prev => prev ? {
-                ...prev,
-                recommendations: updatedRecs as Recommendation[]
-              } : null);
-            }
-          }
-        }, 3000);
-
-        // Set up polling fallback for sources (every 3 seconds while loading)
-        let sourcesAttempts = 0;
-        const sourcesInterval = setInterval(async () => {
-          sourcesAttempts++;
-          if (sourcesAttempts >= maxAttempts) {
-            setSourcesLoading(false);
-            clearInterval(sourcesInterval);
-            return;
-          }
-          
-          if (sourcesLoading) {
-            const { data: promptsData } = await supabase
-              .from("prompts")
-              .select("id")
-              .eq("product_id", productId)
-              .limit(1);
-
-            if (promptsData && promptsData.length > 0) {
-              const { data, error: promptResponsesError } = await supabase
-                .from("prompt_responses")
-                .select("sources_final")
-                .eq("prompt_id", promptsData[0].id)
-                .order("created_at", { ascending: false })
-                .limit(1);
-
-              if (!promptResponsesError && data && data.length > 0 && data[0].sources_final) {
-                const sourcesFinal = data[0].sources_final as any;
-                if (Array.isArray(sourcesFinal) && sourcesFinal.length > 0) {
-                  setSourcesLoading(false);
-                  clearInterval(sourcesInterval);
-                  
-                  // Parse and update sources
-                  const domainCounts = new Map<string, number>();
-                  sourcesFinal.forEach((item: any) => {
-                    const domain = typeof item === 'string' ? item : (item.domain || item.name || "Unknown");
-                    domainCounts.set(domain, (domainCounts.get(domain) || 0) + 1);
-                  });
-                  
-                  const totalSources = sourcesFinal.length;
-                  const parsedSources = Array.from(domainCounts.entries()).map(([domain, count]) => ({
-                    domain: domain,
-                    used_percentage: Math.round((count / totalSources) * 100),
-                    avg_citations: count,
-                    type: "Other",
-                    is_own_domain: false
-                  }));
-
-                  setProduct(prev => prev ? {
-                    ...prev,
-                    sources: parsedSources
-                  } : null);
-                }
-              }
-            }
-          }
-        }, 3000);
 
         // Set up real-time subscription for recommendations
         const recommendationsSubscription = supabase
@@ -687,27 +577,15 @@ const ProductOverview = () => {
             },
             async (payload) => {
               console.log('Recommendations updated:', payload);
-              setRecommendationsLoading(false);
-              // Refetch recommendations
-              const { data: updatedRecs } = await supabase
-                .from("product_recommendations")
-                .select("*")
-                .eq("product_id", productId)
-                .order("created_at", { ascending: false });
-              
-              if (updatedRecs) {
-                setProduct(prev => prev ? {
-                  ...prev,
-                  recommendations: updatedRecs as Recommendation[]
-                } : null);
-              }
+              // Refetch product to get updated recommendations
+              fetchProduct();
             }
           )
           .subscribe();
 
         // Set up real-time subscription for prompt responses (sources)
         const promptResponsesSubscription = supabase
-          .channel(`prompt-responses-${productId}`)
+          .channel(`prompt-responses-product-${productId}`)
           .on(
             'postgres_changes',
             {
@@ -717,47 +595,8 @@ const ProductOverview = () => {
             },
             async (payload) => {
               console.log('Prompt responses updated:', payload);
-              
-              // Check if this response belongs to our product
-              if (payload.new) {
-                const newResponse = payload.new as any;
-                
-                // Get the prompt to verify it's for our product
-                const { data: promptData } = await supabase
-                  .from("prompts")
-                  .select("id, product_id")
-                  .eq("id", newResponse.prompt_id)
-                  .single();
-                
-                if (promptData && promptData.product_id === productId && newResponse.sources_final) {
-                  const sourcesFinal = newResponse.sources_final;
-                  
-                  if (Array.isArray(sourcesFinal) && sourcesFinal.length > 0) {
-                    setSourcesLoading(false);
-                    
-                    // Parse and update sources
-                    const domainCounts = new Map<string, number>();
-                    sourcesFinal.forEach((item: any) => {
-                      const domain = typeof item === 'string' ? item : (item.domain || item.name || "Unknown");
-                      domainCounts.set(domain, (domainCounts.get(domain) || 0) + 1);
-                    });
-                    
-                    const totalSources = sourcesFinal.length;
-                    const parsedSources = Array.from(domainCounts.entries()).map(([domain, count]) => ({
-                      domain: domain,
-                      used_percentage: Math.round((count / totalSources) * 100),
-                      avg_citations: count,
-                      type: "Other",
-                      is_own_domain: false
-                    }));
-
-                    setProduct(prev => prev ? {
-                      ...prev,
-                      sources: parsedSources
-                    } : null);
-                  }
-                }
-              }
+              // Refetch product to get updated sources
+              fetchProduct();
             }
           )
           .subscribe();
@@ -765,8 +604,6 @@ const ProductOverview = () => {
         // Cleanup subscriptions and intervals on unmount
         return () => {
           clearInterval(metricsInterval);
-          clearInterval(recsInterval);
-          clearInterval(sourcesInterval);
           supabase.removeChannel(scoresSubscription);
           supabase.removeChannel(recommendationsSubscription);
           supabase.removeChannel(promptResponsesSubscription);
