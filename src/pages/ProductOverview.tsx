@@ -80,23 +80,26 @@ const generateScoreHistoryFromData = (
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   );
 
-  // Build a map of existing date → value
-  const dateMap = new Map<string, number>();
-  for (const s of sorted) {
-    const key = new Date(s.created_at).toISOString().split("T")[0];
-    dateMap.set(key, s[field]);
+  // If we have a first score, add it at its actual date
+  if (sorted.length > 0 && sorted[0][field] != null) {
+    const firstScoreDate = new Date(sorted[0].created_at).toISOString().split("T")[0];
+    result.push({ date: firstScoreDate, value: sorted[0][field] });
   }
 
-  // Generate exactly 7 days: today → +6
+  // Generate exactly 7 days: today → +6 for forward-looking dates
   for (let i = 0; i < 7; i++) {
     const date = new Date(today);
     date.setDate(today.getDate() + i);
     const dateKey = date.toISOString().split("T")[0];
 
-    // Only plot if score exists for that date
-    const value = dateMap.has(dateKey) ? dateMap.get(dateKey)! : null;
+    // Check if we have a score for this date
+    const scoreForDate = sorted.find(s => new Date(s.created_at).toISOString().split("T")[0] === dateKey);
+    const value = scoreForDate?.[field] ?? null;
 
-    result.push({ date: dateKey, value });
+    // Only add if not already added (avoid duplicate first score)
+    if (!result.some(r => r.date === dateKey)) {
+      result.push({ date: dateKey, value });
+    }
   }
 
   return result;
@@ -165,8 +168,8 @@ const ProductOverview = () => {
             .order("created_at", { ascending: false })
             .limit(1);
 
-          if (responses?.[0]?.sources_final) {
-            const raw = responses[0].sources_final;
+        if (responses?.[0]?.sources_final) {
+            const raw = responses[0].sources_final as any[];
             const counts = new Map<string, number>();
             raw.forEach((r: any) => {
               const domain = typeof r === "string" ? r : r.domain || "Unknown";
@@ -194,13 +197,13 @@ const ProductOverview = () => {
         const getSentimentLevel = (s: number) => (s >= 70 ? "Positive" : s >= 30 ? "Neutral" : "Negative");
 
         const updatedProduct: Product = {
-          ...productData,
+          ...(productData as any),
           visibilityHistory: generateScoreHistoryFromData(scores || [], "visibility_score"),
           sentimentHistory: generateScoreHistoryFromData(scores || [], "sentiment_score"),
           positionHistory: generateScoreHistoryFromData(scores || [], "position_score"),
           suggestions: [],
           sources,
-          recommendations: recs || [],
+          recommendations: (recs || []) as Recommendation[],
           currentMetrics: {
             visibility: getVisibilityLevel(visibilityScore),
             sentiment: getSentimentLevel(sentimentScore),
@@ -240,9 +243,17 @@ const ProductOverview = () => {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "product_scores", filter: `product_id=eq.${productId}` },
-        (payload) => {
-          const newScore = payload.new;
+        async (payload) => {
+          const newScore = payload.new as any;
           if (!newScore) return;
+          
+          // Refetch all scores to update the charts
+          const { data: updatedScores } = await supabase
+            .from("product_scores")
+            .select("*")
+            .eq("product_id", productId)
+            .order("created_at", { ascending: true });
+          
           setProduct((prev) =>
             prev
               ? {
@@ -250,6 +261,9 @@ const ProductOverview = () => {
                   visibility_score: newScore.visibility_score,
                   sentiment_score: newScore.sentiment_score,
                   position_score: newScore.position_score,
+                  visibilityHistory: generateScoreHistoryFromData(updatedScores || [], "visibility_score"),
+                  sentimentHistory: generateScoreHistoryFromData(updatedScores || [], "sentiment_score"),
+                  positionHistory: generateScoreHistoryFromData(updatedScores || [], "position_score"),
                   currentMetrics: {
                     ...prev.currentMetrics,
                     visibilityScore: newScore.visibility_score,
@@ -280,7 +294,7 @@ const ProductOverview = () => {
             .select("*")
             .eq("product_id", productId)
             .order("created_at", { ascending: false });
-          setProduct((p) => (p ? { ...p, recommendations: recs || [] } : p));
+          setProduct((p) => (p ? { ...p, recommendations: (recs || []) as Recommendation[] } : p));
           setRecommendationsLoading(false);
         },
       )
@@ -299,7 +313,7 @@ const ProductOverview = () => {
           .limit(1);
 
         if (responses?.[0]?.sources_final) {
-          const raw = responses[0].sources_final;
+          const raw = responses[0].sources_final as any[];
           const counts = new Map<string, number>();
           raw.forEach((r: any) => {
             const domain = typeof r === "string" ? r : r.domain || "Unknown";
