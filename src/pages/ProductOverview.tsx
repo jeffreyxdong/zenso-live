@@ -72,18 +72,38 @@ const generateScoreHistoryFromData = (
   scores: any[],
   field: "visibility_score" | "sentiment_score" | "position_score",
 ) => {
-  const today = new Date();
   const result = [];
 
-  for (let i = 6; i >= 0; i--) {
+  // Sort chronologically just in case
+  const sorted = [...(scores || [])].sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+  );
+
+  const today = new Date();
+  const lastKnownValue = sorted.length ? sorted[sorted.length - 1][field] : null;
+
+  // Generate 14 days (7 past + today + 6 future)
+  for (let i = -7; i <= 6; i++) {
     const date = new Date(today);
-    date.setDate(today.getDate() - i);
-    const matching = scores.find((s) => new Date(s.created_at).toDateString() === date.toDateString());
+    date.setDate(today.getDate() + i);
+
+    // Try to match score from DB for that day
+    const matching = sorted.find((s) => new Date(s.created_at).toDateString() === date.toDateString());
+
+    let value = null;
+    if (matching) {
+      value = matching[field];
+    } else if (i >= 0 && lastKnownValue !== null) {
+      // Project current value forward
+      value = lastKnownValue;
+    }
+
     result.push({
       date: date.toISOString().split("T")[0],
-      value: matching ? matching[field] : null,
+      value,
     });
   }
+
   return result;
 };
 
