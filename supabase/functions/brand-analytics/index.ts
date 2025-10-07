@@ -189,7 +189,7 @@ Instructions:
         .insert({
           brand_prompt_id: p.id,
           response_text: responseText,
-          model_name: "gpt-4o-mini",
+          model_name: "gpt-4o",
         })
         .select("id");
 
@@ -229,7 +229,7 @@ ${combinedText}
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-5o", // ✅ use up-to-date reasoning model
+        model: "gpt-4o", // ✅ use up-to-date reasoning model
         input: scoringPrompt,
       }),
     });
