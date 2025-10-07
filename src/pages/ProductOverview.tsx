@@ -72,34 +72,36 @@ const generateScoreHistoryFromData = (
   scores: any[],
   field: "visibility_score" | "sentiment_score" | "position_score",
 ) => {
+  const today = new Date();
   const result = [];
 
-  // Sort chronologically just in case
+  // Sort oldest → newest
   const sorted = [...(scores || [])].sort(
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   );
 
-  const today = new Date();
-  const lastKnownValue = sorted.length ? sorted[sorted.length - 1][field] : null;
+  // Determine latest score value
+  const lastKnownValue = sorted.length > 0 ? (sorted[sorted.length - 1][field] ?? 0) : 0;
 
-  // Generate 14 days (7 past + today + 6 future)
-  for (let i = -7; i <= 6; i++) {
+  // Normalize DB timestamps to date strings
+  const dateMap = new Map<string, number>();
+  for (const s of sorted) {
+    const d = new Date(s.created_at);
+    const dateKey = d.toISOString().split("T")[0];
+    dateMap.set(dateKey, s[field]);
+  }
+
+  // Generate exactly 7 days: today → +6
+  for (let i = 0; i < 7; i++) {
     const date = new Date(today);
     date.setDate(today.getDate() + i);
+    const dateKey = date.toISOString().split("T")[0];
 
-    // Try to match score from DB for that day
-    const matching = sorted.find((s) => new Date(s.created_at).toDateString() === date.toDateString());
-
-    let value = null;
-    if (matching) {
-      value = matching[field];
-    } else if (i >= 0 && lastKnownValue !== null) {
-      // Project current value forward
-      value = lastKnownValue;
-    }
+    // Use value if it exists for that date; otherwise project latest known
+    const value = dateMap.has(dateKey) ? dateMap.get(dateKey) : lastKnownValue || 0;
 
     result.push({
-      date: date.toISOString().split("T")[0],
+      date: dateKey,
       value,
     });
   }
