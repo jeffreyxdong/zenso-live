@@ -362,11 +362,15 @@ const ProductOverview = () => {
         // Check if sources are loading (no sources yet)
         if (sources.length === 0) {
           setSourcesLoading(true);
+        } else {
+          setSourcesLoading(false);
         }
 
         // Check if recommendations are loading (no recommendations yet)
         if (!recommendationsData || recommendationsData.length === 0) {
           setRecommendationsLoading(true);
+        } else {
+          setRecommendationsLoading(false);
         }
 
         // Use the latest scores or fallback to product table scores
@@ -512,6 +516,7 @@ const ProductOverview = () => {
             
             if (updatedRecs && updatedRecs.length > 0) {
               setRecommendationsLoading(false);
+              clearInterval(recsInterval);
               setProduct(prev => prev ? {
                 ...prev,
                 recommendations: updatedRecs as Recommendation[]
@@ -541,6 +546,7 @@ const ProductOverview = () => {
                 const sourcesFinal = data[0].sources_final as any;
                 if (Array.isArray(sourcesFinal) && sourcesFinal.length > 0) {
                   setSourcesLoading(false);
+                  clearInterval(sourcesInterval);
                   
                   // Parse and update sources
                   const domainCounts = new Map<string, number>();
