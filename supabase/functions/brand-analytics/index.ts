@@ -154,9 +154,19 @@ Rules:
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
-          tools: [{ type: "web_search_preview" }], // ✅ web-augmented
-          input: `${p.content}\n\nProvide a comprehensive, up-to-date answer as if responding to a customer's search query. Use current web information if relevant.`,
+          model: "gpt-5o", // ✅ latest model with live browsing
+          tools: [{ type: "web_search_preview" }],
+          input: `
+The current date is ${new Date().toISOString().split("T")[0]}.
+Search the web for the most recent, up-to-date information available (from 2024–2025) before answering.
+
+Query: ${p.content}
+
+Instructions:
+- Always retrieve current information from the web before responding.
+- Do NOT rely on old training data.
+- Provide a concise but comprehensive, real-world answer as if responding to a customer's search query.
+`,
         }),
       });
 
