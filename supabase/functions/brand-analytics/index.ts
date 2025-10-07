@@ -252,6 +252,7 @@ ${combinedText}
     const { error: brandScoreError } = await supabase.from("brand_scores").upsert(
       {
         store_id: storeId,
+        store_name: store.name,
         date: today,
         visibility_score: avgVisibility,
       },

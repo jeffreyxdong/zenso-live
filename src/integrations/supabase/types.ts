@@ -170,8 +170,8 @@ export type Database = {
           created_at: string
           date: string
           id: string
-          sentiment_score: number | null
           store_id: string
+          store_name: string
           updated_at: string
           visibility_score: number | null
         }
@@ -179,8 +179,8 @@ export type Database = {
           created_at?: string
           date: string
           id?: string
-          sentiment_score?: number | null
           store_id: string
+          store_name: string
           updated_at?: string
           visibility_score?: number | null
         }
@@ -188,8 +188,8 @@ export type Database = {
           created_at?: string
           date?: string
           id?: string
-          sentiment_score?: number | null
           store_id?: string
+          store_name?: string
           updated_at?: string
           visibility_score?: number | null
         }
