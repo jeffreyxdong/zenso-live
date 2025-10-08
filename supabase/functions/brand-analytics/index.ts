@@ -249,17 +249,25 @@ ${combinedText}
 
     // === 7. Store today's brand score ===
     const today = new Date().toISOString().split("T")[0];
-    const { error: brandScoreError } = await supabase.from("brand_scores").upsert(
-      {
-        store_id: storeId,
-        store_name: store.name,
-        date: today,
-        visibility_score: avgVisibility,
-      },
-      { onConflict: "store_id,date" },
-    );
 
-    if (brandScoreError) console.error("Error storing brand score:", brandScoreError);
+    const { data: brandScoreData, error: brandScoreError } = await supabase
+      .from("brand_scores")
+      .upsert(
+        {
+          store_id: storeId,
+          store_name: store.name, // ✅ required by schema
+          date: today,
+          visibility_score: avgVisibility,
+        },
+        { onConflict: "store_id,date" }, // ✅ matches your table’s unique constraint
+      )
+      .select("id, visibility_score"); // optional: returns inserted/updated row for logging
+
+    if (brandScoreError) {
+      console.error("❌ Error storing brand score:", brandScoreError);
+    } else {
+      console.log("✅ Brand score stored:", brandScoreData);
+    }
 
     console.log(`✅ Brand analytics completed successfully for store: ${store.name}`);
 
