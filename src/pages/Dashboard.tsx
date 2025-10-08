@@ -15,6 +15,7 @@ import CompetitiveBenchmark from "@/components/overview/CompetitiveBenchmark";
 import { BrandCard } from "@/components/overview/BrandCard";
 import { useNavigate, useLocation, useOutletContext } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { formatInTimeZone } from "date-fns-tz";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -153,8 +154,14 @@ const Dashboard = () => {
       }
 
       // Generate new analytics
+      const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const userDate = formatInTimeZone(new Date(), userTimeZone, 'yyyy-MM-dd');
+      
       const { data, error } = await supabase.functions.invoke('brand-analytics', {
-        body: { storeId: activeStore.id }
+        body: { 
+          storeId: activeStore.id,
+          userDate: userDate
+        }
       });
 
       if (error) {

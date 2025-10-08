@@ -61,10 +61,13 @@ serve(async (req) => {
     if (userError || !user) throw new Error("Unauthorized");
 
     // === 2. Input ===
-    const { storeId } = await req.json();
+    const { storeId, userDate } = await req.json();
     if (!storeId) throw new Error("Store ID is required");
 
     console.log(`▶ Brand analytics started — storeId=${storeId}`);
+
+    // Use user's date if provided, otherwise fall back to UTC date
+    const today = userDate || new Date().toISOString().split("T")[0];
 
     // === 3. Fetch store info ===
     const { data: store, error: storeError } = await supabase
@@ -248,8 +251,6 @@ ${combinedText}
     }
 
     // === 7. Store today's brand score ===
-    const today = new Date().toISOString().split("T")[0];
-
     const { data: brandScoreData, error: brandScoreError } = await supabase
       .from("brand_scores")
       .upsert(
