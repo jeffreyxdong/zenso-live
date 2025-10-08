@@ -230,7 +230,10 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
                 formatter={(value) => [`${value}%`, 'Visibility']}
                 labelFormatter={(label, payload) => {
                   if (payload && payload[0] && payload[0].payload.date) {
-                    return new Date(payload[0].payload.date).toLocaleDateString();
+                    const dateStr = payload[0].payload.date;
+                    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                    const date = new Date(dateStr + 'T00:00:00');
+                    return formatInTimeZone(date, userTimeZone, 'MMM dd, yyyy');
                   }
                   return label;
                 }}
