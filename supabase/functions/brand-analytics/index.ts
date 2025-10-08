@@ -90,6 +90,7 @@ Rules:
 - At least one query should strongly allude to ${store.name}, without explicitly mentioning it.
 - Focus on purchase-intent queries.
 - Output ONLY a JSON array of strings.
+- However, you may implicitly reflect its positioning, such as its origin, product type, quality level, or target customer.
 `;
 
     const promptResp = await fetch("https://api.openai.com/v1/responses", {
