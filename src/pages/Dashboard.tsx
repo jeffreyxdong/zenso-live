@@ -26,6 +26,7 @@ const Dashboard = () => {
   });
   const [companyName, setCompanyName] = useState("BrandRefs");
   const [brandVisibility, setBrandVisibility] = useState<number | null>(null);
+  const [brandVisibilityUpdatedAt, setBrandVisibilityUpdatedAt] = useState<string | null>(null);
   const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
   const [brandRecommendations, setBrandRecommendations] = useState<any[]>([]);
   const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
@@ -137,7 +138,7 @@ const Dashboard = () => {
       if (!forceRescore) {
         const { data: latestScore } = await supabase
           .from('brand_scores')
-          .select('visibility_score')
+          .select('visibility_score, updated_at')
           .eq('store_id', activeStore.id)
           .order('date', { ascending: false })
           .limit(1)
@@ -145,6 +146,7 @@ const Dashboard = () => {
 
         if (latestScore?.visibility_score !== null && latestScore?.visibility_score !== undefined) {
           setBrandVisibility(latestScore.visibility_score);
+          setBrandVisibilityUpdatedAt(latestScore.updated_at);
           setIsLoadingAnalytics(false);
           return;
         }
@@ -162,6 +164,17 @@ const Dashboard = () => {
       
       if (data?.visibilityScore !== undefined) {
         setBrandVisibility(data.visibilityScore);
+        // Fetch the updated_at from the newly created score
+        const { data: newScore } = await supabase
+          .from('brand_scores')
+          .select('updated_at')
+          .eq('store_id', activeStore.id)
+          .order('date', { ascending: false })
+          .limit(1)
+          .single();
+        if (newScore?.updated_at) {
+          setBrandVisibilityUpdatedAt(newScore.updated_at);
+        }
       }
     } catch (error) {
       console.error('Error loading brand analytics:', error);
@@ -303,6 +316,11 @@ const Dashboard = () => {
                         <p className="text-muted-foreground">
                           Average visibility across brand prompts
                         </p>
+                        {brandVisibilityUpdatedAt && (
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Last updated: {new Date(brandVisibilityUpdatedAt).toLocaleString()}
+                          </p>
+                        )}
                         {brandVisibility === null && !isLoadingAnalytics && (
                           <Button 
                             onClick={() => loadBrandAnalytics(true)}
