@@ -133,24 +133,20 @@ const Dashboard = () => {
     try {
       setIsLoadingAnalytics(true);
       
-      // Check if we already have brand analytics (skip if forcing rescore)
+      // Check if we already have brand score (skip if forcing rescore)
       if (!forceRescore) {
-        const { data: existingPrompts } = await supabase
-          .from('brand_prompts')
+        const { data: latestScore } = await supabase
+          .from('brand_scores')
           .select('visibility_score')
-          .eq('store_id', activeStore.id);
+          .eq('store_id', activeStore.id)
+          .order('date', { ascending: false })
+          .limit(1)
+          .single();
 
-        if (existingPrompts && existingPrompts.length > 0) {
-          // Calculate average from existing data
-          const scores = existingPrompts.filter(p => p.visibility_score !== null);
-          if (scores.length > 0) {
-            const avg = Math.round(
-              scores.reduce((sum, p) => sum + (p.visibility_score || 0), 0) / scores.length
-            );
-            setBrandVisibility(avg);
-            setIsLoadingAnalytics(false);
-            return;
-          }
+        if (latestScore?.visibility_score !== null && latestScore?.visibility_score !== undefined) {
+          setBrandVisibility(latestScore.visibility_score);
+          setIsLoadingAnalytics(false);
+          return;
         }
       }
 
@@ -164,8 +160,8 @@ const Dashboard = () => {
         throw error;
       }
       
-      if (data?.averageVisibility !== undefined) {
-        setBrandVisibility(data.averageVisibility);
+      if (data?.visibilityScore !== undefined) {
+        setBrandVisibility(data.visibilityScore);
       }
     } catch (error) {
       console.error('Error loading brand analytics:', error);
