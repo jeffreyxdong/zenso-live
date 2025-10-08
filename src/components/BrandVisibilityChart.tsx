@@ -102,8 +102,9 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
     // If we have less than 7 days, extend forward from the latest date
     let startDate: Date;
     if (scores.length > 0) {
-      // Use the oldest date from our rolling window as the start
-      startDate = new Date(scores[0].date + 'T00:00:00');
+      // Parse the date in the user's timezone to avoid UTC offset issues
+      const [year, month, day] = scores[0].date.split('-').map(Number);
+      startDate = new Date(year, month - 1, day);
     } else {
       // If no data, start from today and go backwards
       startDate = new Date();
@@ -231,8 +232,9 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
                 labelFormatter={(label, payload) => {
                   if (payload && payload[0] && payload[0].payload.date) {
                     const dateStr = payload[0].payload.date;
+                    const [year, month, day] = dateStr.split('-').map(Number);
+                    const date = new Date(year, month - 1, day);
                     const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                    const date = new Date(dateStr + 'T00:00:00');
                     return formatInTimeZone(date, userTimeZone, 'MMM dd, yyyy');
                   }
                   return label;
