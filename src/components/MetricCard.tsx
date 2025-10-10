@@ -1,6 +1,6 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, LucideIcon } from "lucide-react";
+import { LucideIcon } from "lucide-react";
 
 interface MetricCardProps {
   title: string;
@@ -26,7 +26,7 @@ const MetricCard = ({ title, icon: Icon, score, description, isLoading }: Metric
       <CardContent>
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-8 space-y-3">
-            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             <div className="text-center">
               <p className="text-sm font-medium">Generating {title}...</p>
               <p className="text-xs text-muted-foreground mt-1">This may take a moment</p>

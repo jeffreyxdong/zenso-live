@@ -412,7 +412,7 @@ const ProductOverview = () => {
             <div className="flex flex-col items-center justify-center py-12 space-y-4">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
               <div className="text-center space-y-2">
-                <p className="font-medium">Generating AI optimization suggestions...</p>
+                <p className="font-medium">Generating AI Optimization Suggestions...</p>
                 <p className="text-sm text-muted-foreground">This may take a moment</p>
               </div>
             </div>
@@ -479,7 +479,7 @@ const ProductOverview = () => {
             <div className="flex flex-col items-center justify-center py-12 space-y-4">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
               <div className="text-center space-y-2">
-                <p className="font-medium">Loading source data...</p>
+                <p className="font-medium">Loading Source Data...</p>
                 <p className="text-sm text-muted-foreground">This may take a moment</p>
               </div>
             </div>

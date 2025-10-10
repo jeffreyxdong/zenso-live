@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from "recharts";
-import { Loader2, LucideIcon } from "lucide-react";
+import { LucideIcon } from "lucide-react";
 
 interface ChartData {
   date: string;
@@ -28,7 +28,7 @@ const TrendChart = ({ title, icon: Icon, data, color, changeText, valueLabel, is
       <CardContent>
         {isLoading ? (
           <div className="flex flex-col items-center justify-center h-[200px] space-y-3">
-            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             <div className="text-center">
               <p className="text-sm font-medium">Generating {title}...</p>
               <p className="text-xs text-muted-foreground mt-1">This may take a moment</p>
