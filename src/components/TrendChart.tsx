@@ -28,9 +28,9 @@ const TrendChart = ({ title, icon: Icon, data, color, changeText, valueLabel, is
       <CardContent>
         {isLoading ? (
           <div className="flex flex-col items-center justify-center h-[200px] space-y-3">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
             <div className="text-center">
-              <p className="text-sm font-medium">Generating {title.toLowerCase()}...</p>
+              <p className="text-sm font-medium">Generating {title}...</p>
               <p className="text-xs text-muted-foreground mt-1">This may take a moment</p>
             </div>
           </div>
