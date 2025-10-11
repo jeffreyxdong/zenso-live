@@ -175,7 +175,7 @@ const AppLayout = () => {
 
     return (
       <Sidebar
-        className={state === "collapsed" ? "w-14" : "w-60"}
+        className={state === "collapsed" ? "w-14" : "w-[264px]"}
         collapsible="icon"
       >
         <SidebarContent>
@@ -260,13 +260,15 @@ const AppLayout = () => {
                               <SidebarMenuButton
                                 key={product.id}
                                 onClick={() => handleProductClick(product.id)}
-                                className={`w-full justify-start text-sm truncate ${
+                                 className={`w-full justify-start text-sm ${
                                   isActive
                                     ? "bg-muted text-primary font-medium"
                                     : "hover:bg-muted/50"
                                 }`}
                               >
-                                {product.title}
+                                <span className="truncate block" title={product.title}>
+                                  {product.title}
+                                </span>
                               </SidebarMenuButton>
                             );
                           })}
@@ -332,7 +334,7 @@ const AppLayout = () => {
                               <SidebarMenuButton
                                 key={prompt.id}
                                 onClick={() => handlePromptClick(prompt.id)}
-                                className={`w-full justify-start text-sm truncate ${
+                                 className={`w-full justify-start text-sm ${
                                   isActive
                                     ? "bg-muted text-primary font-medium"
                                     : "hover:bg-muted/50"
@@ -340,7 +342,7 @@ const AppLayout = () => {
                               >
                                 <span
                                   title={prompt.content}
-                                  className="truncate whitespace-nowrap overflow-hidden block w-full"
+                                  className="truncate block"
                                 >
                                   {prompt.content}
                                 </span>
@@ -389,12 +391,12 @@ const AppLayout = () => {
     <SidebarProvider>
       <div className="min-h-screen bg-background flex w-full">
         <AppSidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 min-w-0 flex flex-col">
           <header className="border-b border-border bg-card">
             <div className="px-6 py-4 flex justify-between items-center">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 min-w-0">
                 <SidebarTrigger className="lg:hidden" />
-                <h1 className="text-2xl font-bold">
+                <h1 className="text-2xl font-bold truncate">
                   {activeStore?.name || companyName}'s Dashboard
                 </h1>
                 <Badge variant="secondary" className="text-xs">
