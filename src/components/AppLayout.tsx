@@ -29,11 +29,6 @@ import {
   Collapsible,
   CollapsibleContent,
 } from "@/components/ui/collapsible";
-import {
-  ResizablePanelGroup,
-  ResizablePanel,
-  ResizableHandle,
-} from "@/components/ui/resizable";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import StoreSelector from "@/components/StoreSelector";
@@ -179,7 +174,10 @@ const AppLayout = () => {
     const activePromptId = promptMatch ? promptMatch[1] : null;
 
     return (
-      <Sidebar className="w-full h-full">
+      <Sidebar
+        className={state === "collapsed" ? "w-14" : "w-60"}
+        collapsible="icon"
+      >
         <SidebarContent>
           {/* Quick Actions */}
           <SidebarGroup>
@@ -389,45 +387,36 @@ const AppLayout = () => {
 
   return (
     <SidebarProvider>
-      <div className="h-screen bg-background flex w-full">
-        <ResizablePanelGroup direction="horizontal">
-          <ResizablePanel defaultSize={5} minSize={3} maxSize={35}>
-            <AppSidebar />
-          </ResizablePanel>
-          
-          <ResizableHandle withHandle />
-          
-          <ResizablePanel defaultSize={95} minSize={65}>
-            <div className="flex flex-col h-full">
-              <header className="border-b border-border bg-card">
-                <div className="px-6 py-4 flex justify-between items-center">
-                  <div className="flex items-center gap-4">
-                    <SidebarTrigger className="lg:hidden" />
-                    <h1 className="text-2xl font-bold">
-                      {activeStore?.name || companyName}'s Dashboard
-                    </h1>
-                    <Badge variant="secondary" className="text-xs">
-                      eCommerce Pro
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <StoreSelector
-                      onStoreChange={setActiveStore}
-                      onAddStore={() => setShowAddStoreModal(true)}
-                    />
-                    <Button variant="outline" size="sm" onClick={handleLogout}>
-                      Logout
-                    </Button>
-                  </div>
-                </div>
-              </header>
-
-              <main className="flex-1 px-6 py-8 overflow-auto">
-                <Outlet context={{ activeStore, setActiveStore }} />
-              </main>
+      <div className="min-h-screen bg-background flex w-full">
+        <AppSidebar />
+        <div className="flex-1 flex flex-col">
+          <header className="border-b border-border bg-card">
+            <div className="px-6 py-4 flex justify-between items-center">
+              <div className="flex items-center gap-4">
+                <SidebarTrigger className="lg:hidden" />
+                <h1 className="text-2xl font-bold">
+                  {activeStore?.name || companyName}'s Dashboard
+                </h1>
+                <Badge variant="secondary" className="text-xs">
+                  eCommerce Pro
+                </Badge>
+              </div>
+              <div className="flex items-center gap-3">
+                <StoreSelector
+                  onStoreChange={setActiveStore}
+                  onAddStore={() => setShowAddStoreModal(true)}
+                />
+                <Button variant="outline" size="sm" onClick={handleLogout}>
+                  Logout
+                </Button>
+              </div>
             </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
+          </header>
+
+          <main className="flex-1 px-6 py-8">
+            <Outlet context={{ activeStore, setActiveStore }} />
+          </main>
+        </div>
       </div>
 
       <AddStoreModal
