@@ -391,9 +391,9 @@ const AppLayout = () => {
     <SidebarProvider>
       <div className="min-h-screen bg-background flex w-full">
         <AppSidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           <header className="border-b border-border bg-card">
-            <div className="px-6 py-4 flex justify-between items-center">
+            <div className="px-6 py-4 flex justify-between items-center flex-wrap gap-2">
               <div className="flex items-center gap-4">
                 <SidebarTrigger className="lg:hidden" />
                 <h1 className="text-2xl font-bold">
@@ -415,7 +415,7 @@ const AppLayout = () => {
             </div>
           </header>
 
-          <main className="flex-1 px-6 py-8">
+          <main className="flex-1 px-6 py-8 overflow-x-auto">
             <Outlet context={{ activeStore, setActiveStore }} />
           </main>
         </div>
