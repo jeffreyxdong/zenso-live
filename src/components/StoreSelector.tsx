@@ -303,13 +303,13 @@ const StoreSelector = ({ onStoreChange, onAddStore }: StoreSelectorProps) => {
             onClick={() => switchToStore(store)}
             className="group flex items-center justify-between cursor-pointer"
           >
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1 flex-1 min-w-0 pr-2">
               <div className="font-medium">{store.name}</div>
               <div className="text-xs text-muted-foreground truncate">
                 {store.website}
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
               {store.is_active && <Check className="w-4 h-4 text-primary" />}
               {stores.length > 1 && !store.is_active && (
                 <button

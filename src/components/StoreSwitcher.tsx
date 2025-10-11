@@ -187,11 +187,11 @@ const StoreSwitcher = ({ onStoreChange, triggerRefresh }: StoreSwitcherProps) =>
             onClick={() => switchStore(store.id)}
             className="group flex items-center justify-between cursor-pointer relative"
           >
-            <div className="flex flex-col">
+            <div className="flex flex-col flex-1 min-w-0 pr-2">
               <span className="font-medium">{store.name}</span>
-              <span className="text-xs text-muted-foreground">{store.website}</span>
+              <span className="text-xs text-muted-foreground truncate">{store.website}</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
               {store.is_active && <Check className="w-4 h-4 text-primary" />}
               {stores.length > 1 && !store.is_active && (
                 <button
