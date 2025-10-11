@@ -25,9 +25,9 @@ const ProductMetrics = ({
   positionLoading = false 
 }: ProductMetricsProps) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <MetricCard
-        title="AI Visibility"
+        title="Visibility Score"
         icon={Eye}
         score={metrics.visibilityScore}
         description="How often your product appears in AI responses"
