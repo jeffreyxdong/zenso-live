@@ -424,7 +424,13 @@ const ResizableSidebar: React.FC<{ children: React.ReactNode }> = ({ children })
   }, []);
 
   return (
-    <div className="relative flex-shrink-0 h-screen border-r border-border bg-background" style={{ width }}>
+    <div 
+      className="relative flex-shrink-0 h-screen border-r border-border bg-background" 
+      style={{ 
+        width,
+        '--dynamic-sidebar-width': `${width}px`
+      } as React.CSSProperties}
+    >
       {children}
       <div
         className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-border/40 active:bg-border/70 transition-colors"
