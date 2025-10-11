@@ -393,8 +393,8 @@ const AppLayout = () => {
         <AppSidebar />
         <div className="flex-1 min-w-0 flex flex-col">
           <header className="border-b border-border bg-card">
-            <div className="px-6 py-4 flex justify-between items-center">
-              <div className="flex items-center gap-4 min-w-0">
+            <div className="px-6 py-4 flex justify-between items-center gap-4">
+              <div className="flex items-center gap-4 min-w-0 flex-1">
                 <SidebarTrigger className="lg:hidden" />
                 <h1 className="text-2xl font-bold truncate">
                   {activeStore?.name || companyName}'s Dashboard
@@ -403,7 +403,7 @@ const AppLayout = () => {
                   eCommerce Pro
                 </Badge>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-shrink-0">
                 <StoreSelector
                   onStoreChange={setActiveStore}
                   onAddStore={() => setShowAddStoreModal(true)}
