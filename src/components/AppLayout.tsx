@@ -346,51 +346,47 @@ const AppLayout = () => {
 
   return (
     <SidebarProvider>
-  <div className="min-h-screen bg-background flex w-full overflow-hidden">
-    <ResizableSidebar>
-      <AppSidebar /> {/* your existing sidebar component */}
-    </ResizableSidebar>
+      <div className="min-h-screen bg-background flex w-full overflow-hidden">
+        <ResizableSidebar>
+          <AppSidebar /> {/* your existing sidebar component */}
+        </ResizableSidebar>
 
-    <div className="flex-1 flex flex-col overflow-hidden">
-      <header className="border-b border-border bg-card">
-        <div className="px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <SidebarTrigger className="lg:hidden" />
-            <h1 className="text-2xl font-bold">
-              {activeStore?.name || companyName}'s Dashboard
-            </h1>
-            <Badge variant="secondary" className="text-xs">
-              eCommerce Pro
-            </Badge>
-          </div>
-          <div className="flex items-center gap-3">
-            <StoreSelector
-              onStoreChange={setActiveStore}
-              onAddStore={() => setShowAddStoreModal(true)}
-            />
-            <Button variant="outline" size="sm" onClick={handleLogout}>
-              Logout
-            </Button>
-          </div>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <header className="border-b border-border bg-card">
+            <div className="px-6 py-4 flex justify-between items-center">
+              <div className="flex items-center gap-4">
+                <SidebarTrigger className="lg:hidden" />
+                <h1 className="text-2xl font-bold">{activeStore?.name || companyName}'s Dashboard</h1>
+                <Badge variant="secondary" className="text-xs">
+                  eCommerce Pro
+                </Badge>
+              </div>
+              <div className="flex items-center gap-3">
+                <StoreSelector onStoreChange={setActiveStore} onAddStore={() => setShowAddStoreModal(true)} />
+                <Button variant="outline" size="sm" onClick={handleLogout}>
+                  Logout
+                </Button>
+              </div>
+            </div>
+          </header>
+
+          <main className="flex-1 px-6 py-8 overflow-y-auto">
+            <Outlet context={{ activeStore, setActiveStore }} />
+          </main>
         </div>
-      </header>
+      </div>
 
-      <main className="flex-1 px-6 py-8 overflow-y-auto">
-        <Outlet context={{ activeStore, setActiveStore }} />
-      </main>
-    </div>
-  </div>
-
-  <AddStoreModal
-    open={showAddStoreModal}
-    onOpenChange={setShowAddStoreModal}
-    onStoreAdded={(store) => {
-      setActiveStore(store);
-      window.location.reload();
-    }}
-  />
-</SidebarProvider>
-
+      <AddStoreModal
+        open={showAddStoreModal}
+        onOpenChange={setShowAddStoreModal}
+        onStoreAdded={(store) => {
+          setActiveStore(store);
+          window.location.reload();
+        }}
+      />
+    </SidebarProvider>
+  );
+};
 
 // === Resizable Sidebar Wrapper ===
 const ResizableSidebar: React.FC<{ children: React.ReactNode }> = ({ children }) => {
