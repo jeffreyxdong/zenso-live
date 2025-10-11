@@ -179,10 +179,8 @@ const AppLayout = () => {
     const activePromptId = promptMatch ? promptMatch[1] : null;
 
     return (
-      <Sidebar
-        className="w-full h-full"
-        collapsible="icon"
-      >
+      <Sidebar className="w-full h-full">
+
         <SidebarContent>
           {/* Quick Actions */}
           <SidebarGroup>
