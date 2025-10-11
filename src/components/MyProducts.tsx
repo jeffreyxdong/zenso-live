@@ -4,8 +4,22 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,10 +28,25 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Progress } from "@/components/ui/progress";
 import { DialogDescription } from "@/components/ui/dialog";
-import { Store, Package, Download, Plus, Search, CheckCircle, AlertCircle, Image, Trash2, MoreVertical, Eye, TrendingUp, MapPin, Heart } from "lucide-react";
+import {
+  Store,
+  Package,
+  Download,
+  Plus,
+  Search,
+  CheckCircle,
+  AlertCircle,
+  Image,
+  Trash2,
+  MoreVertical,
+  Eye,
+  TrendingUp,
+  MapPin,
+  Heart,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import Papa from 'papaparse';
+import Papa from "papaparse";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -100,58 +129,56 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
   const generateHandle = (title: string) => {
     return title
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
   };
 
   const handleAddProduct = async (data: ProductFormData) => {
     setIsSubmitting(true);
     try {
-        const { data: userData, error: userError } = await supabase.auth.getUser();
-        if (userError) throw userError;
-        if (!activeStore?.id) {
-          throw new Error('No active store selected');
-        }
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!activeStore?.id) {
+        throw new Error("No active store selected");
+      }
 
-        const handle = data.handle || generateHandle(data.title);
+      const handle = data.handle || generateHandle(data.title);
 
-        // Create product
-        const { data: productData, error: productError } = await supabase
-          .from("products")
-          .insert({
-            user_id: userData.user.id,
-            store_id: activeStore.id,
-            shopify_id: `manual-${Date.now()}`,
-            title: data.title,
-            handle: handle,
-            product_type: null,
-            vendor: null,
-            status: "active",
-          })
-          .select()
-          .single();
+      // Create product
+      const { data: productData, error: productError } = await supabase
+        .from("products")
+        .insert({
+          user_id: userData.user.id,
+          store_id: activeStore.id,
+          shopify_id: `manual-${Date.now()}`,
+          title: data.title,
+          handle: handle,
+          product_type: null,
+          vendor: null,
+          status: "active",
+        })
+        .select()
+        .single();
 
       if (productError) throw productError;
 
       // Create product variant
-      const { error: variantError } = await supabase
-        .from("product_variants")
-        .insert({
-          product_id: productData.id,
-          shopify_variant_id: `manual-variant-${Date.now()}`,
-          title: "Default Title",
-          price: 0,
-          compare_at_price: null,
-          inventory_quantity: 0,
-          sku: null,
-        });
+      const { error: variantError } = await supabase.from("product_variants").insert({
+        product_id: productData.id,
+        shopify_variant_id: `manual-variant-${Date.now()}`,
+        title: "Default Title",
+        price: 0,
+        compare_at_price: null,
+        inventory_quantity: 0,
+        sku: null,
+      });
 
       if (variantError) throw variantError;
 
       // Close dialog and redirect immediately to PDP
       form.reset();
       setShowAddProductDialog(false);
-      
+
       toast({
         title: "Success",
         description: "Product created! Redirecting to product page...",
@@ -172,22 +199,22 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
             };
 
             // Step 1: Generate buyer-intent prompts
-            console.log('Generating buyer-intent prompts...');
-            await supabase.functions.invoke('generate-buyer-intent-prompts', {
+            console.log("Generating buyer-intent prompts...");
+            await supabase.functions.invoke("generate-buyer-intent-prompts", {
               body: {
                 productId: productData.id,
                 storeId: activeStore.id,
                 productTitle: data.title,
                 productType: null,
                 vendor: null,
-                tags: []
+                tags: [],
               },
               headers: authHeaders,
             });
 
             // Step 2: Generate responses for the prompts
-            console.log('Generating responses for prompts...');
-            await supabase.functions.invoke('generate-buyer-intent-outputs', {
+            console.log("Generating responses for prompts...");
+            await supabase.functions.invoke("generate-buyer-intent-outputs", {
               body: {
                 productId: productData.id,
               },
@@ -195,8 +222,8 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
             });
 
             // Step 3: Score the responses
-            console.log('Scoring the generated responses...');
-            await supabase.functions.invoke('score-buyer-intent-outputs', {
+            console.log("Scoring the generated responses...");
+            await supabase.functions.invoke("score-buyer-intent-outputs", {
               body: {
                 productId: productData.id,
                 productTitle: data.title,
@@ -205,21 +232,20 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
             });
 
             // Step 4: Generate PDP recommendations
-            console.log('Generating AI optimization recommendations...');
-            await supabase.functions.invoke('generate-pdp-recommendations', {
+            console.log("Generating AI optimization recommendations...");
+            await supabase.functions.invoke("generate-pdp-recommendations", {
               body: {
                 productId: productData.id,
               },
               headers: authHeaders,
             });
 
-            console.log('Buyer-intent analysis and AI recommendations pipeline completed successfully');
+            console.log("Buyer-intent analysis and AI recommendations pipeline completed successfully");
           }
         } catch (promptError) {
-          console.error('Error in buyer-intent analysis pipeline:', promptError);
+          console.error("Error in buyer-intent analysis pipeline:", promptError);
         }
       })();
-
     } catch (error: any) {
       console.error("Error adding product:", error);
       toast({
@@ -236,13 +262,13 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
     if (checked) {
       setSelectedProducts([...selectedProducts, productId]);
     } else {
-      setSelectedProducts(selectedProducts.filter(id => id !== productId));
+      setSelectedProducts(selectedProducts.filter((id) => id !== productId));
     }
   };
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedProducts(filteredProducts.map(p => p.id));
+      setSelectedProducts(filteredProducts.map((p) => p.id));
     } else {
       setSelectedProducts([]);
     }
@@ -253,7 +279,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
     let hash = 0;
     for (let i = 0; i < title.length; i++) {
       const char = title.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return `csv-import-${Math.abs(hash)}-${Date.now()}`;
@@ -266,7 +292,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
   const handleCsvFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (!file.name.endsWith('.csv')) {
+      if (!file.name.endsWith(".csv")) {
         toast({
           title: "Invalid file",
           description: "Please upload a CSV file",
@@ -292,13 +318,15 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
     setImportProgress(0);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
-        throw new Error('User not authenticated');
+        throw new Error("User not authenticated");
       }
 
       if (!activeStore) {
-        throw new Error('No active store found. Please add a store first.');
+        throw new Error("No active store found. Please add a store first.");
       }
 
       // Parse CSV file
@@ -308,9 +336,9 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
         complete: async (results) => {
           try {
             const rows = results.data as any[];
-            
+
             // Validate that Title column exists
-            if (rows.length === 0 || !rows[0].hasOwnProperty('Title')) {
+            if (rows.length === 0 || !rows[0].hasOwnProperty("Title")) {
               throw new Error('CSV must contain a "Title" column');
             }
 
@@ -322,10 +350,10 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
 
             for (let i = 0; i < rows.length; i += batchSize) {
               const batch = rows.slice(i, i + batchSize);
-              
+
               const productsToInsert = batch
-                .filter(row => row.Title && row.Title.trim())
-                .map(row => {
+                .filter((row) => row.Title && row.Title.trim())
+                .map((row) => {
                   const title = row.Title.trim();
                   return {
                     user_id: user.id,
@@ -333,7 +361,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                     shopify_id: generateShopifyId(title),
                     title: title,
                     handle: generateHandle(title),
-                    status: 'active',
+                    status: "active",
                     images: [],
                     tags: [],
                   };
@@ -342,15 +370,15 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
               if (productsToInsert.length > 0) {
                 // Use upsert to skip duplicates
                 const { data, error } = await supabase
-                  .from('products')
+                  .from("products")
                   .upsert(productsToInsert, {
-                    onConflict: 'user_id,shopify_id',
-                    ignoreDuplicates: true
+                    onConflict: "user_id,shopify_id",
+                    ignoreDuplicates: true,
                   })
                   .select();
 
                 if (error) {
-                  console.error('Batch insert error:', error);
+                  console.error("Batch insert error:", error);
                   skipped += productsToInsert.length;
                 } else {
                   const insertedCount = data?.length || 0;
@@ -374,9 +402,8 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
               title: "Import Complete",
               description: `Successfully imported ${imported} products. Skipped ${skipped} duplicates or invalid rows.`,
             });
-
           } catch (error: any) {
-            console.error('Import error:', error);
+            console.error("Import error:", error);
             toast({
               title: "Import Failed",
               description: error.message || "Failed to import products",
@@ -387,18 +414,17 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
           }
         },
         error: (error) => {
-          console.error('CSV parse error:', error);
+          console.error("CSV parse error:", error);
           toast({
             title: "Parse Error",
             description: "Failed to parse CSV file. Please ensure it's properly formatted.",
             variant: "destructive",
           });
           setImporting(false);
-        }
+        },
       });
-
     } catch (error: any) {
-      console.error('Import error:', error);
+      console.error("Import error:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to import products",
@@ -415,10 +441,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
       if (userError) throw userError;
 
       // Delete variants first (due to foreign key constraint)
-      const { error: variantError } = await supabase
-        .from("product_variants")
-        .delete()
-        .in("product_id", productIds);
+      const { error: variantError } = await supabase.from("product_variants").delete().in("product_id", productIds);
 
       if (variantError) throw variantError;
 
@@ -441,7 +464,6 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
       setProductToDelete(null);
       setShowDeleteDialog(false);
       await fetchProducts();
-
     } catch (error: any) {
       console.error("Error deleting products:", error);
       toast({
@@ -475,30 +497,42 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
     if (!product.variants || product.variants.length === 0) {
       return "Inventory not tracked";
     }
-    
+
     const totalInventory = product.variants.reduce((sum, variant) => sum + (variant.inventory_quantity || 0), 0);
     const variantCount = product.variants.length;
-    
+
     if (totalInventory === 0) {
       return "0 in stock";
     }
-    
+
     if (variantCount > 1) {
       return `${totalInventory} in stock for ${variantCount} variants`;
     }
-    
+
     return `${totalInventory} in stock`;
   };
 
   const getScoreBadge = (score?: number) => {
     const displayScore = score ?? 0;
     if (displayScore >= 80) {
-      return <span className="text-sm font-semibold px-3 py-1.5 rounded-md border text-green-700 bg-green-50 border-green-200">{displayScore}/100</span>;
+      return (
+        <span className="text-sm font-semibold px-3 py-1.5 rounded-md border text-green-700 bg-green-50 border-green-200">
+          {displayScore}/100
+        </span>
+      );
     }
     if (displayScore >= 60) {
-      return <span className="text-sm font-semibold px-3 py-1.5 rounded-md border text-yellow-700 bg-yellow-50 border-yellow-200">{displayScore}/100</span>;
+      return (
+        <span className="text-sm font-semibold px-3 py-1.5 rounded-md border text-yellow-700 bg-yellow-50 border-yellow-200">
+          {displayScore}/100
+        </span>
+      );
     }
-    return <span className="text-sm font-semibold px-3 py-1.5 rounded-md border text-red-700 bg-red-50 border-red-200">{displayScore}/100</span>;
+    return (
+      <span className="text-sm font-semibold px-3 py-1.5 rounded-md border text-red-700 bg-red-50 border-red-200">
+        {displayScore}/100
+      </span>
+    );
   };
 
   const handleProductClick = (product: Product) => {
@@ -523,10 +557,12 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
 
       const { data: productsData, error } = await supabase
         .from("products")
-        .select(`
+        .select(
+          `
           *,
           variants:product_variants(*)
-        `)
+        `,
+        )
         .eq("user_id", userData.user.id)
         .eq("store_id", activeStore.id)
         .order("created_at", { ascending: false });
@@ -534,22 +570,24 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
       if (error) throw error;
 
       // Fetch the latest scores for each product from product_scores table
-      const productsWithScores = await Promise.all((productsData || []).map(async (product) => {
-        const { data: latestScore } = await supabase
-          .from("product_scores")
-          .select("visibility_score, sentiment_score, position_score")
-          .eq("product_id", product.id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+      const productsWithScores = await Promise.all(
+        (productsData || []).map(async (product) => {
+          const { data: latestScore } = await supabase
+            .from("product_scores")
+            .select("visibility_score, sentiment_score, position_score")
+            .eq("product_id", product.id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
 
-        return {
-          ...product,
-          visibility_score: latestScore?.visibility_score || 0,
-          sentiment_score: latestScore?.sentiment_score || 0,
-          position_score: latestScore?.position_score || 0,
-        };
-      }));
+          return {
+            ...product,
+            visibility_score: latestScore?.visibility_score || 0,
+            sentiment_score: latestScore?.sentiment_score || 0,
+            position_score: latestScore?.position_score || 0,
+          };
+        }),
+      );
 
       setProducts(productsWithScores);
     } catch (error: any) {
@@ -569,7 +607,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
       (product) =>
         product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.vendor?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.product_type?.toLowerCase().includes(searchQuery.toLowerCase())
+        product.product_type?.toLowerCase().includes(searchQuery.toLowerCase()),
     )
     .sort((a, b) => {
       switch (sortBy) {
@@ -613,9 +651,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold text-foreground">My Products</h2>
-          <p className="text-sm text-muted-foreground">
-            {products.length} products
-          </p>
+          <p className="text-sm text-muted-foreground">{products.length} products</p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -718,7 +754,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
               <TooltipProvider key={product.id}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <TableRow 
+                    <TableRow
                       className="cursor-pointer hover:bg-muted/50 hover:shadow-md transition-all duration-200 group"
                       onClick={() => handleProductClick(product)}
                     >
@@ -753,25 +789,19 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                       <TableCell className="text-center">
                         <Badge
                           variant={
-                            product.status === "active" 
-                              ? "default" 
-                              : product.status === "draft" 
-                              ? "secondary" 
-                              : "outline"
+                            product.status === "active"
+                              ? "default"
+                              : product.status === "draft"
+                                ? "secondary"
+                                : "outline"
                           }
                         >
                           {product.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-center">
-                        {getScoreBadge(product.visibility_score)}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {getScoreBadge(product.sentiment_score)}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {getScoreBadge(product.position_score)}
-                      </TableCell>
+                      <TableCell className="text-center">{getScoreBadge(product.visibility_score)}</TableCell>
+                      <TableCell className="text-center">{getScoreBadge(product.sentiment_score)}</TableCell>
+                      <TableCell className="text-center">{getScoreBadge(product.position_score)}</TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()} className="text-center">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -805,9 +835,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
       {filteredProducts.length === 0 && searchQuery && (
         <div className="text-center py-8">
           <AlertCircle className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-          <p className="text-muted-foreground">
-            No products found matching "{searchQuery}"
-          </p>
+          <p className="text-muted-foreground">No products found matching "{searchQuery}"</p>
         </div>
       )}
 
@@ -817,7 +845,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
           <DialogHeader>
             <DialogTitle>Add New Product</DialogTitle>
           </DialogHeader>
-          
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleAddProduct)} className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
@@ -851,19 +879,15 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
               </div>
 
               <div className="flex gap-3 pt-4">
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={() => setShowAddProductDialog(false)}
                   className="flex-1"
                 >
                   Cancel
                 </Button>
-                <Button 
-                  type="submit" 
-                  disabled={isSubmitting}
-                  className="flex-1"
-                >
+                <Button type="submit" disabled={isSubmitting} className="flex-1">
                   {isSubmitting ? "Adding..." : "Add Product"}
                 </Button>
               </div>
@@ -878,10 +902,9 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Products</AlertDialogTitle>
             <AlertDialogDescription>
-              {productToDelete 
+              {productToDelete
                 ? "Are you sure you want to delete this product? This action cannot be undone."
-                : `Are you sure you want to delete ${selectedProducts.length} selected products? This action cannot be undone.`
-              }
+                : `Are you sure you want to delete ${selectedProducts.length} selected products? This action cannot be undone.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -898,19 +921,20 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
       </AlertDialog>
 
       {/* CSV Import Dialog */}
-      <Dialog open={showCsvImportDialog} onOpenChange={(open) => {
-        setShowCsvImportDialog(open);
-        if (!open) {
-          setCsvFile(null);
-          setImportProgress(0);
-        }
-      }}>
+      <Dialog
+        open={showCsvImportDialog}
+        onOpenChange={(open) => {
+          setShowCsvImportDialog(open);
+          if (!open) {
+            setCsvFile(null);
+            setImportProgress(0);
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Import Products from CSV</DialogTitle>
-            <DialogDescription>
-              Upload your Shopify products CSV file. Only the "Title" column will be used.
-            </DialogDescription>
+            <DialogDescription>Upload your Shopify products CSV file.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="border-2 border-dashed rounded-lg p-6 text-center">
@@ -922,18 +946,11 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                 id="csv-upload"
                 disabled={importing}
               />
-              <label
-                htmlFor="csv-upload"
-                className="cursor-pointer flex flex-col items-center gap-2"
-              >
+              <label htmlFor="csv-upload" className="cursor-pointer flex flex-col items-center gap-2">
                 <Store className="w-12 h-12 text-muted-foreground" />
                 <div>
-                  <p className="font-medium">
-                    {csvFile ? csvFile.name : 'Choose CSV file'}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Click to browse or drag and drop
-                  </p>
+                  <p className="font-medium">{csvFile ? csvFile.name : "Choose CSV file"}</p>
+                  <p className="text-sm text-muted-foreground">Click to browse or drag and drop</p>
                 </div>
               </label>
             </div>
@@ -960,11 +977,8 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
               >
                 Cancel
               </Button>
-              <Button
-                onClick={handleCsvImport}
-                disabled={!csvFile || importing}
-              >
-                {importing ? 'Importing...' : 'Import Products'}
+              <Button onClick={handleCsvImport} disabled={!csvFile || importing}>
+                {importing ? "Importing..." : "Import Products"}
               </Button>
             </div>
           </div>
@@ -980,7 +994,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
               Product Details
             </DialogTitle>
           </DialogHeader>
-          
+
           {selectedProduct && (
             <div className="space-y-6">
               {/* Product Info */}
@@ -1002,18 +1016,16 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                   <div className="flex items-center gap-2 mt-2">
                     <Badge
                       variant={
-                        selectedProduct.status === "active" 
-                          ? "default" 
-                          : selectedProduct.status === "draft" 
-                          ? "secondary" 
-                          : "outline"
+                        selectedProduct.status === "active"
+                          ? "default"
+                          : selectedProduct.status === "draft"
+                            ? "secondary"
+                            : "outline"
                       }
                     >
                       {selectedProduct.status}
                     </Badge>
-                    {selectedProduct.product_type && (
-                      <Badge variant="outline">{selectedProduct.product_type}</Badge>
-                    )}
+                    {selectedProduct.product_type && <Badge variant="outline">{selectedProduct.product_type}</Badge>}
                   </div>
                 </div>
               </div>
@@ -1033,11 +1045,13 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                       <div className="text-lg text-muted-foreground font-light">/100</div>
                     </div>
                     <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className={`h-full transition-all duration-500 ${
-                          (selectedProduct.visibility_score ?? 0) >= 80 ? 'bg-green-600' : 
-                          (selectedProduct.visibility_score ?? 0) >= 60 ? 'bg-yellow-500' : 
-                          'bg-red-600'
+                          (selectedProduct.visibility_score ?? 0) >= 80
+                            ? "bg-green-600"
+                            : (selectedProduct.visibility_score ?? 0) >= 60
+                              ? "bg-yellow-500"
+                              : "bg-red-600"
                         }`}
                         style={{ width: `${selectedProduct.visibility_score ?? 0}%` }}
                       />
@@ -1058,11 +1072,13 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                       <div className="text-lg text-muted-foreground font-light">/100</div>
                     </div>
                     <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className={`h-full transition-all duration-500 ${
-                          (selectedProduct.sentiment_score ?? 0) >= 80 ? 'bg-green-600' : 
-                          (selectedProduct.sentiment_score ?? 0) >= 60 ? 'bg-yellow-500' : 
-                          'bg-red-600'
+                          (selectedProduct.sentiment_score ?? 0) >= 80
+                            ? "bg-green-600"
+                            : (selectedProduct.sentiment_score ?? 0) >= 60
+                              ? "bg-yellow-500"
+                              : "bg-red-600"
                         }`}
                         style={{ width: `${selectedProduct.sentiment_score ?? 0}%` }}
                       />
@@ -1083,11 +1099,13 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                       <div className="text-lg text-muted-foreground font-light">/100</div>
                     </div>
                     <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className={`h-full transition-all duration-500 ${
-                          (selectedProduct.position_score ?? 0) >= 80 ? 'bg-green-600' : 
-                          (selectedProduct.position_score ?? 0) >= 60 ? 'bg-yellow-500' : 
-                          'bg-red-600'
+                          (selectedProduct.position_score ?? 0) >= 80
+                            ? "bg-green-600"
+                            : (selectedProduct.position_score ?? 0) >= 60
+                              ? "bg-yellow-500"
+                              : "bg-red-600"
                         }`}
                         style={{ width: `${selectedProduct.position_score ?? 0}%` }}
                       />
@@ -1103,11 +1121,11 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">SKU:</span>
-                      <span>{selectedProduct.variants?.[0]?.sku || 'N/A'}</span>
+                      <span>{selectedProduct.variants?.[0]?.sku || "N/A"}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Price:</span>
-                      <span>${selectedProduct.variants?.[0]?.price || '0.00'}</span>
+                      <span>${selectedProduct.variants?.[0]?.price || "0.00"}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Inventory:</span>
@@ -1115,7 +1133,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Vendor:</span>
-                      <span>{selectedProduct.vendor || 'N/A'}</span>
+                      <span>{selectedProduct.vendor || "N/A"}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Created:</span>
@@ -1133,8 +1151,8 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                         <span>{selectedProduct.visibility_score ?? 0}</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full" 
+                        <div
+                          className="bg-blue-600 h-2 rounded-full"
                           style={{ width: `${selectedProduct.visibility_score ?? 0}%` }}
                         ></div>
                       </div>
@@ -1146,8 +1164,8 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                         <span>{selectedProduct.sentiment_score ?? 0}</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-pink-600 h-2 rounded-full" 
+                        <div
+                          className="bg-pink-600 h-2 rounded-full"
                           style={{ width: `${selectedProduct.sentiment_score ?? 0}%` }}
                         ></div>
                       </div>
@@ -1159,8 +1177,8 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                         <span>{selectedProduct.position_score ?? 0}</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-green-600 h-2 rounded-full" 
+                        <div
+                          className="bg-green-600 h-2 rounded-full"
                           style={{ width: `${selectedProduct.position_score ?? 0}%` }}
                         ></div>
                       </div>
@@ -1168,7 +1186,6 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                   </div>
                 </div>
               </div>
-
             </div>
           )}
         </DialogContent>
