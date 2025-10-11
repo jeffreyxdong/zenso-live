@@ -13,11 +13,6 @@ import {
   FileText,
 } from "lucide-react";
 import {
-  ResizablePanelGroup,
-  ResizablePanel,
-  ResizableHandle,
-} from "@/components/ui/resizable";
-import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
@@ -179,8 +174,10 @@ const AppLayout = () => {
     const activePromptId = promptMatch ? promptMatch[1] : null;
 
     return (
-      <Sidebar className="w-full h-full">
-
+      <Sidebar
+        className={state === "collapsed" ? "w-14" : "w-60"}
+        collapsible="icon"
+      >
         <SidebarContent>
           {/* Quick Actions */}
           <SidebarGroup>
@@ -263,18 +260,13 @@ const AppLayout = () => {
                               <SidebarMenuButton
                                 key={product.id}
                                 onClick={() => handleProductClick(product.id)}
-                                className={`w-full justify-start text-sm ${
+                                className={`w-full justify-start text-sm truncate ${
                                   isActive
                                     ? "bg-muted text-primary font-medium"
                                     : "hover:bg-muted/50"
                                 }`}
                               >
-                                <span
-                                  title={product.title}
-                                  className="truncate whitespace-nowrap overflow-hidden block w-full"
-                                >
-                                  {product.title}
-                                </span>
+                                {product.title}
                               </SidebarMenuButton>
                             );
                           })}
@@ -395,43 +387,36 @@ const AppLayout = () => {
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-full bg-background">
-        <ResizablePanelGroup direction="horizontal">
-          <ResizablePanel defaultSize={20} minSize={15} maxSize={35}>
-            <AppSidebar />
-          </ResizablePanel>
-          <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={80} minSize={50}>
-            <div className="flex flex-col h-full">
-              <header className="border-b border-border bg-card">
-                <div className="px-6 py-4 flex justify-between items-center">
-                  <div className="flex items-center gap-4">
-                    <SidebarTrigger className="lg:hidden" />
-                    <h1 className="text-2xl font-bold">
-                      {activeStore?.name || companyName}'s Dashboard
-                    </h1>
-                    <Badge variant="secondary" className="text-xs">
-                      eCommerce Pro
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <StoreSelector
-                      onStoreChange={setActiveStore}
-                      onAddStore={() => setShowAddStoreModal(true)}
-                    />
-                    <Button variant="outline" size="sm" onClick={handleLogout}>
-                      Logout
-                    </Button>
-                  </div>
-                </div>
-              </header>
-
-              <main className="flex-1 overflow-auto px-6 py-8">
-                <Outlet context={{ activeStore, setActiveStore }} />
-              </main>
+      <div className="min-h-screen bg-background flex w-full">
+        <AppSidebar />
+        <div className="flex-1 flex flex-col">
+          <header className="border-b border-border bg-card">
+            <div className="px-6 py-4 flex justify-between items-center">
+              <div className="flex items-center gap-4">
+                <SidebarTrigger className="lg:hidden" />
+                <h1 className="text-2xl font-bold">
+                  {activeStore?.name || companyName}'s Dashboard
+                </h1>
+                <Badge variant="secondary" className="text-xs">
+                  eCommerce Pro
+                </Badge>
+              </div>
+              <div className="flex items-center gap-3">
+                <StoreSelector
+                  onStoreChange={setActiveStore}
+                  onAddStore={() => setShowAddStoreModal(true)}
+                />
+                <Button variant="outline" size="sm" onClick={handleLogout}>
+                  Logout
+                </Button>
+              </div>
             </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
+          </header>
+
+          <main className="flex-1 px-6 py-8">
+            <Outlet context={{ activeStore, setActiveStore }} />
+          </main>
+        </div>
       </div>
 
       <AddStoreModal
