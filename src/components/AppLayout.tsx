@@ -175,7 +175,7 @@ const AppLayout = () => {
 
     return (
       <Sidebar
-        className={state === "collapsed" ? "w-14" : "w-60"}
+        className={state === "collapsed" ? "w-14" : "w-72"}
         collapsible="icon"
       >
         <SidebarContent>
@@ -260,13 +260,15 @@ const AppLayout = () => {
                               <SidebarMenuButton
                                 key={product.id}
                                 onClick={() => handleProductClick(product.id)}
-                                className={`w-full justify-start text-sm truncate ${
+                                className={`w-full justify-start text-sm ${
                                   isActive
                                     ? "bg-muted text-primary font-medium"
                                     : "hover:bg-muted/50"
                                 }`}
                               >
-                                {product.title}
+                                <span className="truncate block" title={product.title}>
+                                  {product.title}
+                                </span>
                               </SidebarMenuButton>
                             );
                           })}
@@ -332,7 +334,7 @@ const AppLayout = () => {
                               <SidebarMenuButton
                                 key={prompt.id}
                                 onClick={() => handlePromptClick(prompt.id)}
-                                className={`w-full justify-start text-sm truncate ${
+                                className={`w-full justify-start text-sm ${
                                   isActive
                                     ? "bg-muted text-primary font-medium"
                                     : "hover:bg-muted/50"
@@ -340,7 +342,7 @@ const AppLayout = () => {
                               >
                                 <span
                                   title={prompt.content}
-                                  className="truncate whitespace-nowrap overflow-hidden block w-full"
+                                  className="truncate block"
                                 >
                                   {prompt.content}
                                 </span>
