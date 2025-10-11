@@ -175,7 +175,7 @@ const AppLayout = () => {
 
     return (
       <Sidebar
-        className={state === "collapsed" ? "w-14" : "w-60"}
+        className={state === "collapsed" ? "w-14" : "w-75"}
         collapsible="icon"
       >
         <SidebarContent>
@@ -260,13 +260,18 @@ const AppLayout = () => {
                               <SidebarMenuButton
                                 key={product.id}
                                 onClick={() => handleProductClick(product.id)}
-                                className={`w-full justify-start text-sm truncate ${
+                                className={`w-full justify-start text-sm ${
                                   isActive
                                     ? "bg-muted text-primary font-medium"
                                     : "hover:bg-muted/50"
                                 }`}
                               >
-                                {product.title}
+                                <span
+                                  title={product.title}
+                                  className="truncate whitespace-nowrap overflow-hidden block w-full"
+                                >
+                                  {product.title}
+                                </span>
                               </SidebarMenuButton>
                             );
                           })}
