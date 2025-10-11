@@ -348,6 +348,8 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
             let skipped = 0;
             const batchSize = 50; // Insert in batches of 50
 
+            const newlyInsertedProducts: Array<{ id: string; title: string }> = [];
+
             for (let i = 0; i < rows.length; i += batchSize) {
               const batch = rows.slice(i, i + batchSize);
 
@@ -384,6 +386,13 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                   const insertedCount = data?.length || 0;
                   imported += insertedCount;
                   skipped += productsToInsert.length - insertedCount;
+                  
+                  // Track newly inserted products
+                  if (data && data.length > 0) {
+                    newlyInsertedProducts.push(
+                      ...data.map((p) => ({ id: p.id, title: p.title }))
+                    );
+                  }
                 }
               }
 
@@ -402,6 +411,74 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
               title: "Import Complete",
               description: `Successfully imported ${imported} products. Skipped ${skipped} duplicates or invalid rows.`,
             });
+
+            // Trigger AI analysis for up to 25 new products (non-blocking)
+            if (newlyInsertedProducts.length > 0) {
+              const productsToAnalyze = newlyInsertedProducts.slice(0, 25);
+              
+              (async () => {
+                try {
+                  const { data: session } = await supabase.auth.getSession();
+                  if (session?.session) {
+                    const authHeaders = {
+                      Authorization: `Bearer ${session.session.access_token}`,
+                    };
+
+                    console.log(`Starting AI analysis for ${productsToAnalyze.length} imported products...`);
+
+                    for (const product of productsToAnalyze) {
+                      try {
+                        // Step 1: Generate buyer-intent prompts
+                        await supabase.functions.invoke("generate-buyer-intent-prompts", {
+                          body: {
+                            productId: product.id,
+                            storeId: activeStore.id,
+                            productTitle: product.title,
+                            productType: null,
+                            vendor: null,
+                            tags: [],
+                          },
+                          headers: authHeaders,
+                        });
+
+                        // Step 2: Generate responses
+                        await supabase.functions.invoke("generate-buyer-intent-outputs", {
+                          body: {
+                            productId: product.id,
+                          },
+                          headers: authHeaders,
+                        });
+
+                        // Step 3: Score responses
+                        await supabase.functions.invoke("score-buyer-intent-outputs", {
+                          body: {
+                            productId: product.id,
+                            productTitle: product.title,
+                          },
+                          headers: authHeaders,
+                        });
+
+                        // Step 4: Generate PDP recommendations
+                        await supabase.functions.invoke("generate-pdp-recommendations", {
+                          body: {
+                            productId: product.id,
+                          },
+                          headers: authHeaders,
+                        });
+
+                        console.log(`Completed AI analysis for product: ${product.title}`);
+                      } catch (productError) {
+                        console.error(`Error analyzing product ${product.title}:`, productError);
+                      }
+                    }
+
+                    console.log("AI analysis pipeline completed for imported products");
+                  }
+                } catch (error) {
+                  console.error("Error in AI analysis pipeline:", error);
+                }
+              })();
+            }
           } catch (error: any) {
             console.error("Import error:", error);
             toast({
