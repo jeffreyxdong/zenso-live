@@ -12,14 +12,10 @@ export const ResizableSidebar: React.FC<ResizableSidebarProps> = ({ children }) 
   const [width, setWidth] = useState(DEFAULT_WIDTH);
 
   useEffect(() => {
-    // Restore width from localStorage
     const saved = localStorage.getItem("sidebarWidth");
-    if (saved) {
-      setWidth(Number(saved));
-      document.documentElement.style.setProperty("--dynamic-sidebar-width", `${saved}px`);
-    } else {
-      document.documentElement.style.setProperty("--dynamic-sidebar-width", `${DEFAULT_WIDTH}px`);
-    }
+    const parsed = saved ? parseInt(saved) : DEFAULT_WIDTH;
+    setWidth(parsed);
+    document.documentElement.style.setProperty("--dynamic-sidebar-width", `${parsed}px`);
   }, []);
 
   const startResize = (e: React.MouseEvent) => {
@@ -45,10 +41,13 @@ export const ResizableSidebar: React.FC<ResizableSidebarProps> = ({ children }) 
   };
 
   return (
-    <div className="relative flex-shrink-0 h-screen select-none" style={{ width: `${width}px` }}>
+    <div
+      className="relative flex-shrink-0 h-screen select-none bg-sidebar text-sidebar-foreground"
+      style={{ width: `${width}px` }}
+    >
       {children}
       <div
-        className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-border/40 active:bg-border/70 transition-colors"
+        className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-border active:bg-border/70 transition-colors"
         onMouseDown={startResize}
       />
     </div>
