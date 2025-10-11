@@ -2,7 +2,16 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BarChart3, MessageCircle, Settings, Package, Target, Plus, ChevronDown, FileText } from "lucide-react";
+import {
+  BarChart3,
+  MessageCircle,
+  Settings,
+  Package,
+  Target,
+  Plus,
+  ChevronDown,
+  FileText,
+} from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -16,7 +25,10 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
+import {
+  Collapsible,
+  CollapsibleContent,
+} from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import StoreSelector from "@/components/StoreSelector";
@@ -81,7 +93,7 @@ const AppLayout = () => {
             if (payload.new.company_name) {
               setCompanyName(payload.new.company_name);
             }
-          },
+          }
         )
         .subscribe();
       return () => supabase.removeChannel(channel);
@@ -127,7 +139,7 @@ const AppLayout = () => {
             table: "products",
             filter: `store_id=eq.${activeStore.id}`,
           },
-          () => loadData(),
+          () => loadData()
         )
         .subscribe(),
       supabase
@@ -140,7 +152,7 @@ const AppLayout = () => {
             table: "user_generated_prompts",
             filter: `store_id=eq.${activeStore.id}`,
           },
-          () => loadData(),
+          () => loadData()
         )
         .subscribe(),
     ];
@@ -162,7 +174,10 @@ const AppLayout = () => {
     const activePromptId = promptMatch ? promptMatch[1] : null;
 
     return (
-      <Sidebar className={state === "collapsed" ? "w-14" : "w-60"} collapsible="icon">
+      <Sidebar
+        className={state === "collapsed" ? "w-14" : "w-60"}
+        collapsible="icon"
+      >
         <SidebarContent>
           {/* Quick Actions */}
           <SidebarGroup>
@@ -188,7 +203,11 @@ const AppLayout = () => {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     onClick={() => handleTabChange("overview")}
-                    className={activeTab === "overview" ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
+                    className={
+                      activeTab === "overview"
+                        ? "bg-muted text-primary font-medium"
+                        : "hover:bg-muted/50"
+                    }
                   >
                     <BarChart3 className="w-4 h-4" />
                     {state !== "collapsed" && <span>Overview</span>}
@@ -197,14 +216,18 @@ const AppLayout = () => {
 
                 {/* Products */}
                 <Collapsible
-                  open={productsExpanded || location.pathname.startsWith("/product/")}
+                  open={
+                    productsExpanded || location.pathname.startsWith("/product/")
+                  }
                   onOpenChange={setProductsExpanded}
                 >
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       onClick={() => handleTabChange("products-overview")}
                       className={
-                        activeTab === "products-overview" ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"
+                        activeTab === "products-overview"
+                          ? "bg-muted text-primary font-medium"
+                          : "hover:bg-muted/50"
                       }
                     >
                       <Package className="w-4 h-4" />
@@ -227,15 +250,20 @@ const AppLayout = () => {
                       {state !== "collapsed" && products.length > 0 && (
                         <div className="ml-8 mt-1 space-y-1 pl-2 border-l border-border/50">
                           {products.map((product) => {
-                            const productMatch = location.pathname.match(/^\/product\/(.+)$/);
-                            const activeProductId = productMatch ? productMatch[1] : null;
+                            const productMatch =
+                              location.pathname.match(/^\/product\/(.+)$/);
+                            const activeProductId = productMatch
+                              ? productMatch[1]
+                              : null;
                             const isActive = activeProductId === product.id;
                             return (
                               <SidebarMenuButton
                                 key={product.id}
                                 onClick={() => handleProductClick(product.id)}
                                 className={`w-full justify-start text-sm truncate ${
-                                  isActive ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"
+                                  isActive
+                                    ? "bg-muted text-primary font-medium"
+                                    : "hover:bg-muted/50"
                                 }`}
                               >
                                 {product.title}
@@ -253,7 +281,9 @@ const AppLayout = () => {
                   <SidebarMenuButton
                     onClick={() => handleTabChange("brand-overview")}
                     className={
-                      activeTab === "brand-overview" ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"
+                      activeTab === "brand-overview"
+                        ? "bg-muted text-primary font-medium"
+                        : "hover:bg-muted/50"
                     }
                   >
                     <Target className="w-4 h-4" />
@@ -263,14 +293,18 @@ const AppLayout = () => {
 
                 {/* Prompts */}
                 <Collapsible
-                  open={promptsExpanded || location.pathname.startsWith("/prompt/")}
+                  open={
+                    promptsExpanded || location.pathname.startsWith("/prompt/")
+                  }
                   onOpenChange={setPromptsExpanded}
                 >
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       onClick={() => handleTabChange("prompts")}
                       className={`${
-                        activeTab === "prompts" ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"
+                        activeTab === "prompts"
+                          ? "bg-muted text-primary font-medium"
+                          : "hover:bg-muted/50"
                       }`}
                     >
                       <MessageCircle className="w-4 h-4" />
@@ -299,7 +333,9 @@ const AppLayout = () => {
                                 key={prompt.id}
                                 onClick={() => handlePromptClick(prompt.id)}
                                 className={`w-full justify-start text-sm truncate ${
-                                  isActive ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"
+                                  isActive
+                                    ? "bg-muted text-primary font-medium"
+                                    : "hover:bg-muted/50"
                                 }`}
                               >
                                 <span
@@ -321,7 +357,11 @@ const AppLayout = () => {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     onClick={() => handleTabChange("settings")}
-                    className={activeTab === "settings" ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
+                    className={
+                      activeTab === "settings"
+                        ? "bg-muted text-primary font-medium"
+                        : "hover:bg-muted/50"
+                    }
                   >
                     <Settings className="w-4 h-4" />
                     {state !== "collapsed" && <span>Settings</span>}
@@ -337,7 +377,8 @@ const AppLayout = () => {
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
-    if (error) toast({ title: "Logout failed", description: error.message });
+    if (error)
+      toast({ title: "Logout failed", description: error.message });
     else {
       toast({ title: "Signed out" });
       navigate("/", { replace: true });
@@ -346,23 +387,25 @@ const AppLayout = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen bg-background flex w-full overflow-hidden">
-        <ResizableSidebar>
-          <AppSidebar /> {/* your existing sidebar component */}
-        </ResizableSidebar>
-
-        <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="min-h-screen bg-background flex w-full">
+        <AppSidebar />
+        <div className="flex-1 flex flex-col">
           <header className="border-b border-border bg-card">
             <div className="px-6 py-4 flex justify-between items-center">
               <div className="flex items-center gap-4">
                 <SidebarTrigger className="lg:hidden" />
-                <h1 className="text-2xl font-bold">{activeStore?.name || companyName}'s Dashboard</h1>
+                <h1 className="text-2xl font-bold">
+                  {activeStore?.name || companyName}'s Dashboard
+                </h1>
                 <Badge variant="secondary" className="text-xs">
                   eCommerce Pro
                 </Badge>
               </div>
               <div className="flex items-center gap-3">
-                <StoreSelector onStoreChange={setActiveStore} onAddStore={() => setShowAddStoreModal(true)} />
+                <StoreSelector
+                  onStoreChange={setActiveStore}
+                  onAddStore={() => setShowAddStoreModal(true)}
+                />
                 <Button variant="outline" size="sm" onClick={handleLogout}>
                   Logout
                 </Button>
@@ -370,7 +413,7 @@ const AppLayout = () => {
             </div>
           </header>
 
-          <main className="flex-1 px-6 py-8 overflow-y-auto">
+          <main className="flex-1 px-6 py-8">
             <Outlet context={{ activeStore, setActiveStore }} />
           </main>
         </div>
@@ -385,58 +428,6 @@ const AppLayout = () => {
         }}
       />
     </SidebarProvider>
-  );
-};
-
-// === Resizable Sidebar Wrapper ===
-const ResizableSidebar: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [width, setWidth] = useState(() => {
-    const saved = localStorage.getItem("sidebarWidth");
-    return saved ? parseInt(saved, 10) : 260;
-  });
-
-  const isResizing = React.useRef(false);
-
-  const startResize = () => {
-    isResizing.current = true;
-    document.body.style.cursor = "col-resize";
-  };
-
-  const stopResize = () => {
-    isResizing.current = false;
-    document.body.style.cursor = "default";
-    localStorage.setItem("sidebarWidth", String(width));
-  };
-
-  const handleResize = (e: MouseEvent) => {
-    if (!isResizing.current) return;
-    const newWidth = Math.min(Math.max(e.clientX, 180), 420);
-    setWidth(newWidth);
-  };
-
-  useEffect(() => {
-    window.addEventListener("mousemove", handleResize);
-    window.addEventListener("mouseup", stopResize);
-    return () => {
-      window.removeEventListener("mousemove", handleResize);
-      window.removeEventListener("mouseup", stopResize);
-    };
-  }, []);
-
-  return (
-    <div 
-      className="relative flex-shrink-0 h-screen border-r border-border bg-background" 
-      style={{ 
-        width,
-        '--dynamic-sidebar-width': `${width}px`
-      } as React.CSSProperties}
-    >
-      {children}
-      <div
-        className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-border/40 active:bg-border/70 transition-colors"
-        onMouseDown={startResize}
-      />
-    </div>
   );
 };
 
