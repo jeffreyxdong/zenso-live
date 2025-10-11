@@ -391,13 +391,13 @@ const AppLayout = () => {
     <SidebarProvider>
       <div className="h-screen bg-background flex w-full">
         <ResizablePanelGroup direction="horizontal">
-          <ResizablePanel defaultSize={20} minSize={15} maxSize={35}>
+          <ResizablePanel defaultSize={5} minSize={3} maxSize={35}>
             <AppSidebar />
           </ResizablePanel>
           
           <ResizableHandle withHandle />
           
-          <ResizablePanel defaultSize={80} minSize={65}>
+          <ResizablePanel defaultSize={95} minSize={65}>
             <div className="flex flex-col h-full">
               <header className="border-b border-border bg-card">
                 <div className="px-6 py-4 flex justify-between items-center">
