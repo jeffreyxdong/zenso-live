@@ -12,9 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Progress } from "@/components/ui/progress";
+import { DialogDescription } from "@/components/ui/dialog";
 import { Store, Package, Download, Plus, Search, CheckCircle, AlertCircle, Image, Trash2, MoreVertical, Eye, TrendingUp, MapPin, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import Papa from 'papaparse';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -78,6 +81,9 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showProductDetail, setShowProductDetail] = useState(false);
   const [sortBy, setSortBy] = useState<string>("name-asc");
+  const [showCsvImportDialog, setShowCsvImportDialog] = useState(false);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [importProgress, setImportProgress] = useState(0);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -242,198 +248,160 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
     }
   };
 
-  const handleImportProducts = async () => {
-    setImporting(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        throw new Error('Please log in to import products');
-      }
+  const generateShopifyId = (title: string): string => {
+    // Generate a consistent hash-based ID from the title
+    let hash = 0;
+    for (let i = 0; i < title.length; i++) {
+      const char = title.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return `csv-import-${Math.abs(hash)}-${Date.now()}`;
+  };
 
-      console.log('Starting Shopify import process...');
-      
-      // First check if user has existing shop connection
-      const { data: existingShopData, error: shopCheckError } = await supabase.functions.invoke('shopify-oauth', {
-        body: { action: 'check-existing-shop' },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
+  const handleImportProducts = () => {
+    setShowCsvImportDialog(true);
+  };
 
-      if (shopCheckError) {
-        throw new Error(`Failed to check existing shop: ${shopCheckError.message}`);
-      }
-
-      // If user has existing shop, use stored token to import
-      if (existingShopData.hasExistingShop) {
-        console.log('Using existing shop connection...');
-        const { data: importResult, error: importError } = await supabase.functions.invoke('shopify-oauth', {
-          body: { action: 'import-with-existing-token' },
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        });
-
-        if (importError) {
-          throw new Error(`Import failed: ${importError.message}`);
-        }
-
-        // Refresh products and show success
-        fetchProducts();
-        setImporting(false);
-        
+  const handleCsvFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.name.endsWith('.csv')) {
         toast({
-          title: "Success",
-          description: `✅ Products imported successfully! Imported: ${importResult.imported}, Skipped: ${importResult.skipped}`,
+          title: "Invalid file",
+          description: "Please upload a CSV file",
+          variant: "destructive",
         });
         return;
       }
+      setCsvFile(file);
+    }
+  };
 
-      // Get active store from Supabase instead of prompting user
+  const handleCsvImport = async () => {
+    if (!csvFile) {
+      toast({
+        title: "No file selected",
+        description: "Please select a CSV file to import",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setImporting(true);
+    setImportProgress(0);
+
+    try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         throw new Error('User not authenticated');
-      }
-
-      const { data: activeStore, error: storeError } = await supabase
-        .from('stores')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (storeError) {
-        throw new Error(`Failed to get active store: ${storeError.message}`);
       }
 
       if (!activeStore) {
         throw new Error('No active store found. Please add a store first.');
       }
 
-      // Extract shop domain from website URL
-      let shopDomain = '';
-      try {
-        const websiteUrl = activeStore.website;
-        if (websiteUrl.includes('myshopify.com')) {
-          // Extract domain from myshopify.com URL
-          const match = websiteUrl.match(/https?:\/\/([^.]+)\.myshopify\.com/);
-          if (match) {
-            shopDomain = match[1];
+      // Parse CSV file
+      Papa.parse(csvFile, {
+        header: true,
+        skipEmptyLines: true,
+        complete: async (results) => {
+          try {
+            const rows = results.data as any[];
+            
+            // Validate that Title column exists
+            if (rows.length === 0 || !rows[0].hasOwnProperty('Title')) {
+              throw new Error('CSV must contain a "Title" column');
+            }
+
+            console.log(`Parsed ${rows.length} rows from CSV`);
+
+            let imported = 0;
+            let skipped = 0;
+            const batchSize = 50; // Insert in batches of 50
+
+            for (let i = 0; i < rows.length; i += batchSize) {
+              const batch = rows.slice(i, i + batchSize);
+              
+              const productsToInsert = batch
+                .filter(row => row.Title && row.Title.trim())
+                .map(row => {
+                  const title = row.Title.trim();
+                  return {
+                    user_id: user.id,
+                    store_id: activeStore.id,
+                    shopify_id: generateShopifyId(title),
+                    title: title,
+                    handle: generateHandle(title),
+                    status: 'active',
+                    images: [],
+                    tags: [],
+                  };
+                });
+
+              if (productsToInsert.length > 0) {
+                // Use upsert to skip duplicates
+                const { data, error } = await supabase
+                  .from('products')
+                  .upsert(productsToInsert, {
+                    onConflict: 'user_id,shopify_id',
+                    ignoreDuplicates: true
+                  })
+                  .select();
+
+                if (error) {
+                  console.error('Batch insert error:', error);
+                  skipped += productsToInsert.length;
+                } else {
+                  const insertedCount = data?.length || 0;
+                  imported += insertedCount;
+                  skipped += productsToInsert.length - insertedCount;
+                }
+              }
+
+              // Update progress
+              const progress = Math.min(100, Math.round(((i + batchSize) / rows.length) * 100));
+              setImportProgress(progress);
+            }
+
+            // Close dialog and refresh products
+            setShowCsvImportDialog(false);
+            setCsvFile(null);
+            setImportProgress(0);
+            fetchProducts();
+
+            toast({
+              title: "Import Complete",
+              description: `Successfully imported ${imported} products. Skipped ${skipped} duplicates or invalid rows.`,
+            });
+
+          } catch (error: any) {
+            console.error('Import error:', error);
+            toast({
+              title: "Import Failed",
+              description: error.message || "Failed to import products",
+              variant: "destructive",
+            });
+          } finally {
+            setImporting(false);
           }
-        } else {
-          // For custom domains, use the store name as fallback
-          shopDomain = activeStore.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-        }
-      } catch (error) {
-        console.error('Error parsing store website:', error);
-        shopDomain = activeStore.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-      }
-
-      if (!shopDomain) {
-        throw new Error(`Could not determine shop domain from store website: ${activeStore.website}. Please ensure your store website is a valid Shopify URL.`);
-      }
-
-      console.log('Using shop domain from active store:', shopDomain);
-
-      // Get API key from backend
-      const { data: keyData, error: keyError } = await supabase.functions.invoke('shopify-oauth', {
-        body: { action: 'get-api-key' },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
         },
-      });
-
-      console.log('API key response:', { keyData, keyError });
-
-      if (keyError || !keyData?.apiKey) {
-        throw new Error('Shopify API key not configured. Please ensure SHOPIFY_API_KEY secret is set.');
-      }
-
-      // Generate CSRF state token for security
-      const state = Math.random().toString(36).substring(2, 15) + 
-                   Math.random().toString(36).substring(2, 15);
-      
-      console.log('Generated state:', state);
-      
-      // Store state and session for verification
-      sessionStorage.setItem('shopify_oauth_state', state);
-      sessionStorage.setItem('shopify_session_token', session.access_token);
-
-      // Use the correct preview URL format for redirect
-      const redirectUri = `https://id-preview--e8261a88-908d-4b6a-b764-a02dcc966558.lovable.app/auth/shopify/callback`;
-      const scopes = 'read_products,read_inventory';
-
-      // Build OAuth URL
-      const authUrl = `https://${shopDomain}.myshopify.com/admin/oauth/authorize?` +
-        `client_id=${keyData.apiKey}&` +
-        `scope=${scopes}&` +
-        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-        `state=${state}`;
-
-      console.log('OAuth URL:', authUrl);
-      console.log('Redirect URI:', redirectUri);
-
-      console.log('Opening Shopify OAuth popup...');
-
-      // Open popup window for OAuth
-      const popup = window.open(
-        authUrl,
-        'shopify-oauth',
-        'width=600,height=700,scrollbars=yes,resizable=yes,status=yes'
-      );
-
-      console.log('Popup opened:', !!popup);
-
-      if (!popup) {
-        throw new Error('Popup blocked. Please allow popups for this site and try again.');
-      }
-
-      // Listen for success message from popup
-      const messageHandler = (event: MessageEvent) => {
-        if (event.data?.type === 'shopify-import-complete') {
-          console.log('Received import complete message', event.data);
-          popup?.close();
-          window.removeEventListener('message', messageHandler);
-          
-          // Refresh the products list
-          fetchProducts();
-          setImporting(false);
-          
+        error: (error) => {
+          console.error('CSV parse error:', error);
           toast({
-            title: "Success",
-            description: `✅ Products imported successfully! Imported: ${event.data.imported}, Skipped: ${event.data.skipped}`,
-          });
-        } else if (event.data?.type === 'shopify-import-error') {
-          console.log('Received import error message', event.data);
-          popup?.close();
-          window.removeEventListener('message', messageHandler);
-          setImporting(false);
-          
-          toast({
-            title: "Import Error", 
-            description: "❌ Import failed.",
+            title: "Parse Error",
+            description: "Failed to parse CSV file. Please ensure it's properly formatted.",
             variant: "destructive",
           });
-        }
-      };
-
-      window.addEventListener('message', messageHandler);
-
-      // Check if popup was closed manually
-      const checkClosed = setInterval(() => {
-        if (popup?.closed) {
-          clearInterval(checkClosed);
-          window.removeEventListener('message', messageHandler);
           setImporting(false);
         }
-      }, 1000);
+      });
 
     } catch (error: any) {
       console.error('Import error:', error);
       toast({
-        title: "Import Error",
-        description: error.message,
+        title: "Error",
+        description: error.message || "Failed to import products",
         variant: "destructive",
       });
       setImporting(false);
@@ -928,6 +896,80 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* CSV Import Dialog */}
+      <Dialog open={showCsvImportDialog} onOpenChange={(open) => {
+        setShowCsvImportDialog(open);
+        if (!open) {
+          setCsvFile(null);
+          setImportProgress(0);
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Import Products from CSV</DialogTitle>
+            <DialogDescription>
+              Upload your Shopify products CSV file. Only the "Title" column will be used.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="border-2 border-dashed rounded-lg p-6 text-center">
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleCsvFileChange}
+                className="hidden"
+                id="csv-upload"
+                disabled={importing}
+              />
+              <label
+                htmlFor="csv-upload"
+                className="cursor-pointer flex flex-col items-center gap-2"
+              >
+                <Store className="w-12 h-12 text-muted-foreground" />
+                <div>
+                  <p className="font-medium">
+                    {csvFile ? csvFile.name : 'Choose CSV file'}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Click to browse or drag and drop
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            {importing && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Importing products...</span>
+                  <span>{importProgress}%</span>
+                </div>
+                <Progress value={importProgress} />
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowCsvImportDialog(false);
+                  setCsvFile(null);
+                  setImportProgress(0);
+                }}
+                disabled={importing}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCsvImport}
+                disabled={!csvFile || importing}
+              >
+                {importing ? 'Importing...' : 'Import Products'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Product Detail Dialog */}
       <Dialog open={showProductDetail} onOpenChange={setShowProductDetail}>
