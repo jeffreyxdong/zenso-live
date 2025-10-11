@@ -395,14 +395,14 @@ const AppLayout = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen bg-background flex w-full">
-        <ResizablePanelGroup direction="horizontal" className="min-h-screen">
+      <div className="flex h-screen w-full bg-background">
+        <ResizablePanelGroup direction="horizontal">
           <ResizablePanel defaultSize={20} minSize={15} maxSize={35}>
             <AppSidebar />
           </ResizablePanel>
           <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={80}>
-            <div className="flex-1 flex flex-col h-full">
+          <ResizablePanel defaultSize={80} minSize={50}>
+            <div className="flex flex-col h-full">
               <header className="border-b border-border bg-card">
                 <div className="px-6 py-4 flex justify-between items-center">
                   <div className="flex items-center gap-4">
@@ -426,7 +426,7 @@ const AppLayout = () => {
                 </div>
               </header>
 
-              <main className="flex-1 px-6 py-8">
+              <main className="flex-1 overflow-auto px-6 py-8">
                 <Outlet context={{ activeStore, setActiveStore }} />
               </main>
             </div>
