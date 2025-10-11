@@ -660,8 +660,8 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
             onClick={handleImportProducts}
             disabled={loading || importing}
           >
-            <Store className="w-4 h-4" />
-            {importing ? "Importing..." : "Import Products"}
+            <Download className="w-4 h-4" />
+            {importing ? "Importing..." : "Import from CSV"}
           </Button>
           <Button
             className="flex items-center gap-2"
@@ -934,7 +934,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Import Products from CSV</DialogTitle>
-            <DialogDescription>Upload your Shopify products CSV file.</DialogDescription>
+            <DialogDescription>Upload your product CSV file. Only the "Title" column is required.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="border-2 border-dashed rounded-lg p-6 text-center">
@@ -947,7 +947,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                 disabled={importing}
               />
               <label htmlFor="csv-upload" className="cursor-pointer flex flex-col items-center gap-2">
-                <Store className="w-12 h-12 text-muted-foreground" />
+                <Download className="w-12 h-12 text-muted-foreground" />
                 <div>
                   <p className="font-medium">{csvFile ? csvFile.name : "Choose CSV file"}</p>
                   <p className="text-sm text-muted-foreground">Click to browse or drag and drop</p>
@@ -978,7 +978,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                 Cancel
               </Button>
               <Button onClick={handleCsvImport} disabled={!csvFile || importing}>
-                {importing ? "Importing..." : "Import Products"}
+                {importing ? "Importing..." : "Import"}
               </Button>
             </div>
           </div>
