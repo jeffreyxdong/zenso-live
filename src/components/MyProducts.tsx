@@ -745,15 +745,18 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
   };
 
   const getScoreBadge = (score: number | undefined, productId: string, isLoading: boolean) => {
-    if (isLoading || score == null || score === 0) {
-      if (isLoading) {
-        return (
-          <div className="flex items-center justify-center gap-2 text-sm font-semibold px-3 py-1.5 rounded-md border text-muted-foreground bg-muted/50 border-muted">
-            <Loader2 className="w-3 h-3 animate-spin" />
-            <span>Analyzing...</span>
-          </div>
-        );
-      }
+    // Show loading spinner if explicitly loading
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center gap-2 text-sm font-semibold px-3 py-1.5 rounded-md border text-muted-foreground bg-muted/50 border-muted">
+          <Loader2 className="w-3 h-3 animate-spin" />
+          <span>Analyzing...</span>
+        </div>
+      );
+    }
+    
+    // Show "No Data" only if score is actually null/undefined
+    if (score == null) {
       return <span className="text-xs text-muted-foreground px-2 py-1 rounded bg-muted/50">No Data</span>;
     }
     
@@ -825,9 +828,9 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
 
           return {
             ...product,
-            visibility_score: latestScore?.visibility_score || 0,
-            sentiment_score: latestScore?.sentiment_score || 0,
-            position_score: latestScore?.position_score || 0,
+            visibility_score: latestScore?.visibility_score ?? undefined,
+            sentiment_score: latestScore?.sentiment_score ?? undefined,
+            position_score: latestScore?.position_score ?? undefined,
           };
         }),
       );

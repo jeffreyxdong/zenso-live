@@ -189,9 +189,9 @@ const ProductOverview = () => {
         if (!mounted) return;
 
         const latest = scores?.[scores.length - 1];
-        const visibilityScore = latest?.visibility_score || 0;
-        const sentimentScore = latest?.sentiment_score || 0;
-        const positionScore = latest?.position_score || 0;
+        const visibilityScore = latest?.visibility_score ?? 0;
+        const sentimentScore = latest?.sentiment_score ?? 0;
+        const positionScore = latest?.position_score ?? 0;
 
         const getVisibilityLevel = (s: number) => (s >= 80 ? "High" : s >= 60 ? "Medium" : "Low");
         const getSentimentLevel = (s: number) => (s >= 70 ? "Positive" : s >= 30 ? "Neutral" : "Negative");
@@ -207,10 +207,10 @@ const ProductOverview = () => {
           currentMetrics: {
             visibility: getVisibilityLevel(visibilityScore),
             sentiment: getSentimentLevel(sentimentScore),
-            position: positionScore || 5,
+            position: positionScore ?? 0,
             visibilityScore,
             sentimentScore,
-            positionScore: positionScore || 5,
+            positionScore: positionScore ?? 0,
           },
         };
 
