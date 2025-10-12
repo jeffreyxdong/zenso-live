@@ -43,6 +43,7 @@ import {
   TrendingUp,
   MapPin,
   Heart,
+  Loader2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -683,25 +684,39 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
     return `${totalInventory} in stock`;
   };
 
-  const getScoreBadge = (score?: number) => {
-    const displayScore = score ?? 0;
-    if (displayScore >= 80) {
+  const getScoreBadge = (score: number | undefined, productCreatedAt: string) => {
+    // Check if product was created recently (within last 5 minutes) and has no score
+    const isRecentlyCreated = new Date().getTime() - new Date(productCreatedAt).getTime() < 5 * 60 * 1000;
+    
+    if (score == null || score === 0) {
+      if (isRecentlyCreated) {
+        return (
+          <div className="flex items-center justify-center gap-2 text-sm font-semibold px-3 py-1.5 rounded-md border text-muted-foreground bg-muted/50 border-muted">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            <span>Processing...</span>
+          </div>
+        );
+      }
+      return <span className="text-xs text-muted-foreground px-2 py-1 rounded bg-muted/50">No Data</span>;
+    }
+    
+    if (score >= 80) {
       return (
         <span className="text-sm font-semibold px-3 py-1.5 rounded-md border text-green-700 bg-green-50 border-green-200">
-          {displayScore}/100
+          {score}/100
         </span>
       );
     }
-    if (displayScore >= 60) {
+    if (score >= 60) {
       return (
         <span className="text-sm font-semibold px-3 py-1.5 rounded-md border text-yellow-700 bg-yellow-50 border-yellow-200">
-          {displayScore}/100
+          {score}/100
         </span>
       );
     }
     return (
       <span className="text-sm font-semibold px-3 py-1.5 rounded-md border text-red-700 bg-red-50 border-red-200">
-        {displayScore}/100
+        {score}/100
       </span>
     );
   };
@@ -970,9 +985,9 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                           {product.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-center">{getScoreBadge(product.visibility_score)}</TableCell>
-                      <TableCell className="text-center">{getScoreBadge(product.sentiment_score)}</TableCell>
-                      <TableCell className="text-center">{getScoreBadge(product.position_score)}</TableCell>
+                      <TableCell className="text-center">{getScoreBadge(product.visibility_score, product.created_at)}</TableCell>
+                      <TableCell className="text-center">{getScoreBadge(product.sentiment_score, product.created_at)}</TableCell>
+                      <TableCell className="text-center">{getScoreBadge(product.position_score, product.created_at)}</TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()} className="text-center">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
