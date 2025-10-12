@@ -113,7 +113,6 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
   const [showCsvImportDialog, setShowCsvImportDialog] = useState(false);
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [importProgress, setImportProgress] = useState(0);
-  const [loadingScores, setLoadingScores] = useState<Set<string>>(new Set());
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -125,36 +124,6 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
 
   useEffect(() => {
     fetchProducts();
-  }, [activeStore]);
-
-  // Subscribe to product_scores updates to remove from loading state
-  useEffect(() => {
-    if (!activeStore?.id) return;
-
-    const subscription = supabase
-      .channel('product_scores_updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'product_scores',
-        },
-        (payload: any) => {
-          if (payload.new && payload.new.product_id) {
-            setLoadingScores((prev) => {
-              const next = new Set(prev);
-              next.delete(payload.new.product_id);
-              return next;
-            });
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(subscription);
-    };
   }, [activeStore]);
 
   const generateHandle = (title: string) => {
@@ -219,18 +188,6 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
       if (onProductClick) {
         onProductClick(productData.id);
       }
-
-      // Add to loading state
-      setLoadingScores((prev) => new Set(prev).add(productData.id));
-
-      // Set timeout to clear loading state after 2 minutes
-      setTimeout(() => {
-        setLoadingScores((prev) => {
-          const next = new Set(prev);
-          next.delete(productData.id);
-          return next;
-        });
-      }, 120000);
 
       // Start background processes (non-blocking)
       (async () => {
@@ -462,22 +419,6 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
             // Trigger AI analysis for up to 25 new products in batches (non-blocking)
             if (newlyInsertedProducts.length > 0) {
               const productsToAnalyze = newlyInsertedProducts.slice(0, 25);
-              
-              // Add all products to loading state
-              setLoadingScores((prev) => {
-                const next = new Set(prev);
-                productsToAnalyze.forEach(p => next.add(p.id));
-                return next;
-              });
-
-              // Set timeout to clear loading state after 5 minutes for batch imports
-              setTimeout(() => {
-                setLoadingScores((prev) => {
-                  const next = new Set(prev);
-                  productsToAnalyze.forEach(p => next.delete(p.id));
-                  return next;
-                });
-              }, 300000);
               
               (async () => {
                 try {
@@ -742,23 +683,15 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
     return `${totalInventory} in stock`;
   };
 
-  const getScoreBadge = (score: number | undefined, productId: string, isLoading: boolean) => {
-    if (isLoading || score === undefined || score === null) {
-      return (
-        <div className="flex items-center justify-center gap-2">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-          <span className="text-xs text-muted-foreground italic">Analyzing...</span>
-        </div>
-      );
-    }
-    const displayScore = score ?? 0;
-    if (displayScore === 0) {
+  const getScoreBadge = (score?: number) => {
+    if (score === undefined || score === 0) {
       return (
         <span className="text-xs text-muted-foreground italic px-3 py-1.5 rounded-md border bg-muted/50">
-          No data
+          Pending...
         </span>
       );
     }
+    const displayScore = Math.round(score);
     if (displayScore >= 80) {
       return (
         <span className="text-sm font-semibold px-3 py-1.5 rounded-md border text-green-700 bg-green-50 border-green-200">
@@ -1044,9 +977,9 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                           {product.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-center">{getScoreBadge(product.visibility_score, product.id, loadingScores.has(product.id))}</TableCell>
-                      <TableCell className="text-center">{getScoreBadge(product.sentiment_score, product.id, loadingScores.has(product.id))}</TableCell>
-                      <TableCell className="text-center">{getScoreBadge(product.position_score, product.id, loadingScores.has(product.id))}</TableCell>
+                      <TableCell className="text-center">{getScoreBadge(product.visibility_score)}</TableCell>
+                      <TableCell className="text-center">{getScoreBadge(product.sentiment_score)}</TableCell>
+                      <TableCell className="text-center">{getScoreBadge(product.position_score)}</TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()} className="text-center">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
