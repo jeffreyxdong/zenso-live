@@ -64,7 +64,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "gpt-4o-mini",
         input: `You are an expert e-commerce copywriter. 
-    Generate 5 specific, actionable buyer-intent search queries that potential customers would use when they're ready to purchase a product like this.
+    Generate 10 specific, actionable buyer-intent search queries that potential customers would use when they're ready to purchase a product like this.
     
     Product Details:
     - Title: ${productTitle}
