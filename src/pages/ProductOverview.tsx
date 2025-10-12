@@ -215,15 +215,19 @@ const ProductOverview = () => {
         };
 
         setProduct(updatedProduct);
-        // Treat 0 as valid score - only load if null/undefined
-        setVisibilityScoreLoading(visibilityScore == null);
-        setSentimentScoreLoading(sentimentScore == null);
-        setPositionScoreLoading(positionScore == null);
-        setVisibilityTrendLoading(!scores?.length);
-        setSentimentTrendLoading(!scores?.length);
-        setPositionTrendLoading(!scores?.length);
-        setRecommendationsLoading(!recs?.length);
-        setSourcesLoading(!sources?.length);
+        
+        // Check if product was created recently (within last 5 minutes)
+        const isRecentlyCreated = new Date().getTime() - new Date(productData.created_at).getTime() < 5 * 60 * 1000;
+        
+        // Show loading if score is null/undefined OR if score is 0 and product was recently created
+        setVisibilityScoreLoading(visibilityScore == null || (visibilityScore === 0 && isRecentlyCreated));
+        setSentimentScoreLoading(sentimentScore == null || (sentimentScore === 0 && isRecentlyCreated));
+        setPositionScoreLoading(positionScore == null || (positionScore === 0 && isRecentlyCreated));
+        setVisibilityTrendLoading(!scores?.length || (scores.length === 0 && isRecentlyCreated));
+        setSentimentTrendLoading(!scores?.length || (scores.length === 0 && isRecentlyCreated));
+        setPositionTrendLoading(!scores?.length || (scores.length === 0 && isRecentlyCreated));
+        setRecommendationsLoading(!recs?.length || (recs.length === 0 && isRecentlyCreated));
+        setSourcesLoading(!sources?.length || (sources.length === 0 && isRecentlyCreated));
       } catch (e) {
         console.error(e);
         toast({
