@@ -154,7 +154,7 @@ serve(async (req) => {
           .insert({
             prompt_id: prompt.id,
             response_text: responseText,
-            model_name: "gpt-4o",
+            model_name: "gpt-4o-mini",
             sources: sources.length > 0 ? sources : null,
           })
           .select()
