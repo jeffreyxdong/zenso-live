@@ -215,9 +215,10 @@ const ProductOverview = () => {
         };
 
         setProduct(updatedProduct);
-        setVisibilityScoreLoading(!visibilityScore);
-        setSentimentScoreLoading(!sentimentScore);
-        setPositionScoreLoading(!positionScore);
+        // Treat 0 as valid score - only load if null/undefined
+        setVisibilityScoreLoading(visibilityScore == null);
+        setSentimentScoreLoading(sentimentScore == null);
+        setPositionScoreLoading(positionScore == null);
         setVisibilityTrendLoading(!scores?.length);
         setSentimentTrendLoading(!scores?.length);
         setPositionTrendLoading(!scores?.length);
@@ -236,6 +237,18 @@ const ProductOverview = () => {
     };
 
     fetchInitialData();
+
+    // Add timeout protection - stop loading after 30 seconds if no data arrives
+    const timeoutId = setTimeout(() => {
+      setVisibilityScoreLoading(false);
+      setSentimentScoreLoading(false);
+      setPositionScoreLoading(false);
+      setVisibilityTrendLoading(false);
+      setSentimentTrendLoading(false);
+      setPositionTrendLoading(false);
+      setRecommendationsLoading(false);
+      setSourcesLoading(false);
+    }, 30000);
 
     // --- Realtime updates ---
     const scoreSub = supabase
@@ -336,6 +349,7 @@ const ProductOverview = () => {
 
     return () => {
       mounted = false;
+      clearTimeout(timeoutId);
       supabase.removeChannel(scoreSub);
       supabase.removeChannel(recSub);
       supabase.removeChannel(sourceSub);
