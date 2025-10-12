@@ -684,14 +684,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
   };
 
   const getScoreBadge = (score?: number) => {
-    if (score === undefined || score === 0) {
-      return (
-        <span className="text-xs text-muted-foreground italic px-3 py-1.5 rounded-md border bg-muted/50">
-          Pending...
-        </span>
-      );
-    }
-    const displayScore = Math.round(score);
+    const displayScore = score ?? 0;
     if (displayScore >= 80) {
       return (
         <span className="text-sm font-semibold px-3 py-1.5 rounded-md border text-green-700 bg-green-50 border-green-200">
