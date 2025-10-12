@@ -64,7 +64,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "gpt-4o-mini",
         input: `You are an expert e-commerce copywriter. 
-    Generate 5 specific, actionable buyer-intent search queries that potential customers would use when they're ready to purchase a product like this.
+    Generate 10 specific, actionable buyer-intent search queries that potential customers would use when they're ready to purchase a product like this.
     
     Product Details:
     - Title: ${productTitle}
@@ -78,8 +78,7 @@ serve(async (req) => {
     3. Do NOT explicitly mention the product title, but at least one query must allude to it naturally.
     4. Keep outputs diverse and realistic.
     5. Return ONLY a JSON array of 5 strings, no extra text.
-    6. The prompt should be phrased such that the responses will ALWAYS return EITHER this product, or adjacent competitor products
-    7. Every prompt should be structured in such a way that the output will recommend at least one product.`,
+    6. Every prompt should be structured in such a way that the output will recommend at least one product.`,
       }),
     });
 
