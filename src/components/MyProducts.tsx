@@ -114,6 +114,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
   const [showCsvImportDialog, setShowCsvImportDialog] = useState(false);
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [importProgress, setImportProgress] = useState(0);
+  const [loadingScores, setLoadingScores] = useState<Set<string>>(new Set());
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -125,6 +126,37 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
 
   useEffect(() => {
     fetchProducts();
+
+    // Set up real-time subscription for product score updates
+    const channel = supabase
+      .channel('product_scores_updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'product_scores'
+        },
+        (payload) => {
+          console.log('Score update received:', payload);
+          if (payload.new && 'product_id' in payload.new) {
+            const productId = (payload.new as any).product_id;
+            // Remove from loading set when score is updated
+            setLoadingScores(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(productId);
+              return newSet;
+            });
+            // Refresh products to get the new scores
+            fetchProducts();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [activeStore]);
 
   const generateHandle = (title: string) => {
@@ -184,6 +216,18 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
         title: "Success",
         description: "Product created! Redirecting to product page...",
       });
+
+      // Add product to loading scores
+      setLoadingScores(prev => new Set(prev).add(productData.id));
+
+      // Set timeout to clear loading state after 2 minutes (fallback)
+      setTimeout(() => {
+        setLoadingScores(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(productData.id);
+          return newSet;
+        });
+      }, 2 * 60 * 1000);
 
       // Redirect to product overview page
       if (onProductClick) {
@@ -420,6 +464,22 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
             // Trigger AI analysis for up to 25 new products in batches (non-blocking)
             if (newlyInsertedProducts.length > 0) {
               const productsToAnalyze = newlyInsertedProducts.slice(0, 25);
+              
+              // Add all products to loading scores
+              setLoadingScores(prev => {
+                const newSet = new Set(prev);
+                productsToAnalyze.forEach(p => newSet.add(p.id));
+                return newSet;
+              });
+
+              // Set timeout to clear loading state after 5 minutes (fallback)
+              setTimeout(() => {
+                setLoadingScores(prev => {
+                  const newSet = new Set(prev);
+                  productsToAnalyze.forEach(p => newSet.delete(p.id));
+                  return newSet;
+                });
+              }, 5 * 60 * 1000);
               
               (async () => {
                 try {
@@ -684,16 +744,13 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
     return `${totalInventory} in stock`;
   };
 
-  const getScoreBadge = (score: number | undefined, productCreatedAt: string) => {
-    // Check if product was created recently (within last 5 minutes) and has no score
-    const isRecentlyCreated = new Date().getTime() - new Date(productCreatedAt).getTime() < 5 * 60 * 1000;
-    
-    if (score == null || score === 0) {
-      if (isRecentlyCreated) {
+  const getScoreBadge = (score: number | undefined, productId: string, isLoading: boolean) => {
+    if (isLoading || score == null || score === 0) {
+      if (isLoading) {
         return (
           <div className="flex items-center justify-center gap-2 text-sm font-semibold px-3 py-1.5 rounded-md border text-muted-foreground bg-muted/50 border-muted">
             <Loader2 className="w-3 h-3 animate-spin" />
-            <span>Processing...</span>
+            <span>Analyzing...</span>
           </div>
         );
       }
@@ -985,9 +1042,9 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                           {product.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-center">{getScoreBadge(product.visibility_score, product.created_at)}</TableCell>
-                      <TableCell className="text-center">{getScoreBadge(product.sentiment_score, product.created_at)}</TableCell>
-                      <TableCell className="text-center">{getScoreBadge(product.position_score, product.created_at)}</TableCell>
+                      <TableCell className="text-center">{getScoreBadge(product.visibility_score, product.id, loadingScores.has(product.id))}</TableCell>
+                      <TableCell className="text-center">{getScoreBadge(product.sentiment_score, product.id, loadingScores.has(product.id))}</TableCell>
+                      <TableCell className="text-center">{getScoreBadge(product.position_score, product.id, loadingScores.has(product.id))}</TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()} className="text-center">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
