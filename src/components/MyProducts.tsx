@@ -337,12 +337,16 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
           try {
             const rows = results.data as any[];
 
-            // Validate that Title column exists
-            if (rows.length === 0 || !rows[0].hasOwnProperty("Title")) {
-              throw new Error('CSV must contain a "Title" column');
+            // Find title column (case-insensitive)
+            const titleColumn = rows.length > 0 
+              ? Object.keys(rows[0]).find(key => key.toLowerCase() === "title")
+              : null;
+
+            if (!titleColumn) {
+              throw new Error('CSV must contain a "Title" or "title" column');
             }
 
-            console.log(`Parsed ${rows.length} rows from CSV`);
+            console.log(`Parsed ${rows.length} rows from CSV using column "${titleColumn}"`);
 
             let imported = 0;
             let skipped = 0;
@@ -354,9 +358,9 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
               const batch = rows.slice(i, i + batchSize);
 
               const productsToInsert = batch
-                .filter((row) => row.Title && row.Title.trim())
+                .filter((row) => row[titleColumn] && row[titleColumn].trim())
                 .map((row) => {
-                  const title = row.Title.trim();
+                  const title = row[titleColumn].trim();
                   return {
                     user_id: user.id,
                     store_id: activeStore.id,
@@ -1101,7 +1105,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Import Products from CSV</DialogTitle>
-            <DialogDescription>Upload your product CSV file. Only the "Title" column is required.</DialogDescription>
+            <DialogDescription>Upload your product CSV file. Only the "Title" or "title" column is required.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="border-2 border-dashed rounded-lg p-6 text-center">
