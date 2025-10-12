@@ -412,70 +412,160 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
               description: `Successfully imported ${imported} products. Skipped ${skipped} duplicates or invalid rows.`,
             });
 
-            // Trigger AI analysis for up to 25 new products (non-blocking)
+            // Trigger AI analysis for up to 25 new products in batches (non-blocking)
             if (newlyInsertedProducts.length > 0) {
               const productsToAnalyze = newlyInsertedProducts.slice(0, 25);
               
               (async () => {
                 try {
                   const { data: session } = await supabase.auth.getSession();
-                  if (session?.session) {
-                    const authHeaders = {
-                      Authorization: `Bearer ${session.session.access_token}`,
-                    };
-
-                    console.log(`Starting AI analysis for ${productsToAnalyze.length} imported products...`);
-
-                    for (const product of productsToAnalyze) {
-                      try {
-                        // Step 1: Generate buyer-intent prompts
-                        await supabase.functions.invoke("generate-buyer-intent-prompts", {
-                          body: {
-                            productId: product.id,
-                            storeId: activeStore.id,
-                            productTitle: product.title,
-                            productType: null,
-                            vendor: null,
-                            tags: [],
-                          },
-                          headers: authHeaders,
-                        });
-
-                        // Step 2: Generate responses
-                        await supabase.functions.invoke("generate-buyer-intent-outputs", {
-                          body: {
-                            productId: product.id,
-                          },
-                          headers: authHeaders,
-                        });
-
-                        // Step 3: Score responses
-                        await supabase.functions.invoke("score-buyer-intent-outputs", {
-                          body: {
-                            productId: product.id,
-                            productTitle: product.title,
-                          },
-                          headers: authHeaders,
-                        });
-
-                        // Step 4: Generate PDP recommendations
-                        await supabase.functions.invoke("generate-pdp-recommendations", {
-                          body: {
-                            productId: product.id,
-                          },
-                          headers: authHeaders,
-                        });
-
-                        console.log(`Completed AI analysis for product: ${product.title}`);
-                      } catch (productError) {
-                        console.error(`Error analyzing product ${product.title}:`, productError);
-                      }
-                    }
-
-                    console.log("AI analysis pipeline completed for imported products");
+                  if (!session?.session) {
+                    console.error("No active session for AI analysis");
+                    return;
                   }
+
+                  const authHeaders = {
+                    Authorization: `Bearer ${session.session.access_token}`,
+                  };
+
+                  console.log(`Starting AI analysis for ${productsToAnalyze.length} imported products in batches of 3...`);
+
+                  let successCount = 0;
+                  let failureCount = 0;
+                  const failedProducts: Array<{ title: string; step: string; error: string }> = [];
+
+                  // Process products in batches of 3 (parallel)
+                  const batchSize = 3;
+                  for (let i = 0; i < productsToAnalyze.length; i += batchSize) {
+                    const batch = productsToAnalyze.slice(i, i + batchSize);
+                    
+                    // Process batch in parallel
+                    await Promise.allSettled(
+                      batch.map(async (product) => {
+                        try {
+                          console.log(`[${product.title}] Starting analysis...`);
+
+                          // Step 1: Generate buyer-intent prompts
+                          const { data: promptData, error: promptError } = await supabase.functions.invoke(
+                            "generate-buyer-intent-prompts",
+                            {
+                              body: {
+                                productId: product.id,
+                                storeId: activeStore.id,
+                                productTitle: product.title,
+                                productType: null,
+                                vendor: null,
+                                tags: [],
+                              },
+                              headers: authHeaders,
+                            }
+                          );
+
+                          if (promptError) {
+                            throw new Error(`Prompt generation failed: ${promptError.message || JSON.stringify(promptError)}`);
+                          }
+                          console.log(`[${product.title}] ✓ Prompts generated`);
+
+                          // Step 2: Generate responses
+                          const { data: outputData, error: outputError } = await supabase.functions.invoke(
+                            "generate-buyer-intent-outputs",
+                            {
+                              body: { productId: product.id },
+                              headers: authHeaders,
+                            }
+                          );
+
+                          if (outputError) {
+                            throw new Error(`Output generation failed: ${outputError.message || JSON.stringify(outputError)}`);
+                          }
+                          console.log(`[${product.title}] ✓ Responses generated`);
+
+                          // Step 3: Score responses
+                          const { data: scoreData, error: scoreError } = await supabase.functions.invoke(
+                            "score-buyer-intent-outputs",
+                            {
+                              body: {
+                                productId: product.id,
+                                productTitle: product.title,
+                              },
+                              headers: authHeaders,
+                            }
+                          );
+
+                          if (scoreError) {
+                            throw new Error(`Scoring failed: ${scoreError.message || JSON.stringify(scoreError)}`);
+                          }
+                          console.log(`[${product.title}] ✓ Scores calculated`);
+
+                          // Step 4: Generate PDP recommendations
+                          const { data: recData, error: recError } = await supabase.functions.invoke(
+                            "generate-pdp-recommendations",
+                            {
+                              body: { productId: product.id },
+                              headers: authHeaders,
+                            }
+                          );
+
+                          if (recError) {
+                            throw new Error(`Recommendation generation failed: ${recError.message || JSON.stringify(recError)}`);
+                          }
+                          console.log(`[${product.title}] ✓ Recommendations generated`);
+
+                          successCount++;
+                          console.log(`[${product.title}] ✅ Completed successfully`);
+                        } catch (productError: any) {
+                          failureCount++;
+                          const errorMsg = productError?.message || String(productError);
+                          console.error(`[${product.title}] ❌ Failed:`, errorMsg);
+                          
+                          // Extract which step failed
+                          let failedStep = "Unknown";
+                          if (errorMsg.includes("Prompt generation")) failedStep = "Prompt Generation";
+                          else if (errorMsg.includes("Output generation")) failedStep = "Response Generation";
+                          else if (errorMsg.includes("Scoring")) failedStep = "Scoring";
+                          else if (errorMsg.includes("Recommendation")) failedStep = "Recommendations";
+
+                          failedProducts.push({
+                            title: product.title,
+                            step: failedStep,
+                            error: errorMsg,
+                          });
+                        }
+                      })
+                    );
+
+                    // Log batch completion
+                    console.log(`Batch ${Math.floor(i / batchSize) + 1} complete. Progress: ${successCount + failureCount}/${productsToAnalyze.length}`);
+                  }
+
+                  // Show summary toast
+                  const summaryMsg = failureCount > 0 
+                    ? `${successCount} products analyzed successfully. ${failureCount} failed (check console for details).`
+                    : `All ${successCount} products analyzed successfully!`;
+
+                  toast({
+                    title: "AI Analysis Complete",
+                    description: summaryMsg,
+                    variant: failureCount > 0 ? "destructive" : "default",
+                  });
+
+                  // Log detailed failure summary
+                  if (failedProducts.length > 0) {
+                    console.group("❌ Failed Products Summary");
+                    failedProducts.forEach(({ title, step, error }) => {
+                      console.error(`• ${title} (failed at: ${step})\n  Error: ${error}`);
+                    });
+                    console.groupEnd();
+                  }
+
+                  console.log(`AI analysis pipeline completed: ${successCount} succeeded, ${failureCount} failed`);
                 } catch (error) {
-                  console.error("Error in AI analysis pipeline:", error);
+                  console.error("Critical error in AI analysis pipeline:", error);
+                  toast({
+                    title: "Analysis Error",
+                    description: "Failed to start AI analysis. Check console for details.",
+                    variant: "destructive",
+                  });
                 }
               })();
             }
