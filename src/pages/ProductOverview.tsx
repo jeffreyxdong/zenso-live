@@ -216,18 +216,15 @@ const ProductOverview = () => {
 
         setProduct(updatedProduct);
         
-        // Check if product was created recently (within last 5 minutes)
-        const isRecentlyCreated = new Date().getTime() - new Date(productData.created_at).getTime() < 5 * 60 * 1000;
-        
-        // Show loading if score is null/undefined OR if score is 0 and product was recently created
-        setVisibilityScoreLoading(visibilityScore == null || (visibilityScore === 0 && isRecentlyCreated));
-        setSentimentScoreLoading(sentimentScore == null || (sentimentScore === 0 && isRecentlyCreated));
-        setPositionScoreLoading(positionScore == null || (positionScore === 0 && isRecentlyCreated));
-        setVisibilityTrendLoading(!scores?.length || (scores.length === 0 && isRecentlyCreated));
-        setSentimentTrendLoading(!scores?.length || (scores.length === 0 && isRecentlyCreated));
-        setPositionTrendLoading(!scores?.length || (scores.length === 0 && isRecentlyCreated));
-        setRecommendationsLoading(!recs?.length || (recs.length === 0 && isRecentlyCreated));
-        setSourcesLoading(!sources?.length || (sources.length === 0 && isRecentlyCreated));
+        // Keep loading states true if scores are 0 or null until real data arrives
+        setVisibilityScoreLoading(visibilityScore == null || visibilityScore === 0);
+        setSentimentScoreLoading(sentimentScore == null || sentimentScore === 0);
+        setPositionScoreLoading(positionScore == null || positionScore === 0);
+        setVisibilityTrendLoading(!scores?.length || scores.every(s => s.visibility_score == null || s.visibility_score === 0));
+        setSentimentTrendLoading(!scores?.length || scores.every(s => s.sentiment_score == null || s.sentiment_score === 0));
+        setPositionTrendLoading(!scores?.length || scores.every(s => s.position_score == null || s.position_score === 0));
+        setRecommendationsLoading(!recs?.length);
+        setSourcesLoading(!sources?.length);
       } catch (e) {
         console.error(e);
         toast({
@@ -290,12 +287,19 @@ const ProductOverview = () => {
                 }
               : prev,
           );
-          setVisibilityScoreLoading(false);
-          setSentimentScoreLoading(false);
-          setPositionScoreLoading(false);
-          setVisibilityTrendLoading(false);
-          setSentimentTrendLoading(false);
-          setPositionTrendLoading(false);
+          // Only stop loading if we have real scores (not null or 0)
+          if (newScore.visibility_score != null && newScore.visibility_score > 0) {
+            setVisibilityScoreLoading(false);
+            setVisibilityTrendLoading(false);
+          }
+          if (newScore.sentiment_score != null && newScore.sentiment_score > 0) {
+            setSentimentScoreLoading(false);
+            setSentimentTrendLoading(false);
+          }
+          if (newScore.position_score != null && newScore.position_score > 0) {
+            setPositionScoreLoading(false);
+            setPositionTrendLoading(false);
+          }
         },
       )
       .subscribe();
