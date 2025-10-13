@@ -81,8 +81,7 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
           )
         `)
         .eq('store_id', storeId)
-        .eq('competitor_scores.date', today)
-        .limit(4);
+        .eq('competitor_scores.date', today);
 
       if (competitorsError) {
         console.error('Error fetching competitors:', competitorsError);
@@ -105,8 +104,7 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
         const { data: competitorsNoScores } = await supabase
           .from('competitor_analytics')
           .select('id, name')
-          .eq('store_id', storeId)
-          .limit(4);
+          .eq('store_id', storeId);
 
         const competitorBenchmarks: BenchmarkData[] = (competitorsNoScores || []).map((comp) => ({
           name: comp.name,
