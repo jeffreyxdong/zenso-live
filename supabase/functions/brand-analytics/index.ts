@@ -158,7 +158,7 @@ Rules:
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "gpt-4o", // ✅ latest model with live browsing
+          model: "gpt-4o-mini",
           tools: [{ type: "web_search_preview" }],
           input: `
 The current date is ${new Date().toISOString().split("T")[0]}.
@@ -193,7 +193,7 @@ Instructions:
         .insert({
           brand_prompt_id: p.id,
           response_text: responseText,
-          model_name: "gpt-4o",
+          model_name: "gpt-4o-mini",
         })
         .select("id");
 
@@ -233,7 +233,7 @@ ${combinedText}
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o", // ✅ use up-to-date reasoning model
+        model: "gpt-4o-mini",
         input: scoringPrompt,
       }),
     });
