@@ -126,7 +126,7 @@ const AtRiskProducts = ({ storeId }: AtRiskProductsProps) => {
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="min-h-[280px]">
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <AlertTriangle className="h-5 w-5" />
@@ -143,7 +143,7 @@ const AtRiskProducts = ({ storeId }: AtRiskProductsProps) => {
   }
 
   return (
-    <Card>
+    <Card className="min-h-[280px]">
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
           <AlertTriangle className="h-5 w-5" />

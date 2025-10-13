@@ -106,7 +106,7 @@ const RisingStarProducts = ({ storeId }: RisingStarProductsProps) => {
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="min-h-[280px]">
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <Sparkles className="h-5 w-5" />
@@ -123,7 +123,7 @@ const RisingStarProducts = ({ storeId }: RisingStarProductsProps) => {
   }
 
   return (
-    <Card>
+    <Card className="min-h-[280px]">
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
           <Sparkles className="h-5 w-5" />

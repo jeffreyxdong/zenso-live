@@ -149,7 +149,7 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="min-h-[340px]">
         <CardHeader>
           <CardTitle>Brand Visibility Trend</CardTitle>
           <CardDescription>7-day rolling visibility score tracking brand mentions</CardDescription>
@@ -165,7 +165,7 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
 
   if (isGenerating) {
     return (
-      <Card>
+      <Card className="min-h-[340px]">
         <CardHeader>
           <CardTitle>Brand Visibility Trend</CardTitle>
           <CardDescription>7-day rolling visibility score tracking brand mentions</CardDescription>
@@ -184,7 +184,7 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
   }
 
   return (
-    <Card className="h-full flex flex-col">
+    <Card className="h-full min-h-[340px] flex flex-col">
       <CardHeader>
         <CardTitle>Brand Visibility Trend</CardTitle>
         <CardDescription>7-day rolling visibility score tracking brand mentions</CardDescription>

@@ -150,7 +150,7 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
 
   if (isLoading) {
   return (
-    <Card>
+    <Card className="min-h-[380px]">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -179,7 +179,7 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
   }
 
   return (
-    <Card>
+    <Card className="min-h-[380px]">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
