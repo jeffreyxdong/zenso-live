@@ -184,7 +184,7 @@ const ProductHealthMetrics = ({ storeId }: ProductHealthMetricsProps) => {
   };
 
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
           <Activity className="h-5 w-5" />
