@@ -336,6 +336,7 @@ export type Database = {
       }
       product_scores: {
         Row: {
+          ai_mentions: number | null
           created_at: string
           id: string
           position_score: number | null
@@ -345,6 +346,7 @@ export type Database = {
           visibility_score: number | null
         }
         Insert: {
+          ai_mentions?: number | null
           created_at?: string
           id?: string
           position_score?: number | null
@@ -354,6 +356,7 @@ export type Database = {
           visibility_score?: number | null
         }
         Update: {
+          ai_mentions?: number | null
           created_at?: string
           id?: string
           position_score?: number | null
