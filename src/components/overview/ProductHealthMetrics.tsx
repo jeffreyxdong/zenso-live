@@ -202,8 +202,10 @@ const ProductHealthMetrics = ({ storeId }: ProductHealthMetricsProps) => {
                 <p className="text-muted-foreground">Loading...</p>
               </div>
             ) : topProducts.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No product data available yet
+              <div className="flex flex-col items-center justify-center py-8 text-center min-h-[120px]">
+                <p className="text-muted-foreground">
+                  No product data available yet
+                </p>
               </div>
             ) : (
               <div className="min-h-[580px]">
@@ -248,8 +250,10 @@ const ProductHealthMetrics = ({ storeId }: ProductHealthMetricsProps) => {
                 <p className="text-muted-foreground">Loading...</p>
               </div>
             ) : productChanges.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No daily changes available yet
+              <div className="flex flex-col items-center justify-center py-8 text-center min-h-[120px]">
+                <p className="text-muted-foreground">
+                  No daily changes available yet
+                </p>
               </div>
             ) : (
               <div className="min-h-[580px]">
