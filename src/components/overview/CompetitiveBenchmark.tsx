@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Cell } from "recharts";
-import { Target } from "lucide-react";
+import { Target, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface BenchmarkData {
   name: string;
@@ -18,12 +20,37 @@ interface CompetitiveBenchmarkProps {
 const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps) => {
   const [benchmarkData, setBenchmarkData] = useState<BenchmarkData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isScoring, setIsScoring] = useState(false);
 
   useEffect(() => {
     if (storeId) {
       fetchBenchmarkData();
     }
   }, [storeId]);
+
+  const handleManualRescore = async () => {
+    try {
+      setIsScoring(true);
+      toast.info("Starting competitor scoring...");
+
+      // Call the edge function to score competitors
+      const { data, error } = await supabase.functions.invoke('score-competitor-visibility', {
+        body: { storeId }
+      });
+
+      if (error) throw error;
+
+      toast.success(`Scored ${data?.scoresCalculated || 0} competitors successfully`);
+      
+      // Refresh the benchmark data
+      await fetchBenchmarkData();
+    } catch (error) {
+      console.error('Error scoring competitors:', error);
+      toast.error('Failed to score competitors');
+    } finally {
+      setIsScoring(false);
+    }
+  };
 
   const fetchBenchmarkData = async () => {
     try {
@@ -124,14 +151,26 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
   };
 
   if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
             <Target className="h-5 w-5" />
             Competitive Benchmark
           </CardTitle>
-        </CardHeader>
+          <Button 
+            onClick={handleManualRescore} 
+            disabled={isScoring || isLoading}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isScoring ? 'animate-spin' : ''}`} />
+            {isScoring ? 'Scoring...' : 'Rescore'}
+          </Button>
+        </div>
+      </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-[250px]">
             <p className="text-muted-foreground">Loading...</p>
@@ -144,10 +183,22 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Target className="h-5 w-5" />
-          Competitive Benchmark
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Target className="h-5 w-5" />
+            Competitive Benchmark
+          </CardTitle>
+          <Button 
+            onClick={handleManualRescore} 
+            disabled={isScoring || isLoading}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isScoring ? 'animate-spin' : ''}`} />
+            {isScoring ? 'Scoring...' : 'Rescore'}
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {benchmarkData.length === 0 ? (
