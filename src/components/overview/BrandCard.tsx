@@ -94,7 +94,7 @@ export function BrandCard({ storeId }: BrandCardProps) {
 
   if (isLoading || !storeData || !currentScore) {
     return (
-      <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card via-card to-card/80 h-full min-h-[340px]">
+      <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card via-card to-card/80 h-full">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none" />
         <div className="relative p-6 h-full flex items-center justify-center">
           <p className="text-muted-foreground">Loading...</p>
@@ -118,7 +118,7 @@ export function BrandCard({ storeId }: BrandCardProps) {
   return (
     <TooltipProvider>
       <Card 
-        className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card via-card to-card/80 h-full min-h-[340px] cursor-pointer transition-all hover:shadow-lg hover:border-primary/30"
+        className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card via-card to-card/80 h-full cursor-pointer transition-all hover:shadow-lg hover:border-primary/30"
         onClick={() => navigate('/dashboard?tab=overview')}
       >
         {/* Decorative gradient overlay */}

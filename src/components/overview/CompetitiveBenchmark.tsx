@@ -150,7 +150,7 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
 
   if (isLoading) {
   return (
-    <Card className="h-full min-h-[760px] flex flex-col">
+    <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -169,15 +169,17 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
           </Button>
         </div>
       </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center">
-          <p className="text-muted-foreground">Loading...</p>
+        <CardContent>
+          <div className="flex items-center justify-center h-[250px]">
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="h-full min-h-[760px] flex flex-col">
+    <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -196,9 +198,9 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col">
+      <CardContent>
         {benchmarkData.length === 0 ? (
-          <div className="flex items-center justify-center flex-1 text-muted-foreground">
+          <div className="text-center py-8 text-muted-foreground">
             No competitor data available
           </div>
         ) : (

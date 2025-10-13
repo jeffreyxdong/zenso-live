@@ -149,13 +149,15 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
 
   if (isLoading) {
     return (
-      <Card className="h-full min-h-[340px] flex flex-col">
+      <Card>
         <CardHeader>
           <CardTitle>Brand Visibility Trend</CardTitle>
           <CardDescription>7-day rolling visibility score tracking brand mentions</CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center">
-          <p className="text-muted-foreground">Loading...</p>
+        <CardContent>
+          <div className="h-[200px] flex items-center justify-center">
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -163,16 +165,18 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
 
   if (isGenerating) {
     return (
-      <Card className="h-full min-h-[340px] flex flex-col">
+      <Card>
         <CardHeader>
           <CardTitle>Brand Visibility Trend</CardTitle>
           <CardDescription>7-day rolling visibility score tracking brand mentions</CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col items-center justify-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          <div className="text-center space-y-2">
-            <p className="font-medium">Calculating brand visibility...</p>
-            <p className="text-sm text-muted-foreground">This may take a moment</p>
+        <CardContent>
+          <div className="h-[200px] flex flex-col items-center justify-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <div className="text-center space-y-2">
+              <p className="font-medium">Calculating brand visibility...</p>
+              <p className="text-sm text-muted-foreground">This may take a moment</p>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -180,7 +184,7 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
   }
 
   return (
-    <Card className="h-full min-h-[340px] flex flex-col">
+    <Card className="h-full flex flex-col">
       <CardHeader>
         <CardTitle>Brand Visibility Trend</CardTitle>
         <CardDescription>7-day rolling visibility score tracking brand mentions</CardDescription>
