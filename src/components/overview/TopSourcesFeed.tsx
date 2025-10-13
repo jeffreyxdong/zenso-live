@@ -112,12 +112,12 @@ const TopSourcesFeed: React.FC<TopSourcesFeedProps> = ({ storeId }) => {
   }
 
   return (
-    <Card>
+    <Card className="h-full flex flex-col">
       <CardHeader>
         <CardTitle>Top Sources / Mentions Feed</CardTitle>
         <CardDescription>Most common sources that mention your brand across AI responses</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1">
         <div className="flex flex-wrap gap-3">
           {sourceCounts.map((source, index) => {
             const name = source.name.replace(/\.(com|org|net|io|co|edu|gov|ai)$/i, "");
