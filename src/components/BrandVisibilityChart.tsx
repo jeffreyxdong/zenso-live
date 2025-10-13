@@ -184,13 +184,13 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
   }
 
   return (
-    <Card>
+    <Card className="h-full flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-base font-medium">Brand Visibility Trend</CardTitle>
         <TrendingUp className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
-      <CardContent className="pr-6">
-        <div className="h-[200px]">
+      <CardContent className="pr-6 flex-1 flex flex-col">
+        <div className="flex-1 min-h-0">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={visibilityData}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
