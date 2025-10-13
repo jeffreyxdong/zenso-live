@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -111,38 +111,6 @@ const TopSourcesFeed: React.FC<TopSourcesFeedProps> = ({ storeId }) => {
     );
   }
 
-  // Helper function to extract clean brand name
-  const getCleanBrandName = (sourceName: string): string => {
-    // Remove common domain extensions
-    return sourceName
-      .replace(/\.(com|ai|org|net|io|co|dev)$/i, '')
-      .trim();
-  };
-
-  // Helper function to get favicon URL
-  const getFaviconUrl = (sourceName: string): string => {
-    // Map common AI platforms to their domains
-    const domainMap: Record<string, string> = {
-      'chatgpt': 'openai.com',
-      'openai': 'openai.com',
-      'perplexity': 'perplexity.ai',
-      'gemini': 'gemini.google.com',
-      'claude': 'claude.ai',
-      'anthropic': 'anthropic.com',
-      'meta': 'meta.ai',
-      'llama': 'meta.ai',
-      'bing': 'bing.com',
-      'copilot': 'copilot.microsoft.com',
-      'bard': 'google.com',
-    };
-
-    const lowerName = sourceName.toLowerCase();
-    const domain = domainMap[lowerName] || `${lowerName}.com`;
-    
-    // Use Google's favicon service
-    return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -150,29 +118,34 @@ const TopSourcesFeed: React.FC<TopSourcesFeedProps> = ({ storeId }) => {
         <CardDescription>Most common sources that mention your brand across AI responses</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
+        <div className="flex flex-wrap gap-3">
           {sourceCounts.map((source, index) => {
-            const cleanName = getCleanBrandName(source.name);
-            const faviconUrl = getFaviconUrl(source.name);
+            const name = source.name.replace(/\.(com|org|net|io|co|edu|gov|ai)$/i, "");
             
             return (
-              <div key={index} className="flex items-center justify-between py-2 border-b last:border-0">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center overflow-hidden">
-                    <img 
-                      src={faviconUrl} 
-                      alt={`${cleanName} favicon`}
-                      className="w-5 h-5 object-contain"
-                      onError={(e) => {
-                        // Fallback to Globe icon if favicon fails to load
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.parentElement!.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>`;
-                      }}
-                    />
-                  </div>
-                  <span className="font-semibold">{cleanName}</span>
+              <div
+                key={index}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border bg-card hover:bg-accent transition-colors"
+              >
+                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                  <img
+                    src={`https://www.google.com/s2/favicons?domain=${source.name}&sz=32`}
+                    alt={source.name}
+                    className="w-5 h-5"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = "none";
+                      const parent = target.parentElement;
+                      if (parent) {
+                        parent.innerHTML = `<span class='text-sm font-semibold text-primary'>${name.charAt(0).toUpperCase()}</span>`;
+                      }
+                    }}
+                  />
                 </div>
-                <span className="text-muted-foreground text-sm">{source.count} mentions</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-sm capitalize">{name}</span>
+                  <span className="text-xs text-muted-foreground">({source.count})</span>
+                </div>
               </div>
             );
           })}
