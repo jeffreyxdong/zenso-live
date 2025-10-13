@@ -259,19 +259,6 @@ const ProductOverview = () => {
 
     fetchInitialData();
 
-    // Add timeout protection - stop loading after 30 seconds if no data arrives
-    const timeoutId = setTimeout(() => {
-      console.log('⏱️ TIMEOUT: Stopping all loading states after 30 seconds');
-      setVisibilityScoreLoading(false);
-      setSentimentScoreLoading(false);
-      setPositionScoreLoading(false);
-      setVisibilityTrendLoading(false);
-      setSentimentTrendLoading(false);
-      setPositionTrendLoading(false);
-      setRecommendationsLoading(false);
-      setSourcesLoading(false);
-    }, 30000);
-
     // --- Realtime updates ---
     const scoreSub = supabase
       .channel(`scores-${productId}`)
@@ -401,7 +388,6 @@ const ProductOverview = () => {
 
     return () => {
       mounted = false;
-      clearTimeout(timeoutId);
       supabase.removeChannel(scoreSub);
       supabase.removeChannel(recSub);
       supabase.removeChannel(sourceSub);
