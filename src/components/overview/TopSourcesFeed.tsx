@@ -111,6 +111,38 @@ const TopSourcesFeed: React.FC<TopSourcesFeedProps> = ({ storeId }) => {
     );
   }
 
+  // Helper function to extract clean brand name
+  const getCleanBrandName = (sourceName: string): string => {
+    // Remove common domain extensions
+    return sourceName
+      .replace(/\.(com|ai|org|net|io|co|dev)$/i, '')
+      .trim();
+  };
+
+  // Helper function to get favicon URL
+  const getFaviconUrl = (sourceName: string): string => {
+    // Map common AI platforms to their domains
+    const domainMap: Record<string, string> = {
+      'chatgpt': 'openai.com',
+      'openai': 'openai.com',
+      'perplexity': 'perplexity.ai',
+      'gemini': 'gemini.google.com',
+      'claude': 'claude.ai',
+      'anthropic': 'anthropic.com',
+      'meta': 'meta.ai',
+      'llama': 'meta.ai',
+      'bing': 'bing.com',
+      'copilot': 'copilot.microsoft.com',
+      'bard': 'google.com',
+    };
+
+    const lowerName = sourceName.toLowerCase();
+    const domain = domainMap[lowerName] || `${lowerName}.com`;
+    
+    // Use Google's favicon service
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -119,17 +151,31 @@ const TopSourcesFeed: React.FC<TopSourcesFeedProps> = ({ storeId }) => {
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {sourceCounts.map((source, index) => (
-            <div key={index} className="flex items-center justify-between py-2 border-b last:border-0">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                  <Globe className="h-4 w-4 text-muted-foreground" />
+          {sourceCounts.map((source, index) => {
+            const cleanName = getCleanBrandName(source.name);
+            const faviconUrl = getFaviconUrl(source.name);
+            
+            return (
+              <div key={index} className="flex items-center justify-between py-2 border-b last:border-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                    <img 
+                      src={faviconUrl} 
+                      alt={`${cleanName} favicon`}
+                      className="w-5 h-5 object-contain"
+                      onError={(e) => {
+                        // Fallback to Globe icon if favicon fails to load
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.parentElement!.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>`;
+                      }}
+                    />
+                  </div>
+                  <span className="font-semibold">{cleanName}</span>
                 </div>
-                <span className="font-semibold">{source.name}</span>
+                <span className="text-muted-foreground text-sm">{source.count} mentions</span>
               </div>
-              <span className="text-muted-foreground text-sm">{source.count} mentions</span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>
