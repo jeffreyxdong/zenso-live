@@ -278,12 +278,26 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
 
             // Step 4: Generate PDP recommendations
             console.log("Generating AI optimization recommendations...");
-            await supabase.functions.invoke("generate-pdp-recommendations", {
+            const { data: recResponse, error: recError } = await supabase.functions.invoke("generate-pdp-recommendations", {
               body: {
                 productId: productData.id,
               },
               headers: authHeaders,
             });
+            
+            // Handle non-2xx responses by inserting an error marker
+            if (recError) {
+              console.error("Recommendation generation failed:", recError);
+              await supabase.from("product_recommendations").insert({
+                product_id: productData.id,
+                title: "Error",
+                description: "Product page could not be found or accessed",
+                category: "content",
+                impact: "high",
+                effort: "low",
+                status: "dismissed",
+              });
+            }
 
             console.log("Buyer-intent analysis and AI recommendations pipeline completed successfully");
           }
@@ -572,9 +586,20 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                           );
 
                           if (recError) {
-                            throw new Error(`Recommendation generation failed: ${recError.message || JSON.stringify(recError)}`);
+                            console.error(`[${product.title}] Recommendation generation failed:`, recError);
+                            // Insert error marker instead of throwing
+                            await supabase.from("product_recommendations").insert({
+                              product_id: product.id,
+                              title: "Error",
+                              description: "Product page could not be found or accessed",
+                              category: "content",
+                              impact: "high",
+                              effort: "low",
+                              status: "dismissed",
+                            });
+                          } else {
+                            console.log(`[${product.title}] ✓ Recommendations generated`);
                           }
-                          console.log(`[${product.title}] ✓ Recommendations generated`);
 
                           successCount++;
                           console.log(`[${product.title}] ✅ Completed successfully`);

@@ -468,6 +468,12 @@ const ProductOverview = () => {
                 <p className="text-sm text-muted-foreground">This may take a moment</p>
               </div>
             </div>
+          ) : product.recommendations && product.recommendations.length > 0 && product.recommendations[0].title === "Error" ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">
+                Product page could not be found or accessed. Please ensure your product has a valid public URL.
+              </p>
+            </div>
           ) : product.recommendations && product.recommendations.length > 0 ? (
             <div className="space-y-4">
               {product.recommendations.map((rec) => (
