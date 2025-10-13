@@ -73,12 +73,12 @@ const TopSourcesFeed: React.FC<TopSourcesFeedProps> = ({ storeId }) => {
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="h-full min-h-[760px] flex flex-col">
         <CardHeader>
           <CardTitle>Top Sources / Mentions Feed</CardTitle>
           <CardDescription>Most common sources that mention your brand across AI responses</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1 flex flex-col justify-center">
           <div className="space-y-3">
             {[...Array(5)].map((_, i) => (
               <div key={i} className="flex items-center justify-between">
@@ -94,13 +94,13 @@ const TopSourcesFeed: React.FC<TopSourcesFeedProps> = ({ storeId }) => {
 
   if (sourceCounts.length === 0) {
     return (
-      <Card>
+      <Card className="h-full min-h-[760px] flex flex-col">
         <CardHeader>
           <CardTitle>Top Sources / Mentions Feed</CardTitle>
           <CardDescription>Most common sources that mention your brand across AI responses</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center justify-center py-8 text-center">
+        <CardContent className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center justify-center text-center">
             <Globe className="h-12 w-12 text-muted-foreground mb-3" />
             <p className="text-muted-foreground">
               No mentions found yet — check back after your next score update.
@@ -112,7 +112,7 @@ const TopSourcesFeed: React.FC<TopSourcesFeedProps> = ({ storeId }) => {
   }
 
   return (
-    <Card className="h-full flex flex-col">
+    <Card className="h-full min-h-[760px] flex flex-col">
       <CardHeader>
         <CardTitle>Top Sources / Mentions Feed</CardTitle>
         <CardDescription>Most common sources that mention your brand across AI responses</CardDescription>

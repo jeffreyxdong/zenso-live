@@ -37,18 +37,18 @@ const OverviewDraft = () => {
       </div>
 
       {/* Top Row: Brand Score + Brand Visibility Trend */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[340px]">
+        <div className="lg:col-span-1 h-full">
           <BrandCard storeId={activeStore.id} />
         </div>
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 h-full">
           <BrandVisibilityOverview storeId={activeStore.id} />
         </div>
       </div>
 
       {/* Second Row: Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[400px]">
+        <Card className="h-full">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Rising Stars</CardTitle>
             <TrendingUp className="h-4 w-4 text-green-500" />
@@ -58,7 +58,7 @@ const OverviewDraft = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="h-full">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">At Risk</CardTitle>
             <AlertCircle className="h-4 w-4 text-red-500" />
@@ -68,7 +68,7 @@ const OverviewDraft = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="h-full">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Biggest Change</CardTitle>
             <TrendingUp className="h-4 w-4 text-primary" />
@@ -80,11 +80,11 @@ const OverviewDraft = () => {
       </div>
 
       {/* Third Row: Competitive Benchmark + Product Health */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[760px]">
+        <div className="lg:col-span-1 h-full">
           <CompetitiveBenchmark storeId={activeStore.id} brandName={activeStore.name} />
         </div>
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 h-full">
           <ProductHealthMetrics storeId={activeStore.id} />
         </div>
       </div>
