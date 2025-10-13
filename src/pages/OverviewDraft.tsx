@@ -4,6 +4,7 @@ import { BrandCard } from "@/components/overview/BrandCard";
 import BrandVisibilityOverview from "@/components/overview/BrandVisibilityOverview";
 import ProductHealthMetrics from "@/components/overview/ProductHealthMetrics";
 import CompetitiveBenchmark from "@/components/overview/CompetitiveBenchmark";
+import TopSourcesFeed from "@/components/overview/TopSourcesFeed";
 import AtRiskProducts from "@/components/overview/AtRiskProducts";
 import RisingStarProducts from "@/components/overview/RisingStarProducts";
 import HighestDailyChange from "@/components/overview/HighestDailyChange";
@@ -81,8 +82,9 @@ const OverviewDraft = () => {
 
       {/* Third Row: Competitive Benchmark + Product Health */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 space-y-6">
           <CompetitiveBenchmark storeId={activeStore.id} brandName={activeStore.name} />
+          <TopSourcesFeed storeId={activeStore.id} />
         </div>
         <div className="lg:col-span-2">
           <ProductHealthMetrics storeId={activeStore.id} />
