@@ -12,6 +12,7 @@ import { CompetitorAnalytics } from "@/components/CompetitorAnalytics";
 import BrandVisibilityOverview from "@/components/overview/BrandVisibilityOverview";
 import ProductHealthMetrics from "@/components/overview/ProductHealthMetrics";
 import CompetitiveBenchmark from "@/components/overview/CompetitiveBenchmark";
+import TopSourcesFeed from "@/components/overview/TopSourcesFeed";
 import { BrandCard } from "@/components/overview/BrandCard";
 import { useNavigate, useLocation, useOutletContext } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -265,9 +266,10 @@ const Dashboard = () => {
 
           {/* Competitive Benchmark (Left) + Product Health Metrics (Right) */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Competitive Benchmark */}
-            <div className="lg:col-span-1">
+            {/* Competitive Benchmark and Top Sources Feed */}
+            <div className="lg:col-span-1 space-y-6">
               <CompetitiveBenchmark storeId={activeStore.id} brandName={activeStore.name} />
+              <TopSourcesFeed storeId={activeStore.id} />
             </div>
 
             {/* Product Health Metrics with Tabs */}
