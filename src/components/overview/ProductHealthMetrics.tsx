@@ -208,37 +208,39 @@ const ProductHealthMetrics = ({ storeId }: ProductHealthMetricsProps) => {
                 No product data available yet
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Product Name</TableHead>
-                    <TableHead>SKU</TableHead>
-                    <TableHead className="text-right">Visibility Score</TableHead>
-                    <TableHead className="text-right">AI Mentions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {topProducts.map((product) => (
-                    <TableRow key={product.id}>
-                      <TableCell className="font-semibold">
-                        <Link 
-                          to={`/product/${product.id}`}
-                          className="hover:text-primary transition-colors"
-                        >
-                          {product.title}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{product.handle}</TableCell>
-                      <TableCell className="text-right">
-                        <span className="font-semibold text-primary">
-                          {product.visibility_score}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">{product.mention_count}</TableCell>
+              <div className="min-h-[580px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Product Name</TableHead>
+                      <TableHead>SKU</TableHead>
+                      <TableHead className="text-right">Visibility Score</TableHead>
+                      <TableHead className="text-right">AI Mentions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {topProducts.map((product) => (
+                      <TableRow key={product.id}>
+                        <TableCell className="font-semibold">
+                          <Link 
+                            to={`/product/${product.id}`}
+                            className="hover:text-primary transition-colors"
+                          >
+                            {product.title}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{product.handle}</TableCell>
+                        <TableCell className="text-right">
+                          <span className="font-semibold text-primary">
+                            {product.visibility_score}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">{product.mention_count}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </TabsContent>
           
@@ -252,57 +254,59 @@ const ProductHealthMetrics = ({ storeId }: ProductHealthMetricsProps) => {
                 No daily changes available yet
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Product Name</TableHead>
-                    <TableHead>SKU</TableHead>
-                    <TableHead className="text-right">Current</TableHead>
-                    <TableHead className="text-right">Previous</TableHead>
-                    <TableHead className="text-right">Change</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {productChanges.map((change) => (
-                    <TableRow key={change.id}>
-                      <TableCell className="font-semibold">
-                        <Link 
-                          to={`/product/${change.id}`}
-                          className="hover:text-primary transition-colors"
-                        >
-                          {change.product_title}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{change.product_handle}</TableCell>
-                      <TableCell className="text-right">
-                        <span className="font-semibold">{change.current_score}</span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span className="text-muted-foreground">{change.previous_score}</span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {change.change > 0 ? (
-                            <TrendingUp className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <TrendingDown className="h-4 w-4 text-red-600" />
-                          )}
-                          <span className={`font-semibold ${getPriorityColor(change.change)}`}>
-                            {change.change > 0 ? '+' : ''}{change.change}
-                          </span>
-                          <Badge 
-                            variant={Math.abs(change.change) >= 10 ? "default" : "outline"}
-                            className="ml-1"
-                          >
-                            {change.change_percentage > 0 ? '+' : ''}
-                            {change.change_percentage.toFixed(1)}%
-                          </Badge>
-                        </div>
-                      </TableCell>
+              <div className="min-h-[580px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Product Name</TableHead>
+                      <TableHead>SKU</TableHead>
+                      <TableHead className="text-right">Current</TableHead>
+                      <TableHead className="text-right">Previous</TableHead>
+                      <TableHead className="text-right">Change</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {productChanges.map((change) => (
+                      <TableRow key={change.id}>
+                        <TableCell className="font-semibold">
+                          <Link 
+                            to={`/product/${change.id}`}
+                            className="hover:text-primary transition-colors"
+                          >
+                            {change.product_title}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{change.product_handle}</TableCell>
+                        <TableCell className="text-right">
+                          <span className="font-semibold">{change.current_score}</span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <span className="text-muted-foreground">{change.previous_score}</span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {change.change > 0 ? (
+                              <TrendingUp className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <TrendingDown className="h-4 w-4 text-red-600" />
+                            )}
+                            <span className={`font-semibold ${getPriorityColor(change.change)}`}>
+                              {change.change > 0 ? '+' : ''}{change.change}
+                            </span>
+                            <Badge 
+                              variant={Math.abs(change.change) >= 10 ? "default" : "outline"}
+                              className="ml-1"
+                            >
+                              {change.change_percentage > 0 ? '+' : ''}
+                              {change.change_percentage.toFixed(1)}%
+                            </Badge>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </TabsContent>
         </Tabs>
