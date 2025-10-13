@@ -247,6 +247,51 @@ export type Database = {
           },
         ]
       }
+      competitor_scores: {
+        Row: {
+          competitor_id: string
+          created_at: string
+          date: string
+          id: string
+          store_id: string
+          updated_at: string
+          visibility_score: number | null
+        }
+        Insert: {
+          competitor_id: string
+          created_at?: string
+          date?: string
+          id?: string
+          store_id: string
+          updated_at?: string
+          visibility_score?: number | null
+        }
+        Update: {
+          competitor_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          store_id?: string
+          updated_at?: string
+          visibility_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitor_scores_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: false
+            referencedRelation: "competitor_analytics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competitor_scores_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_recommendations: {
         Row: {
           category: string

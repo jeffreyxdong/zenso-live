@@ -138,6 +138,9 @@ verify_jwt = false
 [functions.score-brand-visibility]
 verify_jwt = false
 
+[functions.score-competitor-visibility]
+verify_jwt = false
+
 [functions.run-daily-prompt-runner]
 verify_jwt = false
 

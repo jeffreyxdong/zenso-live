@@ -41,33 +41,81 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
 
       const yourScore = brandScores?.[0]?.visibility_score || 0;
 
-      // Get competitors for this store
+      // Get competitors with their latest scores
+      const today = new Date().toISOString().split('T')[0];
       const { data: competitors, error: competitorsError } = await supabase
         .from('competitor_analytics')
-        .select('name')
+        .select(`
+          id,
+          name,
+          competitor_scores!inner(
+            visibility_score,
+            date
+          )
+        `)
         .eq('store_id', storeId)
+        .eq('competitor_scores.date', today)
         .limit(4);
 
-      if (competitorsError) throw competitorsError;
+      if (competitorsError) {
+        console.error('Error fetching competitors:', competitorsError);
+      }
 
-      // For now, generate mock scores for competitors
-      // TODO: Implement actual competitor scoring via edge function
-      const competitorBenchmarks: BenchmarkData[] = (competitors || []).map((comp, idx) => ({
-        name: comp.name,
-        score: Math.floor(Math.random() * 40) + 20, // Random 20-60 for demo
-        isYourBrand: false
-      }));
+      // If no scores exist for today, trigger scoring
+      if (!competitors || competitors.length === 0) {
+        console.log('No competitor scores found for today, triggering scoring...');
+        
+        // Call the edge function to calculate competitor scores
+        const { error: scoringError } = await supabase.functions.invoke('score-competitor-visibility', {
+          body: { storeId }
+        });
 
-      const allBenchmarks = [
-        {
-          name: brandName || 'Your Brand',
-          score: yourScore,
-          isYourBrand: true
-        },
-        ...competitorBenchmarks
-      ].sort((a, b) => b.score - a.score);
+        if (scoringError) {
+          console.error('Error triggering competitor scoring:', scoringError);
+        }
 
-      setBenchmarkData(allBenchmarks);
+        // Fetch competitors without scores for now (scores will be available after edge function completes)
+        const { data: competitorsNoScores } = await supabase
+          .from('competitor_analytics')
+          .select('id, name')
+          .eq('store_id', storeId)
+          .limit(4);
+
+        const competitorBenchmarks: BenchmarkData[] = (competitorsNoScores || []).map((comp) => ({
+          name: comp.name,
+          score: 0, // Will be updated when scores are calculated
+          isYourBrand: false
+        }));
+
+        const allBenchmarks = [
+          {
+            name: brandName || 'Your Brand',
+            score: yourScore,
+            isYourBrand: true
+          },
+          ...competitorBenchmarks
+        ].sort((a, b) => b.score - a.score);
+
+        setBenchmarkData(allBenchmarks);
+      } else {
+        // Build benchmark data from competitors with scores
+        const competitorBenchmarks: BenchmarkData[] = competitors.map((comp: any) => ({
+          name: comp.name,
+          score: comp.competitor_scores[0]?.visibility_score || 0,
+          isYourBrand: false
+        }));
+
+        const allBenchmarks = [
+          {
+            name: brandName || 'Your Brand',
+            score: yourScore,
+            isYourBrand: true
+          },
+          ...competitorBenchmarks
+        ].sort((a, b) => b.score - a.score);
+
+        setBenchmarkData(allBenchmarks);
+      }
     } catch (error) {
       console.error('Error fetching benchmark data:', error);
     } finally {
