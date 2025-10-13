@@ -217,12 +217,32 @@ const ProductOverview = () => {
         setProduct(updatedProduct);
         
         // Keep loading states true if scores are 0 or null until real data arrives
-        setVisibilityScoreLoading(visibilityScore == null || visibilityScore === 0);
-        setSentimentScoreLoading(sentimentScore == null || sentimentScore === 0);
-        setPositionScoreLoading(positionScore == null || positionScore === 0);
-        setVisibilityTrendLoading(!scores?.length || scores.every(s => s.visibility_score == null || s.visibility_score === 0));
-        setSentimentTrendLoading(!scores?.length || scores.every(s => s.sentiment_score == null || s.sentiment_score === 0));
-        setPositionTrendLoading(!scores?.length || scores.every(s => s.position_score == null || s.position_score === 0));
+        const visLoading = visibilityScore == null || visibilityScore === 0;
+        const sentLoading = sentimentScore == null || sentimentScore === 0;
+        const posLoading = positionScore == null || positionScore === 0;
+        const visHistLoading = !scores?.length || scores.every(s => s.visibility_score == null || s.visibility_score === 0);
+        const sentHistLoading = !scores?.length || scores.every(s => s.sentiment_score == null || s.sentiment_score === 0);
+        const posHistLoading = !scores?.length || scores.every(s => s.position_score == null || s.position_score === 0);
+        
+        console.log('📊 Initial loading states:', {
+          visibilityScore,
+          sentimentScore,
+          positionScore,
+          scoresCount: scores?.length || 0,
+          visLoading,
+          sentLoading,
+          posLoading,
+          visHistLoading,
+          sentHistLoading,
+          posHistLoading
+        });
+        
+        setVisibilityScoreLoading(visLoading);
+        setSentimentScoreLoading(sentLoading);
+        setPositionScoreLoading(posLoading);
+        setVisibilityTrendLoading(visHistLoading);
+        setSentimentTrendLoading(sentHistLoading);
+        setPositionTrendLoading(posHistLoading);
         setRecommendationsLoading(!recs?.length);
         setSourcesLoading(!sources?.length);
       } catch (e) {
@@ -241,6 +261,7 @@ const ProductOverview = () => {
 
     // Add timeout protection - stop loading after 30 seconds if no data arrives
     const timeoutId = setTimeout(() => {
+      console.log('⏱️ TIMEOUT: Stopping all loading states after 30 seconds');
       setVisibilityScoreLoading(false);
       setSentimentScoreLoading(false);
       setPositionScoreLoading(false);
@@ -268,6 +289,13 @@ const ProductOverview = () => {
             .eq("product_id", productId)
             .order("created_at", { ascending: true });
           
+          console.log('🔄 Realtime score update received:', {
+            visibility: newScore.visibility_score,
+            sentiment: newScore.sentiment_score,
+            position: newScore.position_score,
+            scoresCount: updatedScores?.length || 0
+          });
+          
           setProduct((prev) =>
             prev
               ? {
@@ -287,18 +315,30 @@ const ProductOverview = () => {
                 }
               : prev,
           );
+          
           // Only stop loading if we have real scores (not null or 0)
           if (newScore.visibility_score != null && newScore.visibility_score > 0) {
+            console.log('✅ Stopping visibility loading (score:', newScore.visibility_score, ')');
             setVisibilityScoreLoading(false);
             setVisibilityTrendLoading(false);
+          } else {
+            console.log('⏳ Keeping visibility loading (score:', newScore.visibility_score, ')');
           }
+          
           if (newScore.sentiment_score != null && newScore.sentiment_score > 0) {
+            console.log('✅ Stopping sentiment loading (score:', newScore.sentiment_score, ')');
             setSentimentScoreLoading(false);
             setSentimentTrendLoading(false);
+          } else {
+            console.log('⏳ Keeping sentiment loading (score:', newScore.sentiment_score, ')');
           }
+          
           if (newScore.position_score != null && newScore.position_score > 0) {
+            console.log('✅ Stopping position loading (score:', newScore.position_score, ')');
             setPositionScoreLoading(false);
             setPositionTrendLoading(false);
+          } else {
+            console.log('⏳ Keeping position loading (score:', newScore.position_score, ')');
           }
         },
       )
@@ -315,8 +355,12 @@ const ProductOverview = () => {
             .select("*")
             .eq("product_id", productId)
             .order("created_at", { ascending: false });
+          console.log('📝 Recommendations updated:', recs?.length || 0, 'recommendations');
           setProduct((p) => (p ? { ...p, recommendations: (recs || []) as Recommendation[] } : p));
-          setRecommendationsLoading(false);
+          if (recs && recs.length > 0) {
+            console.log('✅ Stopping recommendations loading');
+            setRecommendationsLoading(false);
+          }
         },
       )
       .subscribe();
