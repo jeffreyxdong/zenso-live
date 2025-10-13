@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -61,19 +62,23 @@ const ProductHealthMetrics = ({ storeId }: ProductHealthMetricsProps) => {
 
       if (error) throw error;
 
+      // Get the latest ai_mentions for each product from product_scores
       const productsWithMentions = await Promise.all(
         (scores || []).map(async (score) => {
-          const { count } = await supabase
-            .from('prompt_responses_with_prompts')
-            .select('*', { count: 'exact', head: true })
-            .eq('product_id', score.product_id);
+          const { data: latestScore } = await supabase
+            .from('product_scores')
+            .select('ai_mentions')
+            .eq('product_id', score.product_id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
 
           return {
             id: score.product_id,
             handle: score.product_handle || '',
             title: score.product_title || '',
             visibility_score: score.visibility_score || 0,
-            mention_count: count || 0
+            mention_count: latestScore?.ai_mentions || 0
           };
         })
       );
@@ -206,8 +211,8 @@ const ProductHealthMetrics = ({ storeId }: ProductHealthMetricsProps) => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>SKU</TableHead>
                     <TableHead>Product Name</TableHead>
+                    <TableHead>SKU</TableHead>
                     <TableHead className="text-right">Visibility Score</TableHead>
                     <TableHead className="text-right">AI Mentions</TableHead>
                   </TableRow>
@@ -215,8 +220,15 @@ const ProductHealthMetrics = ({ storeId }: ProductHealthMetricsProps) => {
                 <TableBody>
                   {topProducts.map((product) => (
                     <TableRow key={product.id}>
-                      <TableCell className="font-medium">{product.handle}</TableCell>
-                      <TableCell>{product.title}</TableCell>
+                      <TableCell className="font-semibold">
+                        <Link 
+                          to={`/product/${product.id}`}
+                          className="hover:text-primary transition-colors"
+                        >
+                          {product.title}
+                        </Link>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{product.handle}</TableCell>
                       <TableCell className="text-right">
                         <span className="font-semibold text-primary">
                           {product.visibility_score}
@@ -243,8 +255,8 @@ const ProductHealthMetrics = ({ storeId }: ProductHealthMetricsProps) => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>SKU</TableHead>
                     <TableHead>Product Name</TableHead>
+                    <TableHead>SKU</TableHead>
                     <TableHead className="text-right">Current</TableHead>
                     <TableHead className="text-right">Previous</TableHead>
                     <TableHead className="text-right">Change</TableHead>
@@ -253,8 +265,15 @@ const ProductHealthMetrics = ({ storeId }: ProductHealthMetricsProps) => {
                 <TableBody>
                   {productChanges.map((change) => (
                     <TableRow key={change.id}>
-                      <TableCell className="font-medium">{change.product_handle}</TableCell>
-                      <TableCell>{change.product_title}</TableCell>
+                      <TableCell className="font-semibold">
+                        <Link 
+                          to={`/product/${change.id}`}
+                          className="hover:text-primary transition-colors"
+                        >
+                          {change.product_title}
+                        </Link>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{change.product_handle}</TableCell>
                       <TableCell className="text-right">
                         <span className="font-semibold">{change.current_score}</span>
                       </TableCell>
