@@ -58,7 +58,7 @@ const ProductHealthMetrics = ({ storeId }: ProductHealthMetricsProps) => {
         .select('*')
         .not('visibility_score', 'is', null)
         .order('visibility_score', { ascending: false })
-        .limit(5);
+        .limit(10);
 
       if (error) throw error;
 
@@ -167,7 +167,7 @@ const ProductHealthMetrics = ({ storeId }: ProductHealthMetricsProps) => {
       const changes = (await Promise.all(changesPromises))
         .filter((c): c is ProductChange => c !== null)
         .sort((a, b) => Math.abs(b.change) - Math.abs(a.change))
-        .slice(0, 5);
+        .slice(0, 10);
 
       setProductChanges(changes);
     } catch (error) {
