@@ -101,6 +101,8 @@ A 0–100 score reflecting tone of mentions toward the brand.
 Step 4 - Source Information: When a product is mentioned in the collection of multiple ressponses, output an array of all the sources that mentioned the product. 
 Do not include the full URL, just the name of the source website/material. 
 
+Step 5 - AI_Mentions: Total up all the times the product was mentioned in the collection of multiple responses. Provide a single number. 
+
 
 
 Return ONLY a JSON object in this format:
@@ -109,6 +111,7 @@ Return ONLY a JSON object in this format:
   "position_score": 72,
   "sentiment_score": 91
   sources: an array of sources 
+  "ai_mentions": 8
 }`
           },
           {
@@ -145,10 +148,12 @@ ${allResponsesText}`
     const visibilityScore = parseInt(scores.visibility_score) || 0;
     const positionScore = parseInt(scores.position_score) || 0;
     const sentimentScore = parseInt(scores.sentiment_score) || 0;
+    const aiMentions = parseInt(scores.ai_mentions) || 0; 
     const sources = scores.sources || [];
 
     console.log('Extracted sources:', JSON.stringify(sources, null, 2));
     console.log('Sources array length:', sources.length);
+    console.log('AI Mentions count:', aiMentions);  // ✅ DEBUG LOG
     console.log('Number of responses to update:', responses.length);
 
     // Save sources to all prompt_responses that were analyzed
@@ -180,6 +185,7 @@ ${allResponsesText}`
         visibility_score: visibilityScore,
         position_score: positionScore,
         sentiment_score: sentimentScore
+        ai_mentions: aiMentions
       })
       .select()
       .single();
@@ -194,6 +200,7 @@ ${allResponsesText}`
         visibility_score: visibilityScore,
         position_score: positionScore,
         sentiment_score: sentimentScore
+        ai_mentions: aiMentions
       },
       scoreId: insertedScore.id,
       message: "Product scores calculated and saved successfully"
