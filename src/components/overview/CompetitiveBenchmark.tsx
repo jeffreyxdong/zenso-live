@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Cell } from "recharts";
 import { Target, RefreshCw } from "lucide-react";
@@ -153,10 +153,10 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Target className="h-5 w-5" />
-            Competitive Benchmark
-          </CardTitle>
+          <div>
+            <CardTitle>Competitive Benchmark</CardTitle>
+            <CardDescription>Compare your brand visibility against key competitors</CardDescription>
+          </div>
           <Button 
             onClick={handleManualRescore} 
             disabled={isScoring || isLoading}
@@ -182,10 +182,10 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Target className="h-5 w-5" />
-            Competitive Benchmark
-          </CardTitle>
+          <div>
+            <CardTitle>Competitive Benchmark</CardTitle>
+            <CardDescription>Compare your brand visibility against key competitors</CardDescription>
+          </div>
           <Button 
             onClick={handleManualRescore} 
             disabled={isScoring || isLoading}

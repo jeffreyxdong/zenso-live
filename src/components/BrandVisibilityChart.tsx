@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from "recharts";
 import { TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -150,9 +150,9 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
   if (isLoading) {
     return (
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-base font-medium">Brand Visibility Trend</CardTitle>
-          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+        <CardHeader>
+          <CardTitle>Brand Visibility Trend</CardTitle>
+          <CardDescription>7-day rolling visibility score tracking brand mentions</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-[200px] flex items-center justify-center">
@@ -166,9 +166,9 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
   if (isGenerating) {
     return (
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-base font-medium">Brand Visibility Trend</CardTitle>
-          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+        <CardHeader>
+          <CardTitle>Brand Visibility Trend</CardTitle>
+          <CardDescription>7-day rolling visibility score tracking brand mentions</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-[200px] flex flex-col items-center justify-center space-y-4">
@@ -185,9 +185,9 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-base font-medium">Brand Visibility Trend</CardTitle>
-        <TrendingUp className="h-4 w-4 text-muted-foreground" />
+      <CardHeader>
+        <CardTitle>Brand Visibility Trend</CardTitle>
+        <CardDescription>7-day rolling visibility score tracking brand mentions</CardDescription>
       </CardHeader>
       <CardContent className="pr-6 flex-1 flex flex-col">
         <div className="flex-1 min-h-0">

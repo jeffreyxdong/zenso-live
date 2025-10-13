@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -186,10 +186,8 @@ const ProductHealthMetrics = ({ storeId }: ProductHealthMetricsProps) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Activity className="h-5 w-5" />
-          Product Health Metrics
-        </CardTitle>
+        <CardTitle>Product Health Metrics</CardTitle>
+        <CardDescription>Track top performers and daily visibility changes across products</CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="top-performers" className="w-full">
