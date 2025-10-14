@@ -52,11 +52,10 @@ const TopSourcesFeed: React.FC<TopSourcesFeedProps> = ({ storeId }) => {
           }
         });
 
-        // Convert to array, sort by frequency, and take top 10
+        // Convert to array and sort by frequency
         const sortedSources = Array.from(sourceMap.entries())
           .map(([name, count]) => ({ name, count }))
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 10);
+          .sort((a, b) => b.count - a.count);
 
         setSourceCounts(sortedSources);
       } catch (err) {
