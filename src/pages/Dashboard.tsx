@@ -359,7 +359,7 @@ const Dashboard = () => {
 
           {/* Right Column - AI Optimization Suggestions */}
           <div>
-            <Card className="h-full">
+            <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
