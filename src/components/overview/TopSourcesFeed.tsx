@@ -52,11 +52,11 @@ const TopSourcesFeed: React.FC<TopSourcesFeedProps> = ({ storeId }) => {
           }
         });
 
-        // Convert to array, sort by frequency, and take top 5
+        // Convert to array, sort by frequency, and take top 10
         const sortedSources = Array.from(sourceMap.entries())
           .map(([name, count]) => ({ name, count }))
           .sort((a, b) => b.count - a.count)
-          .slice(0, 5);
+          .slice(0, 10);
 
         setSourceCounts(sortedSources);
       } catch (err) {
@@ -144,7 +144,6 @@ const TopSourcesFeed: React.FC<TopSourcesFeedProps> = ({ storeId }) => {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-sm capitalize">{name}</span>
-                  <span className="text-xs text-muted-foreground">({source.count})</span>
                 </div>
               </div>
             );
