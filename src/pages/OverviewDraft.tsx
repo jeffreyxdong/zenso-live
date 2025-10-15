@@ -80,11 +80,11 @@ const OverviewDraft = () => {
       </div>
 
       {/* Third Row: Competitive Benchmark + Product Health */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 auto-rows-fr">
+        <div className="lg:col-span-1 flex">
           <CompetitiveBenchmark storeId={activeStore.id} brandName={activeStore.name} />
         </div>
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 flex">
           <ProductHealthMetrics storeId={activeStore.id} />
         </div>
       </div>

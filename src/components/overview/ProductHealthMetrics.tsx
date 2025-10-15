@@ -184,12 +184,12 @@ const ProductHealthMetrics = ({ storeId }: ProductHealthMetricsProps) => {
   };
 
   return (
-    <Card className="h-full min-h-[380px] flex flex-col">
+    <Card className="h-full flex flex-col flex-1">
       <CardHeader>
         <CardTitle>Product Health Metrics</CardTitle>
         <CardDescription>Track top performers and daily visibility changes across products</CardDescription>
       </CardHeader>
-      <CardContent className="flex-1">
+      <CardContent className="flex-1 overflow-y-auto">
         <Tabs defaultValue="top-performers" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="top-performers">Top Performers</TabsTrigger>
