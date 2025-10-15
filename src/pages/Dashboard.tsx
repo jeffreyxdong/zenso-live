@@ -290,11 +290,11 @@ const Dashboard = () => {
       )}
 
       {activeTab === "brand-overview" && (
-        <div className="grid grid-cols-2 gap-6 items-start">
+        <div className="grid grid-cols-2 gap-6 auto-rows-fr">
           {/* Left Column - Score & Trend */}
-          <div className="space-y-6">
+          <div className="space-y-6 flex flex-col">
             {/* Brand AI Visibility Score */}
-            <Card>
+            <Card className="flex-none">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle>AI Visibility Score</CardTitle>
                 <Button
@@ -349,17 +349,21 @@ const Dashboard = () => {
             </Card>
 
             {/* Brand AI Visibility Trends */}
-            {activeStore?.id && <BrandVisibilityChart storeId={activeStore.id} />}
+            <div className="flex-none">
+              {activeStore?.id && <BrandVisibilityChart storeId={activeStore.id} />}
+            </div>
 
             {/* Competitor Analytics */}
             {activeStore?.id && (
-              <CompetitorAnalytics storeId={activeStore.id} />
+              <div className="flex-1">
+                <CompetitorAnalytics storeId={activeStore.id} />
+              </div>
             )}
           </div>
 
           {/* Right Column - AI Optimization Suggestions */}
-          <div className="flex">
-            <Card className="flex-1 flex flex-col">
+          <div>
+            <Card className="h-full flex flex-col">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
