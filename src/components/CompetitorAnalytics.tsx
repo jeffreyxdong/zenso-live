@@ -121,7 +121,7 @@ export const CompetitorAnalytics = ({ storeId }: CompetitorAnalyticsProps) => {
   };
 
   return (
-    <Card className="h-[400px] flex flex-col">
+    <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg">Competitor Analytics</CardTitle>
         <Button
@@ -133,7 +133,7 @@ export const CompetitorAnalytics = ({ storeId }: CompetitorAnalyticsProps) => {
           <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
         </Button>
       </CardHeader>
-      <CardContent className="flex-1 overflow-y-auto">
+      <CardContent>
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-12 space-y-4">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>

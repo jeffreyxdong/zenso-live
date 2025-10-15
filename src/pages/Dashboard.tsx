@@ -294,7 +294,7 @@ const Dashboard = () => {
           {/* Left Column - Score & Trend */}
           <div className="space-y-6">
             {/* Brand AI Visibility Score */}
-            <Card className="h-[240px]">
+            <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle>AI Visibility Score</CardTitle>
                 <Button
@@ -358,8 +358,8 @@ const Dashboard = () => {
           </div>
 
           {/* Right Column - AI Optimization Suggestions */}
-          <div className="flex flex-col">
-            <Card className="flex-1 flex flex-col">
+          <div>
+            <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
@@ -387,7 +387,7 @@ const Dashboard = () => {
                   )}
                 </div>
               </CardHeader>
-              <CardContent className="flex-1 overflow-y-auto">
+              <CardContent>
                 {isLoadingRecommendations ? (
                   <div className="flex flex-col items-center justify-center py-12 space-y-4">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
