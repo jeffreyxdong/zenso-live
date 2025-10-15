@@ -358,8 +358,8 @@ const Dashboard = () => {
           </div>
 
           {/* Right Column - AI Optimization Suggestions */}
-          <div>
-            <Card>
+          <div className="h-[calc(100%-0px)]">
+            <Card className="h-full flex flex-col">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
@@ -387,7 +387,7 @@ const Dashboard = () => {
                   )}
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex-1 overflow-y-auto">
                 {isLoadingRecommendations ? (
                   <div className="flex flex-col items-center justify-center py-12 space-y-4">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
