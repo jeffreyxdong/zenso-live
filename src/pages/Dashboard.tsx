@@ -290,7 +290,7 @@ const Dashboard = () => {
       )}
 
       {activeTab === "brand-overview" && (
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 gap-6 items-start">
           {/* Left Column - Score & Trend */}
           <div className="space-y-6">
             {/* Brand AI Visibility Score */}
@@ -358,8 +358,8 @@ const Dashboard = () => {
           </div>
 
           {/* Right Column - AI Optimization Suggestions */}
-          <div className="h-[calc(100%-0px)]">
-            <Card className="h-full flex flex-col">
+          <div className="flex">
+            <Card className="flex-1 flex flex-col">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
