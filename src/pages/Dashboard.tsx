@@ -278,7 +278,7 @@ const Dashboard = () => {
           </div>
 
           {/* Competitive Benchmark (Left) + Product Health Metrics (Right) */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch" style={{ minHeight: "600px" }}>
             {/* Competitive Benchmark and Top Sources Feed */}
             <div className="lg:col-span-1 flex flex-col gap-6 h-full">
               <CompetitiveBenchmark storeId={activeStore.id} brandName={activeStore.name} />
