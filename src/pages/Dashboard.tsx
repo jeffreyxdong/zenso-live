@@ -282,7 +282,7 @@ const Dashboard = () => {
             {/* Competitive Benchmark and Top Sources Feed */}
             <div className="lg:col-span-1 flex flex-col gap-6">
               {/* Competitive Benchmark with Fixed Height (e.g., h-96 = 24rem) */}
-              <div className="h-96">
+              <div className="h-600">
                 <CompetitiveBenchmark storeId={activeStore.id} brandName={activeStore.name} />
               </div>
 
