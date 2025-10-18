@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, TrendingUp, TrendingDown } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -94,12 +95,47 @@ export function BrandCard({ storeId }: BrandCardProps) {
 
   if (isLoading || !storeData || !currentScore) {
     return (
-      <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card via-card to-card/80 h-full min-h-[340px]">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none" />
-        <div className="relative p-6 h-full flex items-center justify-center">
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </Card>
+      <TooltipProvider>
+        <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card via-card to-card/80 h-full min-h-[340px]">
+          {/* Decorative gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none" />
+          
+          <div className="relative p-6 h-full flex flex-col">
+            {/* Header with badge */}
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-4 w-36" />
+              </div>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge 
+                    variant="outline" 
+                    className="px-3 py-1.5 text-xs font-medium border-primary/30 bg-primary/10 text-primary rounded-full cursor-help"
+                  >
+                    Daily Score
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="max-w-xs">
+                  <p className="text-sm">Brand visibility change compared to the previous day, based on AI mentions.</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+
+            {/* Score Section */}
+            <div className="flex-1 flex flex-col justify-center items-center space-y-4">
+              <Skeleton className="h-20 w-32" />
+              <Skeleton className="h-6 w-40" />
+            </div>
+
+            {/* Footer */}
+            <div className="pt-3 border-t border-border/30 mt-4">
+              <Skeleton className="h-3 w-48" />
+            </div>
+          </div>
+        </Card>
+      </TooltipProvider>
     );
   }
 
