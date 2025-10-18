@@ -45,27 +45,6 @@ serve(async (req) => {
     const { name: brandName, website } = store;
     console.log('Analyzing competitors for store:', brandName);
 
-    // Fetch some products to understand the brand's industry
-    const { data: products } = await supabase
-      .from('products')
-      .select('title, product_type, tags')
-      .eq('store_id', storeId)
-      .limit(10);
-
-    // Build context about the brand's products
-    let productContext = '';
-    if (products && products.length > 0) {
-      const productTypes = [...new Set(products.map(p => p.product_type).filter(Boolean))];
-      const allTags = products.flatMap(p => p.tags || []);
-      const uniqueTags = [...new Set(allTags)].slice(0, 10);
-      
-      productContext = `\n\nThe brand sells products in these categories: ${productTypes.join(', ')}.`;
-      if (uniqueTags.length > 0) {
-        productContext += ` Product tags include: ${uniqueTags.join(', ')}.`;
-      }
-      productContext += `\n\nSample products: ${products.slice(0, 5).map(p => p.title).join(', ')}.`;
-    }
-
     const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY');
     if (!perplexityApiKey) {
       console.error('PERPLEXITY_API_KEY not configured');
