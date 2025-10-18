@@ -278,32 +278,30 @@ const Dashboard = () => {
           </div>
 
           {/* Competitive Benchmark (Left) + Product Health Metrics (Right) */}
-<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-  {/* Competitive Benchmark and Top Sources Feed */}
-  <div className="lg:col-span-1 flex flex-col gap-6">
-    <CompetitiveBenchmark
-      storeId={activeStore.id}
-      brandName={activeStore.name}
-    />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            {/* Competitive Benchmark and Top Sources Feed */}
+            <div className="lg:col-span-1 flex flex-col gap-6">
+              {/* Competitive Benchmark with Fixed Height (e.g., h-96 = 24rem) */}
+              <div className="h-96">
+                <CompetitiveBenchmark storeId={activeStore.id} brandName={activeStore.name} />
+              </div>
 
-    {/* Top Sources Feed with fixed adjustable height */}
-    <div
-      className="rounded-xl border bg-background overflow-y-auto"
-      style={{ height: "600px" }} // 👈 adjust this value as needed
-    >
-      <TopSourcesFeed storeId={activeStore.id} />
-    </div>
-  </div>
+              {/* Top Sources Feed */}
+              <div>
+                <TopSourcesFeed storeId={activeStore.id} />
+              </div>
+            </div>
 
-  {/* Product Health Metrics with fixed adjustable height */}
-  <div
-    className="lg:col-span-2 rounded-xl border bg-background overflow-y-auto"
-    style={{ height: "600px" }} // 👈 adjust independently if needed
-  >
-    <ProductHealthMetrics storeId={activeStore.id} />
-  </div>
-</div>
-)}
+            {/* Product Health Metrics with Tabs */}
+            <div className="lg:col-span-2 flex flex-col">
+              {/* Product Health Metrics with Fixed Height (e.g., h-96 = 24rem) */}
+              <div className="h-96">
+                <ProductHealthMetrics storeId={activeStore.id} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {activeTab === "products-overview" && (
         <MyProducts activeStore={activeStore} onProductClick={(productId) => navigate(`/product/${productId}`)} />
