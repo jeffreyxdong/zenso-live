@@ -17,9 +17,90 @@ serve(async (req) => {
   }
 
   try {
-    const { productId, productTitle } = await req.json();
+    const requestBody = await req.json().catch(() => ({}));
+    const { productId, productTitle } = requestBody;
 
-    if (!productId || !productTitle) {
+    const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
+
+    // Check if this is a daily batch job (no productId provided)
+    if (!productId) {
+      console.log("Running daily batch scoring for all active products...");
+      
+      // Fetch all active products
+      const { data: products, error: productsError } = await supabase
+        .from('products')
+        .select('id, title, user_id')
+        .eq('status', 'active');
+
+      if (productsError) {
+        throw new Error(`Failed to fetch products: ${productsError.message}`);
+      }
+
+      if (!products || products.length === 0) {
+        return new Response(
+          JSON.stringify({ success: true, message: 'No active products found', processed: 0 }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      console.log(`Found ${products.length} active products to score`);
+      let processedCount = 0;
+      const today = new Date().toISOString().split('T')[0];
+
+      // Process each product
+      for (const product of products) {
+        try {
+          // Check if we already have a score for today
+          const { data: existingScore } = await supabase
+            .from('product_scores')
+            .select('id')
+            .eq('product_id', product.id)
+            .gte('created_at', today)
+            .maybeSingle();
+
+          if (existingScore) {
+            console.log(`Score already exists for product ${product.id} today`);
+            continue;
+          }
+
+          // Fetch all responses for this product
+          const { data: responses } = await supabase
+            .from("prompt_responses")
+            .select(`
+              id,
+              response_text,
+              prompts!inner(product_id, user_id)
+            `)
+            .eq("prompts.product_id", product.id)
+            .eq("prompts.user_id", product.user_id);
+
+          if (!responses || responses.length === 0) {
+            console.log(`No responses found for product ${product.id}`);
+            continue;
+          }
+
+          // Score this product
+          await scoreProduct(supabase, product.id, product.title, responses);
+          processedCount++;
+          console.log(`Successfully scored product ${product.id}`);
+        } catch (error) {
+          console.error(`Error scoring product ${product.id}:`, error);
+        }
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          processed: processedCount,
+          total: products.length,
+          message: `Scored ${processedCount} products`
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Single product scoring (original behavior)
+    if (!productTitle) {
       return new Response(JSON.stringify({ error: "Product ID and title are required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -33,7 +114,6 @@ serve(async (req) => {
     if (!authHeader) throw new Error("Authorization header required");
     const token = authHeader.replace("Bearer ", "");
 
-    const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
     if (userError || !userData.user) throw new Error("Invalid user token");
 
@@ -64,9 +144,27 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Found ${responses.length} responses to analyze`);
+    const result = await scoreProduct(supabase, productId, productTitle, responses);
 
-    const allResponsesText = responses.map((r) => r.response_text).join("\n\n---\n\n");
+    return new Response(
+      JSON.stringify(result),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error("Error in score-buyer-intent-outputs function:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});
+
+// Extracted scoring logic for reuse
+async function scoreProduct(supabase: any, productId: string, productTitle: string, responses: any[]) {
+  console.log(`Found ${responses.length} responses to analyze for ${productTitle}`);
+
+  const allResponsesText = responses.map((r) => r.response_text).join("\n\n---\n\n");
 
     // Call Responses API
     const resp = await fetch("https://api.openai.com/v1/responses", {
@@ -178,28 +276,15 @@ ${allResponsesText}`,
 
     console.log(`Inserted scores for product ${productId}:`, insertedScore);
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        scores: {
-          visibility_score: visibilityScore,
-          position_score: positionScore,
-          sentiment_score: sentimentScore,
-          ai_mentions: aiMentions, // ✅ INCLUDED IN RESPONSE
-        },
-        scoreId: insertedScore.id,
-        message: "Product scores calculated and saved successfully",
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return {
+      success: true,
+      scores: {
+        visibility_score: visibilityScore,
+        position_score: positionScore,
+        sentiment_score: sentimentScore,
+        ai_mentions: aiMentions,
       },
-    );
-  } catch (error) {
-    console.error("Error in score-buyer-intent-outputs function:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-});
+      scoreId: insertedScore.id,
+      message: "Product scores calculated and saved successfully",
+    };
+}
