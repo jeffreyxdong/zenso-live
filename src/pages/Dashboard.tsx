@@ -287,7 +287,7 @@ const Dashboard = () => {
               </div>
 
               {/* Top Sources Feed with Fixed Height (e.g., h-96 = 24rem) */}
-              <div className="h-[665px]">
+              <div className="h-[660px]">
                 <TopSourcesFeed storeId={activeStore.id} />
               </div>
             </div>
