@@ -296,7 +296,7 @@ const Dashboard = () => {
           </div>
         </div>
       )}
-      )
+
       {activeTab === "products-overview" && (
         <MyProducts activeStore={activeStore} onProductClick={(productId) => navigate(`/product/${productId}`)} />
       )}
