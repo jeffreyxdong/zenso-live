@@ -287,7 +287,7 @@ const Dashboard = () => {
               </div>
 
               {/* Top Sources Feed with Fixed Height (e.g., h-96 = 24rem) */}
-              <div className="h-96">
+              <div className="h-[400px]">
                 <TopSourcesFeed storeId={activeStore.id} />
               </div>
             </div>
@@ -295,7 +295,7 @@ const Dashboard = () => {
             {/* Product Health Metrics with Tabs */}
             <div className="lg:col-span-2 flex flex-col">
               {/* Product Health Metrics with Fixed Height (e.g., h-96 = 24rem) */}
-              <div className="h-96">
+              <div className="h-[400px]">
                 <ProductHealthMetrics storeId={activeStore.id} />
               </div>
             </div>
