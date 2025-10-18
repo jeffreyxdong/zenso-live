@@ -285,7 +285,7 @@ const Dashboard = () => {
   </div>
 </div>
 
-      )}
+      )
 
       {activeTab === "products-overview" && (
         <MyProducts 
