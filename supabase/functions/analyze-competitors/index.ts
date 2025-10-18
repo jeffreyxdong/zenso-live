@@ -54,7 +54,7 @@ serve(async (req) => {
       );
     }
 
-    const prompt = `Identify the top 5 direct competitors for ${brandName}${website ? ` (${website})` : ''} in the SAME industry and product category.${productContext}
+    const prompt = `Identify the top 5 direct competitors for ${brandName}${website ? ` (${website})` : ''} in the SAME industry and product category.
 
 IMPORTANT: The competitors MUST be in the exact same industry and sell similar products. Do not suggest competitors from different industries.
 
