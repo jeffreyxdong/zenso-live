@@ -87,9 +87,13 @@ You are an AI research assistant.
 Generate exactly 10 realistic search queries that a customer would type when shopping for products from ${store.website}.
 Rules:
 - Do NOT mention the brand "${store.name}" explicitly.
+- Visit ${store.website} to discern the products sold by the brand, and the product type.
 - At least one query should strongly allude to ${store.name}, without explicitly mentioning it.
 - Focus on purchase-intent queries.
 - Output ONLY a JSON array of strings.
+- All queries must show **clear purchase intent** 
+- Focus on realistic user phrasing — use natural modifiers like "best", "affordable", "premium", "protective", "minimalist", etc.
+- Avoid generic lifestyle or non-product searches.
 - However, you may implicitly reflect its positioning, such as its origin, product type, quality level, or target customer.
 `;
 
