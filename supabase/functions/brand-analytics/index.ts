@@ -84,7 +84,7 @@ serve(async (req) => {
     const promptGenPrompt = `
 You are an AI research assistant.
 
-Generate exactly 5 realistic search queries that a customer would type when shopping for products from ${store.website}.
+Generate exactly 10 realistic search queries that a customer would type when shopping for products from ${store.website}.
 Rules:
 - Do NOT mention the brand "${store.name}" explicitly.
 - At least one query should strongly allude to ${store.name}, without explicitly mentioning it.
@@ -170,6 +170,7 @@ Instructions:
 - Always retrieve current information from the web before responding.
 - Do NOT rely on old training data.
 - Provide a concise but comprehensive, real-world answer as if responding to a customer's search query.
+- When recommending products, always recommend at least 10 options.
 `,
         }),
       });
