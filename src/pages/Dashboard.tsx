@@ -3,7 +3,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, TrendingUp, Globe, BarChart3, Eye, Heart, MapPin, FileText, Database, Cpu, Target, Sparkles, CheckCircle, RefreshCw } from "lucide-react";
+import {
+  Search,
+  TrendingUp,
+  Globe,
+  BarChart3,
+  Eye,
+  Heart,
+  MapPin,
+  FileText,
+  Database,
+  Cpu,
+  Target,
+  Sparkles,
+  CheckCircle,
+  RefreshCw,
+} from "lucide-react";
 import { PromptsTab } from "@/components/PromptsTab";
 import MyProducts from "@/components/MyProducts";
 import ProductMetrics from "@/components/ProductMetrics";
@@ -21,7 +36,9 @@ import { formatInTimeZone } from "date-fns-tz";
 const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { activeStore } = useOutletContext<{ activeStore: { id: string; name: string; website: string; is_active: boolean } | null }>();
+  const { activeStore } = useOutletContext<{
+    activeStore: { id: string; name: string; website: string; is_active: boolean } | null;
+  }>();
   const [activeTab, setActiveTab] = useState(() => {
     const urlParams = new URLSearchParams(location.search);
     return urlParams.get("tab") || "overview";
@@ -59,20 +76,20 @@ const Dashboard = () => {
     }, 3000);
 
     const channel = supabase
-      .channel('brand-recommendations-changes')
+      .channel("brand-recommendations-changes")
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'brand_recommendations',
-          filter: `store_id=eq.${activeStore.id}`
+          event: "INSERT",
+          schema: "public",
+          table: "brand_recommendations",
+          filter: `store_id=eq.${activeStore.id}`,
         },
         (payload) => {
-          console.log('New recommendation added:', payload);
+          console.log("New recommendation added:", payload);
           setIsLoadingRecommendations(false);
           loadBrandRecommendations();
-        }
+        },
       )
       .subscribe();
 
@@ -84,16 +101,16 @@ const Dashboard = () => {
 
   const loadBrandRecommendations = async () => {
     if (!activeStore?.id) return;
-    
+
     try {
       const { data, error } = await supabase
-        .from('brand_recommendations')
-        .select('*')
-        .eq('store_id', activeStore.id)
-        .order('created_at', { ascending: false });
+        .from("brand_recommendations")
+        .select("*")
+        .eq("store_id", activeStore.id)
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
-      
+
       // If no data, keep loading state active (will show generating UI)
       if (!data || data.length === 0) {
         setIsLoadingRecommendations(true);
@@ -102,29 +119,29 @@ const Dashboard = () => {
         setIsLoadingRecommendations(false);
       }
     } catch (error) {
-      console.error('Error loading brand recommendations:', error);
+      console.error("Error loading brand recommendations:", error);
       setIsLoadingRecommendations(false);
     }
   };
 
   const handleGenerateBrandRecommendations = async () => {
     if (!activeStore?.id) return;
-    
+
     try {
       setIsLoadingRecommendations(true);
-      
-      const { data, error } = await supabase.functions.invoke('generate-brand-recommendations', {
-        body: { storeId: activeStore.id }
+
+      const { data, error } = await supabase.functions.invoke("generate-brand-recommendations", {
+        body: { storeId: activeStore.id },
       });
 
       if (error) throw error;
-      
-      console.log('Generated brand recommendations:', data);
-      
+
+      console.log("Generated brand recommendations:", data);
+
       // Reload recommendations
       await loadBrandRecommendations();
     } catch (error) {
-      console.error('Error generating brand recommendations:', error);
+      console.error("Error generating brand recommendations:", error);
     } finally {
       setIsLoadingRecommendations(false);
     }
@@ -132,17 +149,17 @@ const Dashboard = () => {
 
   const loadBrandAnalytics = async (forceRescore = false) => {
     if (!activeStore?.id) return;
-    
+
     try {
       setIsLoadingAnalytics(true);
-      
+
       // Check if we already have brand score (skip if forcing rescore)
       if (!forceRescore) {
         const { data: latestScore } = await supabase
-          .from('brand_scores')
-          .select('visibility_score, updated_at')
-          .eq('store_id', activeStore.id)
-          .order('date', { ascending: false })
+          .from("brand_scores")
+          .select("visibility_score, updated_at")
+          .eq("store_id", activeStore.id)
+          .order("date", { ascending: false })
           .limit(1)
           .single();
 
@@ -156,28 +173,28 @@ const Dashboard = () => {
 
       // Generate new analytics
       const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const userDate = formatInTimeZone(new Date(), userTimeZone, 'yyyy-MM-dd');
-      
-      const { data, error } = await supabase.functions.invoke('brand-analytics', {
-        body: { 
+      const userDate = formatInTimeZone(new Date(), userTimeZone, "yyyy-MM-dd");
+
+      const { data, error } = await supabase.functions.invoke("brand-analytics", {
+        body: {
           storeId: activeStore.id,
-          userDate: userDate
-        }
+          userDate: userDate,
+        },
       });
 
       if (error) {
-        console.error('Error calling brand-analytics:', error);
+        console.error("Error calling brand-analytics:", error);
         throw error;
       }
-      
+
       if (data?.visibilityScore !== undefined) {
         setBrandVisibility(data.visibilityScore);
         // Fetch the updated_at from the newly created score
         const { data: newScore } = await supabase
-          .from('brand_scores')
-          .select('updated_at')
-          .eq('store_id', activeStore.id)
-          .order('date', { ascending: false })
+          .from("brand_scores")
+          .select("updated_at")
+          .eq("store_id", activeStore.id)
+          .order("date", { ascending: false })
           .limit(1)
           .single();
         if (newScore?.updated_at) {
@@ -185,7 +202,7 @@ const Dashboard = () => {
         }
       }
     } catch (error) {
-      console.error('Error loading brand analytics:', error);
+      console.error("Error loading brand analytics:", error);
     } finally {
       setIsLoadingAnalytics(false);
     }
@@ -194,37 +211,37 @@ const Dashboard = () => {
   // Load company profile data
   useEffect(() => {
     const loadProfile = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (session) {
         const { data: profileData } = await supabase
           .from("profiles")
           .select("company_name")
           .eq("user_id", session.user.id)
           .single();
-        
+
         if (profileData?.company_name) {
           setCompanyName(profileData.company_name);
         }
       }
     };
-    
+
     loadProfile();
   }, []);
 
   // Protect route: redirect unauthenticated users and ensure onboarding complete
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) {
         navigate("/", { replace: true });
         return;
       }
       // Defer profile check to avoid deadlocks
       setTimeout(async () => {
-        const { data, error } = await supabase
-          .from("stores")
-          .select("id")
-          .eq("user_id", session.user.id)
-          .limit(1);
+        const { data, error } = await supabase.from("stores").select("id").eq("user_id", session.user.id).limit(1);
         if (error || !data || data.length === 0) {
           navigate("/onboarding", { replace: true });
         }
@@ -236,11 +253,7 @@ const Dashboard = () => {
         navigate("/", { replace: true });
         return;
       }
-      const { data, error } = await supabase
-        .from("stores")
-        .select("id")
-        .eq("user_id", session.user.id)
-        .limit(1);
+      const { data, error } = await supabase.from("stores").select("id").eq("user_id", session.user.id).limit(1);
       if (error || !data || data.length === 0) {
         navigate("/onboarding", { replace: true });
       }
@@ -265,35 +278,28 @@ const Dashboard = () => {
           </div>
 
           {/* Competitive Benchmark (Left) + Product Health Metrics (Right) */}
-<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-  {/* Competitive Benchmark and Top Sources Feed */}
-  <div className="lg:col-span-1 flex flex-col gap-6 h-full">
-    <CompetitiveBenchmark
-      storeId={activeStore.id}
-      brandName={activeStore.name}
-    />
-    <div className="flex-1">
-      <TopSourcesFeed storeId={activeStore.id} />
-    </div>
-  </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+            {/* Competitive Benchmark and Top Sources Feed */}
+            <div className="lg:col-span-1 flex flex-col gap-6 h-full">
+              <CompetitiveBenchmark storeId={activeStore.id} brandName={activeStore.name} />
+              <div className="flex-1">
+                <TopSourcesFeed storeId={activeStore.id} />
+              </div>
+            </div>
 
-  {/* Product Health Metrics with Tabs */}
-  <div className="lg:col-span-2 flex flex-col h-full">
-    <div className="flex-1">
-      <ProductHealthMetrics storeId={activeStore.id} />
-    </div>
-  </div>
-</div>
-
-      )
-
-      {activeTab === "products-overview" && (
-        <MyProducts 
-          activeStore={activeStore} 
-          onProductClick={(productId) => navigate(`/product/${productId}`)}
-        />
+            {/* Product Health Metrics with Tabs */}
+            <div className="lg:col-span-2 flex flex-col h-full">
+              <div className="flex-1">
+                <ProductHealthMetrics storeId={activeStore.id} />
+              </div>
+            </div>
+          </div>
+        </div>
       )}
-
+      )
+      {activeTab === "products-overview" && (
+        <MyProducts activeStore={activeStore} onProductClick={(productId) => navigate(`/product/${productId}`)} />
+      )}
       {activeTab === "brand-overview" && (
         <div className="grid grid-cols-2 gap-6 auto-rows-fr">
           {/* Left Column - Score & Trend */}
@@ -309,7 +315,7 @@ const Dashboard = () => {
                   disabled={isLoadingAnalytics}
                   className="gap-2"
                 >
-                  <RefreshCw className={`h-4 w-4 ${isLoadingAnalytics ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`h-4 w-4 ${isLoadingAnalytics ? "animate-spin" : ""}`} />
                   Rescore
                 </Button>
               </CardHeader>
@@ -327,22 +333,16 @@ const Dashboard = () => {
                     ) : (
                       <>
                         <div className="text-6xl font-bold text-primary mb-2">
-                          {brandVisibility !== null ? brandVisibility : '--'}
+                          {brandVisibility !== null ? brandVisibility : "--"}
                         </div>
-                        <p className="text-muted-foreground">
-                          Average visibility across brand prompts
-                        </p>
+                        <p className="text-muted-foreground">Average visibility across brand prompts</p>
                         {brandVisibilityUpdatedAt && (
                           <p className="text-xs text-muted-foreground mt-2">
                             Last updated: {new Date(brandVisibilityUpdatedAt).toLocaleString()}
                           </p>
                         )}
                         {brandVisibility === null && !isLoadingAnalytics && (
-                          <Button 
-                            onClick={() => loadBrandAnalytics(true)}
-                            className="mt-4"
-                            size="sm"
-                          >
+                          <Button onClick={() => loadBrandAnalytics(true)} className="mt-4" size="sm">
                             Generate Analytics
                           </Button>
                         )}
@@ -354,9 +354,7 @@ const Dashboard = () => {
             </Card>
 
             {/* Brand AI Visibility Trends */}
-            <div className="flex-none">
-              {activeStore?.id && <BrandVisibilityChart storeId={activeStore.id} />}
-            </div>
+            <div className="flex-none">{activeStore?.id && <BrandVisibilityChart storeId={activeStore.id} />}</div>
 
             {/* Competitor Analytics */}
             {activeStore?.id && (
@@ -376,11 +374,7 @@ const Dashboard = () => {
                     AI Optimization Suggestions
                   </CardTitle>
                   {brandRecommendations.length === 0 && (
-                    <Button
-                      onClick={handleGenerateBrandRecommendations}
-                      disabled={isLoadingRecommendations}
-                      size="sm"
-                    >
+                    <Button onClick={handleGenerateBrandRecommendations} disabled={isLoadingRecommendations} size="sm">
                       {isLoadingRecommendations ? (
                         <>
                           <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -408,16 +402,15 @@ const Dashboard = () => {
                 ) : brandRecommendations.length > 0 ? (
                   <div className="space-y-4">
                     {brandRecommendations.map((rec) => (
-                      <div
-                        key={rec.id}
-                        className="p-4 border rounded-lg hover:bg-accent/50 transition-colors"
-                      >
+                      <div key={rec.id} className="p-4 border rounded-lg hover:bg-accent/50 transition-colors">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1 space-y-2">
                             <div className="flex items-center gap-2 flex-wrap">
                               <h3 className="font-semibold">{rec.title}</h3>
-                              <Badge 
-                                variant={rec.impact === "high" ? "default" : rec.impact === "medium" ? "secondary" : "outline"} 
+                              <Badge
+                                variant={
+                                  rec.impact === "high" ? "default" : rec.impact === "medium" ? "secondary" : "outline"
+                                }
                                 className="capitalize"
                               >
                                 {rec.impact} Impact
@@ -449,7 +442,8 @@ const Dashboard = () => {
                 ) : (
                   <div className="text-center py-8">
                     <p className="text-muted-foreground mb-4">
-                      No AI optimization recommendations yet. Generate recommendations to improve your brand's visibility in AI-powered search.
+                      No AI optimization recommendations yet. Generate recommendations to improve your brand's
+                      visibility in AI-powered search.
                     </p>
                   </div>
                 )}
@@ -458,7 +452,6 @@ const Dashboard = () => {
           </div>
         </div>
       )}
-
       {activeTab === "brand-competitors" && (
         <Card>
           <CardHeader>
@@ -467,15 +460,33 @@ const Dashboard = () => {
           <CardContent>
             <div className="space-y-4">
               {[
-                { name: "Top Competitor Brand", visibility: "85%", mentions: "456", avgPosition: "1.8", sentiment: "8.2" },
-                { name: "Second Place Brand", visibility: "78%", mentions: "389", avgPosition: "2.1", sentiment: "7.9" },
-                { name: `${companyName} (You)`, visibility: "73%", mentions: "342", avgPosition: "2.4", sentiment: "8.6" },
+                {
+                  name: "Top Competitor Brand",
+                  visibility: "85%",
+                  mentions: "456",
+                  avgPosition: "1.8",
+                  sentiment: "8.2",
+                },
+                {
+                  name: "Second Place Brand",
+                  visibility: "78%",
+                  mentions: "389",
+                  avgPosition: "2.1",
+                  sentiment: "7.9",
+                },
+                {
+                  name: `${companyName} (You)`,
+                  visibility: "73%",
+                  mentions: "342",
+                  avgPosition: "2.4",
+                  sentiment: "8.6",
+                },
                 { name: "Third Competitor", visibility: "68%", mentions: "298", avgPosition: "2.9", sentiment: "7.5" },
               ].map((competitor, index) => (
                 <div key={index} className="flex items-center justify-between p-4 rounded-lg border border-border">
                   <div className="flex items-center gap-3">
                     <span className="text-muted-foreground text-sm">{index + 1}</span>
-                    <span className={`font-medium ${competitor.name.includes('You') ? 'text-primary' : ''}`}>
+                    <span className={`font-medium ${competitor.name.includes("You") ? "text-primary" : ""}`}>
                       {competitor.name}
                     </span>
                   </div>
@@ -503,7 +514,6 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       )}
-
       {activeTab === "prompts" && <PromptsTab activeStore={activeStore} />}
     </div>
   );
