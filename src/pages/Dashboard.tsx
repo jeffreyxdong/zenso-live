@@ -303,7 +303,7 @@ const Dashboard = () => {
     <ProductHealthMetrics storeId={activeStore.id} />
   </div>
 </div>
-
+)}
 
       {activeTab === "products-overview" && (
         <MyProducts activeStore={activeStore} onProductClick={(productId) => navigate(`/product/${productId}`)} />
