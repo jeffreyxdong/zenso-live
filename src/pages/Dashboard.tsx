@@ -295,7 +295,7 @@ const Dashboard = () => {
             {/* Product Health Metrics with Tabs */}
             <div className="lg:col-span-2 flex flex-col">
               {/* Product Health Metrics with Fixed Height (e.g., h-96 = 24rem) */}
-              <div className="h-[1150px]">
+              <div className="h-[1135px]">
                 <ProductHealthMetrics storeId={activeStore.id} />
               </div>
             </div>
