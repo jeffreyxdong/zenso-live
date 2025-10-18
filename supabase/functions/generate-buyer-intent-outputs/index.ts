@@ -97,7 +97,7 @@ serve(async (req) => {
               {
                 role: "system",
                 content:
-                  "You are ChatGPT, a helpful assistant. Always run a web search before answering. When recommending products, cite sources and base recommendations on up-to-date information. Include at least 10 products with each response. Output the response from the lens of present day.",
+                  "You are ChatGPT, a helpful assistant. Always run a web search before answering. When recommending products, cite sources and base recommendations on up-to-date information. Always recommend at least 10 products. Output the response from the lens of present day.",
               },
               {
                 role: "user",
