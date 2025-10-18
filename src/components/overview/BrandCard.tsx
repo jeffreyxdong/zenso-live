@@ -32,7 +32,7 @@ export function BrandCard({ storeId }: BrandCardProps) {
 
   useEffect(() => {
     if (storeId) {
-      fetchStoreAndScoreData();
+      fetchStoreData();
       
       const channel = supabase
         .channel('brand-card-updates')
@@ -45,7 +45,7 @@ export function BrandCard({ storeId }: BrandCardProps) {
             filter: `store_id=eq.${storeId}`
           },
           () => {
-            fetchStoreAndScoreData();
+            fetchScoreData();
           }
         )
         .subscribe();
@@ -56,11 +56,9 @@ export function BrandCard({ storeId }: BrandCardProps) {
     }
   }, [storeId]);
 
-  const fetchStoreAndScoreData = async () => {
+  const fetchStoreData = async () => {
     try {
-      setIsLoading(true);
-
-      // Fetch store data
+      // Fetch store data first
       const { data: store, error: storeError } = await supabase
         .from('stores')
         .select('name, website')
@@ -69,6 +67,18 @@ export function BrandCard({ storeId }: BrandCardProps) {
 
       if (storeError) throw storeError;
       setStoreData(store);
+
+      // Then fetch scores
+      fetchScoreData();
+    } catch (error) {
+      console.error('Error fetching brand card data:', error);
+      setIsLoading(false);
+    }
+  };
+
+  const fetchScoreData = async () => {
+    try {
+      setIsLoading(true);
 
       // Fetch latest 2 brand scores to calculate change
       const { data: scores, error: scoresError } = await supabase
@@ -87,13 +97,34 @@ export function BrandCard({ storeId }: BrandCardProps) {
         }
       }
     } catch (error) {
-      console.error('Error fetching brand card data:', error);
+      console.error('Error fetching brand score data:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (isLoading || !storeData || !currentScore) {
+  // Loading state - show header with spinning loader
+  if (!storeData) {
+    return (
+      <TooltipProvider>
+        <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card via-card to-card/80 h-full min-h-[340px]">
+          {/* Decorative gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none" />
+          
+          <div className="relative p-6 h-full flex flex-col">
+            <div className="h-[200px] flex items-center justify-center">
+              <p className="text-muted-foreground">Loading...</p>
+            </div>
+          </div>
+        </Card>
+      </TooltipProvider>
+    );
+  }
+
+  // Clean website URL for display
+  const displayUrl = storeData.website.replace(/^https?:\/\//, '').replace(/\/$/, '');
+
+  if (isLoading || !currentScore) {
     return (
       <TooltipProvider>
         <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card via-card to-card/80 h-full min-h-[340px]">
@@ -103,9 +134,20 @@ export function BrandCard({ storeId }: BrandCardProps) {
           <div className="relative p-6 h-full flex flex-col">
             {/* Header with badge */}
             <div className="flex items-start justify-between mb-4">
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-8 w-48" />
-                <Skeleton className="h-4 w-36" />
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold text-foreground mb-1">
+                  {storeData.name}
+                </h2>
+                <a 
+                  href={storeData.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors group"
+                >
+                  <span>{displayUrl}</span>
+                  <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                </a>
               </div>
               
               <Tooltip>
@@ -123,15 +165,20 @@ export function BrandCard({ storeId }: BrandCardProps) {
               </Tooltip>
             </div>
 
-            {/* Score Section */}
-            <div className="flex-1 flex flex-col justify-center items-center space-y-4">
-              <Skeleton className="h-20 w-32" />
-              <Skeleton className="h-6 w-40" />
+            {/* Loading spinner */}
+            <div className="flex-1 flex flex-col items-center justify-center space-y-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              <div className="text-center space-y-2">
+                <p className="font-medium">Calculating brand score...</p>
+                <p className="text-sm text-muted-foreground">This may take a moment</p>
+              </div>
             </div>
 
             {/* Footer */}
             <div className="pt-3 border-t border-border/30 mt-4">
-              <Skeleton className="h-3 w-48" />
+              <div className="text-xs text-muted-foreground/70 invisible">
+                Placeholder for alignment
+              </div>
             </div>
           </div>
         </Card>
@@ -147,9 +194,6 @@ export function BrandCard({ storeId }: BrandCardProps) {
     : 5.2; // Mock change if no previous data
   const isPositive = scoreChange > 0;
   const trendDirection = Math.abs(scoreChange) > 3 ? (isPositive ? "up" : "down") : "stable";
-  
-  // Clean website URL for display
-  const displayUrl = storeData.website.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
   return (
     <TooltipProvider>
