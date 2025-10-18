@@ -53,9 +53,27 @@ const ProductHealthMetrics = ({ storeId }: ProductHealthMetricsProps) => {
     try {
       setIsLoadingTop(true);
       
+      // First, get products for this store
+      const { data: products, error: productsError } = await supabase
+        .from('products')
+        .select('id, title, handle')
+        .eq('store_id', storeId)
+        .eq('status', 'active');
+
+      if (productsError) throw productsError;
+
+      if (!products || products.length === 0) {
+        setTopProducts([]);
+        return;
+      }
+
+      const productIds = products.map(p => p.id);
+
+      // Get scores for these products
       const { data: scores, error } = await supabase
         .from('product_scores_with_titles')
         .select('*')
+        .in('product_id', productIds)
         .not('visibility_score', 'is', null)
         .order('visibility_score', { ascending: false })
         .limit(10);
