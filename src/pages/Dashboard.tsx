@@ -281,13 +281,13 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             {/* Competitive Benchmark and Top Sources Feed */}
             <div className="lg:col-span-1 flex flex-col gap-6">
-              {/* Competitive Benchmark with Fixed Height (e.g., h-96 = 24rem) */}
-              <div className="h-600">
+              {/* Competitive Benchmark (height determined by its content) */}
+              <div>
                 <CompetitiveBenchmark storeId={activeStore.id} brandName={activeStore.name} />
               </div>
 
-              {/* Top Sources Feed */}
-              <div>
+              {/* Top Sources Feed with Fixed Height (e.g., h-96 = 24rem) */}
+              <div className="h-96">
                 <TopSourcesFeed storeId={activeStore.id} />
               </div>
             </div>
