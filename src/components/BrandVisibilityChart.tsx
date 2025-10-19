@@ -3,22 +3,99 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from "recharts";
 import { TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { formatInTimeZone } from "date-fns-tz";
+import { toZonedTime, format as formatTz } from "date-fns-tz";
 
 interface ChartDataPoint {
   date: string;
   value: number | null;
-  formattedDate: string;
 }
 
 interface BrandVisibilityChartProps {
   storeId: string;
+  testDate?: string; // Optional test date for debugging (format: YYYY-MM-DD)
 }
 
-const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
+// Helper to convert UTC date to user's local date string
+const getLocalDateString = (utcDate: Date, userTimeZone: string): string => {
+  const zonedDate = toZonedTime(utcDate, userTimeZone);
+  return formatTz(zonedDate, "yyyy-MM-dd", { timeZone: userTimeZone });
+};
+
+const generateScoreHistoryFromData = (
+  scores: any[],
+  storeCreatedAt: string,
+  testDate?: string,
+) => {
+  // Get user's timezone
+  const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  // Convert store creation date to user's local timezone
+  const storeCreationDateUTC = new Date(storeCreatedAt);
+  const storeCreationDate = toZonedTime(storeCreationDateUTC, userTimeZone);
+  storeCreationDate.setHours(0, 0, 0, 0);
+
+  // Calculate the end of the initial 7-day window (creation date + 6 days)
+  const initialWindowEnd = new Date(storeCreationDate);
+  initialWindowEnd.setDate(storeCreationDate.getDate() + 6);
+  const initialWindowEndStr = formatTz(initialWindowEnd, "yyyy-MM-dd", { timeZone: userTimeZone });
+
+  // Sort scores by date
+  const sorted = [...(scores || [])].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+  );
+
+  // Create a map of date -> score for quick lookup
+  const scoreMap = new Map<string, number>();
+  let latestDataDate = "";
+
+  sorted.forEach((score) => {
+    if (score.visibility_score != null) {
+      // For brand_scores, the date field is already a date string (not timestamp)
+      scoreMap.set(score.date, score.visibility_score);
+      if (score.date > latestDataDate) {
+        latestDataDate = score.date;
+      }
+    }
+  });
+
+  const result = [];
+
+  // If we DON'T have data beyond the initial 7-day window, show fixed window (creation + 6 days)
+  // Otherwise, show rolling window of most recent 7 days
+  if (latestDataDate <= initialWindowEndStr || !latestDataDate) {
+    // Show from store creation date + 6 future days in user's timezone
+    // Always show full 7-day window on X-axis, even if data is missing
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(storeCreationDate);
+      date.setDate(storeCreationDate.getDate() + i);
+      const dateKey = formatTz(date, "yyyy-MM-dd", { timeZone: userTimeZone });
+
+      result.push({
+        date: dateKey,
+        value: scoreMap.get(dateKey) ?? null, // null for dates without data
+      });
+    }
+  } else {
+    // Show most recent 7 days of actual data (rolling window)
+    const allDates = Array.from(scoreMap.keys()).sort();
+    const recentDates = allDates.slice(-7);
+
+    recentDates.forEach((dateKey) => {
+      result.push({
+        date: dateKey,
+        value: scoreMap.get(dateKey) ?? null,
+      });
+    });
+  }
+
+  return result;
+};
+
+const BrandVisibilityChart = ({ storeId, testDate }: BrandVisibilityChartProps) => {
   const [visibilityData, setVisibilityData] = useState<ChartDataPoint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [storeCreatedAt, setStoreCreatedAt] = useState<string>("");
 
   useEffect(() => {
     if (storeId) {
@@ -32,11 +109,12 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
           {
             event: '*',
             schema: 'public',
-            table: 'brand_scores'
+            table: 'brand_scores',
+            filter: `store_id=eq.${storeId}`
           },
           (payload) => {
             console.log('Brand scores updated:', payload);
-            setIsGenerating(false); // Stop generating state when data arrives
+            setIsGenerating(false);
             fetchVisibilityData();
           }
         )
@@ -52,28 +130,33 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
     try {
       setIsLoading(true);
       
-      // Fetch last 7 days of brand scores for this store (rolling window)
+      // Fetch store creation date
+      const { data: storeData, error: storeError } = await supabase
+        .from('stores')
+        .select('created_at')
+        .eq('id', storeId)
+        .single();
+
+      if (storeError) throw storeError;
+
+      const createdAt = testDate || storeData.created_at;
+      setStoreCreatedAt(createdAt);
+      
+      // Fetch brand scores for this store
       const { data: brandScores, error } = await supabase
         .from('brand_scores')
         .select('date, visibility_score')
         .eq('store_id', storeId)
-        .order('date', { ascending: false })
-        .limit(7);
+        .order('date', { ascending: true });
 
       if (error) throw error;
 
-      // If no data exists, set generating state
-      if (!brandScores || brandScores.length === 0) {
-        setIsGenerating(true);
-      } else {
-        setIsGenerating(false);
-      }
+      // Check if we should be generating
+      const hasValidScores = brandScores && brandScores.some(s => s.visibility_score != null && s.visibility_score > 0);
+      setIsGenerating(!hasValidScores);
 
-      // Reverse so oldest date is first
-      const reversedScores = (brandScores || []).reverse();
-      
-      // Prepare chart data using the same logic as PromptViewModal
-      const chartData = prepareChartData(reversedScores);
+      // Generate chart data using the same logic as PDP
+      const chartData = generateScoreHistoryFromData(brandScores || [], createdAt, testDate);
       
       setVisibilityData(chartData);
     } catch (error) {
@@ -81,53 +164,6 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Prepare chart data to always show 7 days on x-axis, filling gaps with null
-  const prepareChartData = (scores: Array<{ date: string; visibility_score: number | null }>): ChartDataPoint[] => {
-    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-    // Create a lookup map for existing scores
-    const scoreMap = new Map<string, number>();
-    scores.forEach((score) => {
-      if (score.visibility_score !== null) {
-        scoreMap.set(score.date, score.visibility_score);
-      }
-    });
-
-    const chartData: ChartDataPoint[] = [];
-    
-    // Always generate 7 days for x-axis
-    // If we have data, use the date range from our rolling window
-    // If we have less than 7 days, extend forward from the latest date
-    let startDate: Date;
-    if (scores.length > 0) {
-      // Parse the date in the user's timezone to avoid UTC offset issues
-      const [year, month, day] = scores[0].date.split('-').map(Number);
-      startDate = new Date(year, month - 1, day);
-    } else {
-      // If no data, start from today and go backwards
-      startDate = new Date();
-      startDate.setDate(startDate.getDate() - 6);
-    }
-
-    // Generate exactly 7 days
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(startDate);
-      date.setDate(startDate.getDate() + i);
-      const dateStr = formatInTimeZone(date, userTimeZone, "yyyy-MM-dd");
-      
-      // Check if we have data for this date
-      const existingScore = scoreMap.get(dateStr);
-      
-      chartData.push({
-        date: dateStr,
-        value: existingScore ?? null,
-        formattedDate: formatInTimeZone(date, userTimeZone, "MMM dd"),
-      });
-    }
-    
-    return chartData;
   };
 
   // Calculate trend
@@ -146,6 +182,7 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
   };
 
   const trend = calculateTrend();
+  const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   if (isLoading) {
     return (
@@ -194,33 +231,20 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={visibilityData}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-             <XAxis
-                dataKey="formattedDate"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-                tick={{
-                  fill: 'hsl(var(--muted-foreground))',
-                  dy: 10,
+              <XAxis
+                dataKey="date"
+                className="text-xs fill-muted-foreground"
+                tick={{ fontSize: 10 }}
+                tickFormatter={(dateStr) => {
+                  const [year, month, day] = dateStr.split('-').map(Number);
+                  const date = new Date(year, month - 1, day);
+                  return formatTz(date, "MMM dd", { timeZone: userTimeZone });
                 }}
-                interval={0}
-                angle={0}
-                textAnchor="middle"
-                height={40}
-                padding={{ left: 0, right: 20 }}   // <-- this adds space for the last tick
               />
               <YAxis
+                className="text-xs fill-muted-foreground"
+                tick={{ fontSize: 10 }}
                 domain={[0, 100]}
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-                tick={{
-                  fill: 'hsl(var(--muted-foreground))',
-                  dx: -5,
-                }}
-                tickFormatter={(value) => `${value}%`}
-                width={50}
-                orientation="left"
               />
               <Tooltip 
                 contentStyle={{ 
@@ -229,19 +253,14 @@ const BrandVisibilityChart = ({ storeId }: BrandVisibilityChartProps) => {
                   borderRadius: '6px'
                 }}
                 formatter={(value) => [`${value}%`, 'Visibility']}
-                labelFormatter={(label, payload) => {
-                  if (payload && payload[0] && payload[0].payload.date) {
-                    const dateStr = payload[0].payload.date;
-                    const [year, month, day] = dateStr.split('-').map(Number);
-                    const date = new Date(year, month - 1, day);
-                    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                    return formatInTimeZone(date, userTimeZone, 'MMM dd, yyyy');
-                  }
-                  return label;
+                labelFormatter={(dateStr) => {
+                  const [year, month, day] = dateStr.split('-').map(Number);
+                  const date = new Date(year, month - 1, day);
+                  return formatTz(date, 'MMM dd, yyyy', { timeZone: userTimeZone });
                 }}
               />
               <Line 
-                type="basis" 
+                type="monotone" 
                 dataKey="value" 
                 stroke="hsl(var(--primary))" 
                 strokeWidth={2}
