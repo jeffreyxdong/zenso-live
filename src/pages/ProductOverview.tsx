@@ -100,22 +100,22 @@ const generateScoreHistoryFromData = (
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   );
   
-  // Create a map of local date -> score for quick lookup
-  const scoreMap = new Map<string, number>();
-  sorted.forEach(score => {
-    const utcDate = new Date(score.created_at);
-    const dateKey = getLocalDateString(utcDate, userTimeZone);
-    if (score[field] != null) {
-      scoreMap.set(dateKey, score[field]);
-    }
-  });
-  
   const result = [];
   
   // If within first 7 days: show from creation date + 6 future days
-  // Otherwise: show most recent 7 calendar days
+  // Otherwise: show most recent 7 days of actual data
   if (daysSinceCreation < 7) {
     // Show from product creation date + 6 future days in user's timezone
+    // Create a map of local date -> score for quick lookup
+    const scoreMap = new Map<string, number>();
+    sorted.forEach(score => {
+      const utcDate = new Date(score.created_at);
+      const dateKey = getLocalDateString(utcDate, userTimeZone);
+      if (score[field] != null) {
+        scoreMap.set(dateKey, score[field]);
+      }
+    });
+    
     for (let i = 0; i < 7; i++) {
       const date = new Date(productCreationDate);
       date.setDate(productCreationDate.getDate() + i);
@@ -127,17 +127,21 @@ const generateScoreHistoryFromData = (
       });
     }
   } else {
-    // Show most recent 7 calendar days (today going back 6 days) in user's timezone
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(localToday);
-      date.setDate(localToday.getDate() - i);
-      const dateKey = formatTz(date, "yyyy-MM-dd", { timeZone: userTimeZone });
+    // Show most recent 7 days of actual data (rolling window)
+    // Get the last 7 records that have scores for this field
+    const scoresWithData = sorted.filter(score => score[field] != null);
+    const recentScores = scoresWithData.slice(-7);
+    
+    // If we have less than 7 days of data, show what we have
+    recentScores.forEach(score => {
+      const utcDate = new Date(score.created_at);
+      const dateKey = getLocalDateString(utcDate, userTimeZone);
       
       result.push({
         date: dateKey,
-        value: scoreMap.get(dateKey) ?? null,
+        value: score[field],
       });
-    }
+    });
   }
   
   return result;
