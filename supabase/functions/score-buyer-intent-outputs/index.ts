@@ -315,8 +315,8 @@ ${allResponsesText}`,
 
   // If testDate is provided, set created_at explicitly
   if (testDate) {
-    insertData.created_at = new Date(testDate).toISOString();
-    console.log("Using testDate for created_at:", insertData.created_at);
+    insertData.created_at = `${testDate}T12:00:00.000Z`;
+    console.log("Using testDate for created_at (noon UTC):", insertData.created_at);
   }
 
   // Save ai_mentions into product_scores
