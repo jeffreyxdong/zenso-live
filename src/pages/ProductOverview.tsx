@@ -128,18 +128,26 @@ const generateScoreHistoryFromData = (
     }
   } else {
     // Show most recent 7 days of actual data (rolling window)
-    // Get the last 7 records that have scores for this field
-    const scoresWithData = sorted.filter(score => score[field] != null);
-    const recentScores = scoresWithData.slice(-7);
+    // Group scores by date and take the most recent score for each day
+    const scoresByDate = new Map<string, number>();
     
-    // If we have less than 7 days of data, show what we have
-    recentScores.forEach(score => {
-      const utcDate = new Date(score.created_at);
-      const dateKey = getLocalDateString(utcDate, userTimeZone);
-      
+    sorted.forEach(score => {
+      if (score[field] != null) {
+        const utcDate = new Date(score.created_at);
+        const dateKey = getLocalDateString(utcDate, userTimeZone);
+        // Keep the most recent score for each date (later scores overwrite)
+        scoresByDate.set(dateKey, score[field]);
+      }
+    });
+    
+    // Get all dates sorted, then take the most recent 7
+    const allDates = Array.from(scoresByDate.keys()).sort();
+    const recentDates = allDates.slice(-7);
+    
+    recentDates.forEach(dateKey => {
       result.push({
         date: dateKey,
-        value: score[field],
+        value: scoresByDate.get(dateKey) ?? null,
       });
     });
   }
