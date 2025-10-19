@@ -51,17 +51,9 @@ serve(async (req) => {
   }
 
   try {
-    // === 1. Auth ===
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("Missing authorization header");
-
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabase.auth.getUser(token);
-    const user = userData?.user;
-    if (userError || !user) throw new Error("Unauthorized");
 
-    // === 2. Input ===
+    // === Input ===
     const { storeId, testDate } = await req.json();
     if (!storeId) throw new Error("Store ID is required");
 
@@ -75,18 +67,17 @@ serve(async (req) => {
     const today = testDate || new Date().toISOString().split("T")[0];
     console.log("Using date for brand score:", today);
 
-    // === 3. Fetch store info ===
+    // === Fetch store info ===
     const { data: store, error: storeError } = await supabase
       .from("stores")
       .select("id, user_id, name, website")
       .eq("id", storeId)
-      .eq("user_id", user.id)
       .single();
 
-    if (storeError || !store) throw new Error("Store not found or not owned by user");
+    if (storeError || !store) throw new Error("Store not found");
     console.log(`✓ Store found: ${store.name} (${store.website})`);
 
-    // === 4. Generate 10 purchase-intent prompts ===
+    // === Generate 10 purchase-intent prompts ===
     const promptGenPrompt = `
 You are an AI research assistant.
 
@@ -143,7 +134,7 @@ Rules:
       .insert(
         prompts.map((content) => ({
           content,
-          user_id: user.id,
+          user_id: store.user_id,
           store_id: storeId,
           brand_name: store.name,
           status: "active",
@@ -155,7 +146,7 @@ Rules:
     if (insertError) throw new Error(`Failed to store prompts: ${insertError.message}`);
     console.log(`🧾 Stored ${insertedPrompts.length} prompts`);
 
-    // === 5. Generate web-augmented responses and store each ===
+    // === Generate web-augmented responses and store each ===
     const responses = [];
     for (const p of insertedPrompts) {
       console.log(`🌐 Generating response for promptId=${p.id}: "${p.content}"`);
@@ -223,7 +214,7 @@ Instructions:
       });
     }
 
-    // === 6. Combine all responses and compute single visibility score ===
+    // === Combine all responses and compute single visibility score ===
     if (responses.length === 0) throw new Error("No responses generated; aborting score computation.");
 
     const combinedText = responses.map((r) => r.responseText).join("\n\n---\n\n");
@@ -268,7 +259,7 @@ ${combinedText}
       throw new Error("Failed to compute visibility score");
     }
 
-    // === 7. Store brand score with testDate support ===
+    // === Store brand score with testDate support ===
     const insertData = {
       store_id: storeId,
       store_name: store.name,
