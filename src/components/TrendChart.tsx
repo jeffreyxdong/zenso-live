@@ -2,6 +2,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from "recharts";
 import { LucideIcon } from "lucide-react";
+import { formatInTimeZone } from "date-fns-tz";
 
 interface ChartData {
   date: string;
@@ -19,6 +20,8 @@ interface TrendChartProps {
 }
 
 const TrendChart = ({ title, icon: Icon, data, color, changeText, valueLabel, isLoading }: TrendChartProps) => {
+  const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -44,7 +47,11 @@ const TrendChart = ({ title, icon: Icon, data, color, changeText, valueLabel, is
                     dataKey="date" 
                     className="text-xs fill-muted-foreground"
                     tick={{ fontSize: 10 }}
-                    tickFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    tickFormatter={(dateStr) => {
+                      const [year, month, day] = dateStr.split('-').map(Number);
+                      const date = new Date(year, month - 1, day);
+                      return formatInTimeZone(date, userTimeZone, "MMM dd");
+                    }}
                   />
                   <YAxis 
                     className="text-xs fill-muted-foreground"
@@ -58,7 +65,11 @@ const TrendChart = ({ title, icon: Icon, data, color, changeText, valueLabel, is
                       borderRadius: '6px'
                     }}
                     formatter={(value) => [`${value}%`, valueLabel]}
-                    labelFormatter={(date) => new Date(date).toLocaleDateString()}
+                    labelFormatter={(dateStr) => {
+                      const [year, month, day] = dateStr.split('-').map(Number);
+                      const date = new Date(year, month - 1, day);
+                      return formatInTimeZone(date, userTimeZone, "MMM dd, yyyy");
+                    }}
                   />
                   <Line 
                     type="basis" 

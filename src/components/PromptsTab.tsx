@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Loader2, Bot, Eye, Trash2, MoreVertical, Search, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { formatInTimeZone, toZonedTime } from "date-fns-tz";
 
 interface SavedPrompt {
   id: string;
@@ -178,8 +179,9 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
       // Score responses
       const { avgVisibility, avgSentiment } = await scoreResponses(responses, brandName);
 
-      // Save scores
-      const today = new Date().toISOString().split('T')[0];
+      // Save scores (using user's local date)
+      const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const today = formatInTimeZone(new Date(), userTimeZone, "yyyy-MM-dd");
       await supabase.from("user_generated_prompt_daily_scores" as any).insert({
         prompt_id: promptId,
         date: today,
@@ -501,7 +503,7 @@ export const PromptsTab = ({ activeStore }: PromptsTabProps) => {
                   <TableCell className="text-center">{getScoreDisplay(p.visibility_score, "visibility", p.created_at)}</TableCell>
                   <TableCell className="text-center">{getScoreDisplay(p.sentiment_score, "sentiment", p.created_at)}</TableCell>
                   <TableCell className="text-sm text-muted-foreground text-center">
-                    {new Date(p.created_at).toLocaleDateString()}
+                    {formatInTimeZone(new Date(p.created_at), Intl.DateTimeFormat().resolvedOptions().timeZone, "MMM dd, yyyy")}
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()} className="text-center">
                     <DropdownMenu>

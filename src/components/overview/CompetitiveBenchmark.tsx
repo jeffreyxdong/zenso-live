@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Toolti
 import { Target, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { formatInTimeZone } from "date-fns-tz";
 
 interface BenchmarkData {
   name: string;
@@ -68,8 +69,9 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
 
       const yourScore = brandScores?.[0]?.visibility_score || 0;
 
-      // Get competitors with their latest scores
-      const today = new Date().toISOString().split('T')[0];
+      // Get competitors with their latest scores (using user's local date)
+      const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const today = formatInTimeZone(new Date(), userTimeZone, "yyyy-MM-dd");
       const { data: competitors, error: competitorsError } = await supabase
         .from('competitor_analytics')
         .select(`

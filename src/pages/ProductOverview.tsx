@@ -9,6 +9,7 @@ import ProductCharts from "@/components/ProductCharts";
 import PreviewModal from "@/components/PreviewModal";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { toZonedTime, format as formatTz } from "date-fns-tz";
 
 // Interfaces
 interface Source {
@@ -68,29 +69,42 @@ interface Product {
   };
 }
 
+// Helper to convert UTC date to user's local date string
+const getLocalDateString = (utcDate: Date, userTimeZone: string): string => {
+  const zonedDate = toZonedTime(utcDate, userTimeZone);
+  return formatTz(zonedDate, "yyyy-MM-dd", { timeZone: userTimeZone });
+};
+
 const generateScoreHistoryFromData = (
   scores: any[],
   field: "visibility_score" | "sentiment_score" | "position_score",
   productCreatedAt: string,
 ) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Get user's timezone
+  const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   
-  const productCreationDate = new Date(productCreatedAt);
+  // Convert to user's local timezone
+  const today = new Date();
+  const localToday = toZonedTime(today, userTimeZone);
+  localToday.setHours(0, 0, 0, 0);
+  
+  const productCreationDateUTC = new Date(productCreatedAt);
+  const productCreationDate = toZonedTime(productCreationDateUTC, userTimeZone);
   productCreationDate.setHours(0, 0, 0, 0);
   
-  // Calculate days since product creation
-  const daysSinceCreation = Math.floor((today.getTime() - productCreationDate.getTime()) / (1000 * 60 * 60 * 24));
+  // Calculate days since product creation in user's timezone
+  const daysSinceCreation = Math.floor((localToday.getTime() - productCreationDate.getTime()) / (1000 * 60 * 60 * 24));
   
   // Sort scores by date
   const sorted = [...(scores || [])].sort(
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   );
   
-  // Create a map of date -> score for quick lookup
+  // Create a map of local date -> score for quick lookup
   const scoreMap = new Map<string, number>();
   sorted.forEach(score => {
-    const dateKey = new Date(score.created_at).toISOString().split("T")[0];
+    const utcDate = new Date(score.created_at);
+    const dateKey = getLocalDateString(utcDate, userTimeZone);
     if (score[field] != null) {
       scoreMap.set(dateKey, score[field]);
     }
@@ -101,11 +115,11 @@ const generateScoreHistoryFromData = (
   // If within first 7 days: show from creation date + 6 future days
   // Otherwise: show most recent 7 calendar days
   if (daysSinceCreation < 7) {
-    // Show from product creation date + 6 future days
+    // Show from product creation date + 6 future days in user's timezone
     for (let i = 0; i < 7; i++) {
       const date = new Date(productCreationDate);
       date.setDate(productCreationDate.getDate() + i);
-      const dateKey = date.toISOString().split("T")[0];
+      const dateKey = formatTz(date, "yyyy-MM-dd", { timeZone: userTimeZone });
       
       result.push({
         date: dateKey,
@@ -113,11 +127,11 @@ const generateScoreHistoryFromData = (
       });
     }
   } else {
-    // Show most recent 7 calendar days (today going back 6 days)
+    // Show most recent 7 calendar days (today going back 6 days) in user's timezone
     for (let i = 6; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - i);
-      const dateKey = date.toISOString().split("T")[0];
+      const date = new Date(localToday);
+      date.setDate(localToday.getDate() - i);
+      const dateKey = formatTz(date, "yyyy-MM-dd", { timeZone: userTimeZone });
       
       result.push({
         date: dateKey,

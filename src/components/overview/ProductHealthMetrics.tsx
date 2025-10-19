@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, Activity } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { formatInTimeZone, toZonedTime } from "date-fns-tz";
 
 interface TopProduct {
   id: string;
@@ -113,13 +114,16 @@ const ProductHealthMetrics = ({ storeId }: ProductHealthMetricsProps) => {
     try {
       setIsLoadingChanges(true);
       
+      // Use user's timezone for date calculations
+      const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
+      const localToday = toZonedTime(today, userTimeZone);
+      localToday.setHours(0, 0, 0, 0);
+      const yesterday = new Date(localToday);
+      yesterday.setDate(localToday.getDate() - 1);
 
-      const todayStr = today.toISOString().split('T')[0];
-      const yesterdayStr = yesterday.toISOString().split('T')[0];
+      const todayStr = formatInTimeZone(localToday, userTimeZone, "yyyy-MM-dd");
+      const yesterdayStr = formatInTimeZone(yesterday, userTimeZone, "yyyy-MM-dd");
 
       const { data: products, error: productsError } = await supabase
         .from('products')

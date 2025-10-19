@@ -48,6 +48,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import Papa from "papaparse";
+import { formatInTimeZone } from "date-fns-tz";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -1408,7 +1409,7 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Created:</span>
-                      <span>{new Date(selectedProduct.created_at).toLocaleDateString()}</span>
+                      <span>{formatInTimeZone(new Date(selectedProduct.created_at), Intl.DateTimeFormat().resolvedOptions().timeZone, "MMM dd, yyyy")}</span>
                     </div>
                   </div>
                 </div>
