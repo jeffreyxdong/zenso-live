@@ -92,19 +92,33 @@ const generateScoreHistoryFromData = (
   const productCreationDate = toZonedTime(productCreationDateUTC, userTimeZone);
   productCreationDate.setHours(0, 0, 0, 0);
   
-  // Calculate days since product creation in user's timezone
-  const daysSinceCreation = Math.floor((localToday.getTime() - productCreationDate.getTime()) / (1000 * 60 * 60 * 24));
+  // Calculate the end of the initial 7-day window (creation date + 6 days)
+  const initialWindowEnd = new Date(productCreationDate);
+  initialWindowEnd.setDate(productCreationDate.getDate() + 6);
+  const initialWindowEndStr = formatTz(initialWindowEnd, "yyyy-MM-dd", { timeZone: userTimeZone });
   
   // Sort scores by date
   const sorted = [...(scores || [])].sort(
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   );
   
+  // Find the latest date in the available data
+  let latestDataDate = "";
+  sorted.forEach(score => {
+    if (score[field] != null) {
+      const utcDate = new Date(score.created_at);
+      const dateKey = getLocalDateString(utcDate, userTimeZone);
+      if (dateKey > latestDataDate) {
+        latestDataDate = dateKey;
+      }
+    }
+  });
+  
   const result = [];
   
-  // If within first 7 days: show from creation date + 6 future days
-  // Otherwise: show most recent 7 days of actual data
-  if (daysSinceCreation < 7) {
+  // If we have data beyond the initial 7-day window, show rolling window
+  // Otherwise, show creation date + 6 future days
+  if (latestDataDate > initialWindowEndStr) {
     // Show from product creation date + 6 future days in user's timezone
     // Create a map of local date -> score for quick lookup
     const scoreMap = new Map<string, number>();
