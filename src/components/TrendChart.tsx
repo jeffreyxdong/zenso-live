@@ -72,7 +72,7 @@ const TrendChart = ({ title, icon: Icon, data, color, changeText, valueLabel, is
                     }}
                   />
                   <Line 
-                    type="basis" 
+                    type="monotone" 
                     dataKey="value" 
                     stroke={color}
                     strokeWidth={2}
