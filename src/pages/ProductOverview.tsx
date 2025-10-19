@@ -71,21 +71,62 @@ interface Product {
 const generateScoreHistoryFromData = (
   scores: any[],
   field: "visibility_score" | "sentiment_score" | "position_score",
+  productCreatedAt: string,
 ) => {
-  if (!scores || scores.length === 0) {
-    return [];
-  }
-
-  // Sort scores oldest → newest
-  const sorted = [...scores].sort(
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const productCreationDate = new Date(productCreatedAt);
+  productCreationDate.setHours(0, 0, 0, 0);
+  
+  // Calculate days since product creation
+  const daysSinceCreation = Math.floor((today.getTime() - productCreationDate.getTime()) / (1000 * 60 * 60 * 24));
+  
+  // Sort scores by date
+  const sorted = [...(scores || [])].sort(
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   );
-
-  // Map all scores to chart data format
-  return sorted.map(score => ({
-    date: new Date(score.created_at).toISOString().split("T")[0],
-    value: score[field] ?? null,
-  }));
+  
+  // Create a map of date -> score for quick lookup
+  const scoreMap = new Map<string, number>();
+  sorted.forEach(score => {
+    const dateKey = new Date(score.created_at).toISOString().split("T")[0];
+    if (score[field] != null) {
+      scoreMap.set(dateKey, score[field]);
+    }
+  });
+  
+  const result = [];
+  
+  // If within first 7 days: show from creation date + 6 future days
+  // Otherwise: show most recent 7 calendar days
+  if (daysSinceCreation < 7) {
+    // Show from product creation date + 6 future days
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(productCreationDate);
+      date.setDate(productCreationDate.getDate() + i);
+      const dateKey = date.toISOString().split("T")[0];
+      
+      result.push({
+        date: dateKey,
+        value: scoreMap.get(dateKey) ?? null,
+      });
+    }
+  } else {
+    // Show most recent 7 calendar days (today going back 6 days)
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const dateKey = date.toISOString().split("T")[0];
+      
+      result.push({
+        date: dateKey,
+        value: scoreMap.get(dateKey) ?? null,
+      });
+    }
+  }
+  
+  return result;
 };
 
 const ProductOverview = () => {
@@ -181,9 +222,9 @@ const ProductOverview = () => {
 
         const updatedProduct: Product = {
           ...(productData as any),
-          visibilityHistory: generateScoreHistoryFromData(scores || [], "visibility_score"),
-          sentimentHistory: generateScoreHistoryFromData(scores || [], "sentiment_score"),
-          positionHistory: generateScoreHistoryFromData(scores || [], "position_score"),
+          visibilityHistory: generateScoreHistoryFromData(scores || [], "visibility_score", productData.created_at),
+          sentimentHistory: generateScoreHistoryFromData(scores || [], "sentiment_score", productData.created_at),
+          positionHistory: generateScoreHistoryFromData(scores || [], "position_score", productData.created_at),
           suggestions: [],
           sources,
           recommendations: (recs || []) as Recommendation[],
@@ -273,9 +314,9 @@ const ProductOverview = () => {
                   visibility_score: newScore.visibility_score,
                   sentiment_score: newScore.sentiment_score,
                   position_score: newScore.position_score,
-                  visibilityHistory: generateScoreHistoryFromData(updatedScores || [], "visibility_score"),
-                  sentimentHistory: generateScoreHistoryFromData(updatedScores || [], "sentiment_score"),
-                  positionHistory: generateScoreHistoryFromData(updatedScores || [], "position_score"),
+                  visibilityHistory: generateScoreHistoryFromData(updatedScores || [], "visibility_score", prev.created_at),
+                  sentimentHistory: generateScoreHistoryFromData(updatedScores || [], "sentiment_score", prev.created_at),
+                  positionHistory: generateScoreHistoryFromData(updatedScores || [], "position_score", prev.created_at),
                   currentMetrics: {
                     ...prev.currentMetrics,
                     visibilityScore: newScore.visibility_score,
