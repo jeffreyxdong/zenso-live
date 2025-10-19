@@ -72,37 +72,20 @@ const generateScoreHistoryFromData = (
   scores: any[],
   field: "visibility_score" | "sentiment_score" | "position_score",
 ) => {
-  const today = new Date();
-  const result = [];
+  if (!scores || scores.length === 0) {
+    return [];
+  }
 
   // Sort scores oldest → newest
-  const sorted = [...(scores || [])].sort(
+  const sorted = [...scores].sort(
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   );
 
-  // If we have a first score, add it at its actual date
-  if (sorted.length > 0 && sorted[0][field] != null) {
-    const firstScoreDate = new Date(sorted[0].created_at).toISOString().split("T")[0];
-    result.push({ date: firstScoreDate, value: sorted[0][field] });
-  }
-
-  // Generate exactly 7 days: today → +6 for forward-looking dates
-  for (let i = 0; i < 7; i++) {
-    const date = new Date(today);
-    date.setDate(today.getDate() + i);
-    const dateKey = date.toISOString().split("T")[0];
-
-    // Check if we have a score for this date
-    const scoreForDate = sorted.find(s => new Date(s.created_at).toISOString().split("T")[0] === dateKey);
-    const value = scoreForDate?.[field] ?? null;
-
-    // Only add if not already added (avoid duplicate first score)
-    if (!result.some(r => r.date === dateKey)) {
-      result.push({ date: dateKey, value });
-    }
-  }
-
-  return result;
+  // Map all scores to chart data format
+  return sorted.map(score => ({
+    date: new Date(score.created_at).toISOString().split("T")[0],
+    value: score[field] ?? null,
+  }));
 };
 
 const ProductOverview = () => {
