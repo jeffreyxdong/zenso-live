@@ -82,90 +82,67 @@ const generateScoreHistoryFromData = (
 ) => {
   // Get user's timezone
   const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  
-  // Convert to user's local timezone
-  const today = new Date();
-  const localToday = toZonedTime(today, userTimeZone);
-  localToday.setHours(0, 0, 0, 0);
-  
+
+  // Convert product creation date to user's local timezone
   const productCreationDateUTC = new Date(productCreatedAt);
   const productCreationDate = toZonedTime(productCreationDateUTC, userTimeZone);
   productCreationDate.setHours(0, 0, 0, 0);
-  
+
   // Calculate the end of the initial 7-day window (creation date + 6 days)
   const initialWindowEnd = new Date(productCreationDate);
   initialWindowEnd.setDate(productCreationDate.getDate() + 6);
   const initialWindowEndStr = formatTz(initialWindowEnd, "yyyy-MM-dd", { timeZone: userTimeZone });
-  
+
   // Sort scores by date
   const sorted = [...(scores || [])].sort(
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   );
-  
-  // Find the latest date in the available data
+
+  // Create a map of local date -> score for quick lookup
+  const scoreMap = new Map<string, number>();
   let latestDataDate = "";
-  sorted.forEach(score => {
+
+  sorted.forEach((score) => {
     if (score[field] != null) {
       const utcDate = new Date(score.created_at);
       const dateKey = getLocalDateString(utcDate, userTimeZone);
+      scoreMap.set(dateKey, score[field]);
       if (dateKey > latestDataDate) {
         latestDataDate = dateKey;
       }
     }
   });
-  
+
   const result = [];
-  
-  // If we have data beyond the initial 7-day window, show rolling window
-  // Otherwise, show creation date + 6 future days
-  if (latestDataDate > initialWindowEndStr) {
+
+  // If we DON'T have data beyond the initial 7-day window, show fixed window (creation + 6 days)
+  // Otherwise, show rolling window of most recent 7 days
+  if (latestDataDate <= initialWindowEndStr || !latestDataDate) {
     // Show from product creation date + 6 future days in user's timezone
-    // Create a map of local date -> score for quick lookup
-    const scoreMap = new Map<string, number>();
-    sorted.forEach(score => {
-      const utcDate = new Date(score.created_at);
-      const dateKey = getLocalDateString(utcDate, userTimeZone);
-      if (score[field] != null) {
-        scoreMap.set(dateKey, score[field]);
-      }
-    });
-    
+    // Always show full 7-day window on X-axis, even if data is missing
     for (let i = 0; i < 7; i++) {
       const date = new Date(productCreationDate);
       date.setDate(productCreationDate.getDate() + i);
       const dateKey = formatTz(date, "yyyy-MM-dd", { timeZone: userTimeZone });
-      
+
       result.push({
         date: dateKey,
-        value: scoreMap.get(dateKey) ?? null,
+        value: scoreMap.get(dateKey) ?? null, // null for dates without data
       });
     }
   } else {
     // Show most recent 7 days of actual data (rolling window)
-    // Group scores by date and take the most recent score for each day
-    const scoresByDate = new Map<string, number>();
-    
-    sorted.forEach(score => {
-      if (score[field] != null) {
-        const utcDate = new Date(score.created_at);
-        const dateKey = getLocalDateString(utcDate, userTimeZone);
-        // Keep the most recent score for each date (later scores overwrite)
-        scoresByDate.set(dateKey, score[field]);
-      }
-    });
-    
-    // Get all dates sorted, then take the most recent 7
-    const allDates = Array.from(scoresByDate.keys()).sort();
+    const allDates = Array.from(scoreMap.keys()).sort();
     const recentDates = allDates.slice(-7);
-    
-    recentDates.forEach(dateKey => {
+
+    recentDates.forEach((dateKey) => {
       result.push({
         date: dateKey,
-        value: scoresByDate.get(dateKey) ?? null,
+        value: scoreMap.get(dateKey) ?? null,
       });
     });
   }
-  
+
   return result;
 };
 
@@ -232,7 +209,7 @@ const ProductOverview = () => {
             .order("created_at", { ascending: false })
             .limit(1);
 
-        if (responses?.[0]?.sources_final) {
+          if (responses?.[0]?.sources_final) {
             const raw = responses[0].sources_final as any[];
             const counts = new Map<string, number>();
             raw.forEach((r: any) => {
@@ -279,16 +256,19 @@ const ProductOverview = () => {
         };
 
         setProduct(updatedProduct);
-        
+
         // Keep loading states true if scores are 0 or null until real data arrives
         const visLoading = visibilityScore == null || visibilityScore === 0;
         const sentLoading = sentimentScore == null || sentimentScore === 0;
         const posLoading = positionScore == null || positionScore === 0;
-        const visHistLoading = !scores?.length || scores.every(s => s.visibility_score == null || s.visibility_score === 0);
-        const sentHistLoading = !scores?.length || scores.every(s => s.sentiment_score == null || s.sentiment_score === 0);
-        const posHistLoading = !scores?.length || scores.every(s => s.position_score == null || s.position_score === 0);
-        
-        console.log('📊 Initial loading states:', {
+        const visHistLoading =
+          !scores?.length || scores.every((s) => s.visibility_score == null || s.visibility_score === 0);
+        const sentHistLoading =
+          !scores?.length || scores.every((s) => s.sentiment_score == null || s.sentiment_score === 0);
+        const posHistLoading =
+          !scores?.length || scores.every((s) => s.position_score == null || s.position_score === 0);
+
+        console.log("📊 Initial loading states:", {
           visibilityScore,
           sentimentScore,
           positionScore,
@@ -298,9 +278,9 @@ const ProductOverview = () => {
           posLoading,
           visHistLoading,
           sentHistLoading,
-          posHistLoading
+          posHistLoading,
         });
-        
+
         setVisibilityScoreLoading(visLoading);
         setSentimentScoreLoading(sentLoading);
         setPositionScoreLoading(posLoading);
@@ -332,21 +312,21 @@ const ProductOverview = () => {
         async (payload) => {
           const newScore = payload.new as any;
           if (!newScore) return;
-          
+
           // Refetch all scores to update the charts
           const { data: updatedScores } = await supabase
             .from("product_scores")
             .select("*")
             .eq("product_id", productId)
             .order("created_at", { ascending: true });
-          
-          console.log('🔄 Realtime score update received:', {
+
+          console.log("🔄 Realtime score update received:", {
             visibility: newScore.visibility_score,
             sentiment: newScore.sentiment_score,
             position: newScore.position_score,
-            scoresCount: updatedScores?.length || 0
+            scoresCount: updatedScores?.length || 0,
           });
-          
+
           setProduct((prev) =>
             prev
               ? {
@@ -354,8 +334,16 @@ const ProductOverview = () => {
                   visibility_score: newScore.visibility_score,
                   sentiment_score: newScore.sentiment_score,
                   position_score: newScore.position_score,
-                  visibilityHistory: generateScoreHistoryFromData(updatedScores || [], "visibility_score", prev.created_at),
-                  sentimentHistory: generateScoreHistoryFromData(updatedScores || [], "sentiment_score", prev.created_at),
+                  visibilityHistory: generateScoreHistoryFromData(
+                    updatedScores || [],
+                    "visibility_score",
+                    prev.created_at,
+                  ),
+                  sentimentHistory: generateScoreHistoryFromData(
+                    updatedScores || [],
+                    "sentiment_score",
+                    prev.created_at,
+                  ),
                   positionHistory: generateScoreHistoryFromData(updatedScores || [], "position_score", prev.created_at),
                   currentMetrics: {
                     ...prev.currentMetrics,
@@ -366,30 +354,30 @@ const ProductOverview = () => {
                 }
               : prev,
           );
-          
+
           // Only stop loading if we have real scores (not null or 0)
           if (newScore.visibility_score != null && newScore.visibility_score > 0) {
-            console.log('✅ Stopping visibility loading (score:', newScore.visibility_score, ')');
+            console.log("✅ Stopping visibility loading (score:", newScore.visibility_score, ")");
             setVisibilityScoreLoading(false);
             setVisibilityTrendLoading(false);
           } else {
-            console.log('⏳ Keeping visibility loading (score:', newScore.visibility_score, ')');
+            console.log("⏳ Keeping visibility loading (score:", newScore.visibility_score, ")");
           }
-          
+
           if (newScore.sentiment_score != null && newScore.sentiment_score > 0) {
-            console.log('✅ Stopping sentiment loading (score:', newScore.sentiment_score, ')');
+            console.log("✅ Stopping sentiment loading (score:", newScore.sentiment_score, ")");
             setSentimentScoreLoading(false);
             setSentimentTrendLoading(false);
           } else {
-            console.log('⏳ Keeping sentiment loading (score:', newScore.sentiment_score, ')');
+            console.log("⏳ Keeping sentiment loading (score:", newScore.sentiment_score, ")");
           }
-          
+
           if (newScore.position_score != null && newScore.position_score > 0) {
-            console.log('✅ Stopping position loading (score:', newScore.position_score, ')');
+            console.log("✅ Stopping position loading (score:", newScore.position_score, ")");
             setPositionScoreLoading(false);
             setPositionTrendLoading(false);
           } else {
-            console.log('⏳ Keeping position loading (score:', newScore.position_score, ')');
+            console.log("⏳ Keeping position loading (score:", newScore.position_score, ")");
           }
         },
       )
@@ -406,10 +394,10 @@ const ProductOverview = () => {
             .select("*")
             .eq("product_id", productId)
             .order("created_at", { ascending: false });
-          console.log('📝 Recommendations updated:', recs?.length || 0, 'recommendations');
+          console.log("📝 Recommendations updated:", recs?.length || 0, "recommendations");
           setProduct((p) => (p ? { ...p, recommendations: (recs || []) as Recommendation[] } : p));
           if (recs && recs.length > 0) {
-            console.log('✅ Stopping recommendations loading');
+            console.log("✅ Stopping recommendations loading");
             setRecommendationsLoading(false);
           }
         },
@@ -532,7 +520,9 @@ const ProductOverview = () => {
                 <p className="text-sm text-muted-foreground">This may take a moment</p>
               </div>
             </div>
-          ) : product.recommendations && product.recommendations.length > 0 && product.recommendations[0].title === "Error" ? (
+          ) : product.recommendations &&
+            product.recommendations.length > 0 &&
+            product.recommendations[0].title === "Error" ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground">
                 Product page could not be found or accessed. Please ensure your product has a valid public URL.
