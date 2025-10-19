@@ -1,20 +1,19 @@
 /**
  * Brand Analytics Edge Function
  * -----------------------------
- * 1. Generates 5 purchase-intent prompts per store
+ * 1. Generates 10 purchase-intent prompts per store
  * 2. Generates web-augmented responses for each prompt
  * 3. Stores responses in brand_prompt_responses
  * 4. Combines all responses → single brand visibility score
  * 5. Saves score in brand_scores table
  */
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
-const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const supabaseUrl = Deno.env.get("SUPABASE_URL");
+const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,15 +21,15 @@ const corsHeaders = {
 };
 
 // Helper to safely extract text from OpenAI Responses API
-function extractText(json: any): string {
+function extractText(json) {
   try {
     if (Array.isArray(json?.output)) {
       return json.output
-        .map((o: any) =>
+        .map((o) =>
           Array.isArray(o?.content)
             ? o.content
-                .filter((c: any) => c.type === "output_text" || typeof c.text === "string")
-                .map((c: any) => c.text ?? "")
+                .filter((c) => c.type === "output_text" || typeof c.text === "string")
+                .map((c) => c.text ?? "")
                 .join(" ")
             : "",
         )
@@ -46,7 +45,9 @@ function extractText(json: any): string {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, {
+      headers: corsHeaders,
+    });
   }
 
   try {
@@ -61,13 +62,18 @@ serve(async (req) => {
     if (userError || !user) throw new Error("Unauthorized");
 
     // === 2. Input ===
-    const { storeId, userDate } = await req.json();
+    const { storeId, testDate } = await req.json();
     if (!storeId) throw new Error("Store ID is required");
+
+    console.log("=== REQUEST RECEIVED ===");
+    console.log("Request body:", { storeId, testDate });
+    console.log("testDate parameter:", testDate);
 
     console.log(`▶ Brand analytics started — storeId=${storeId}`);
 
-    // Use user's date if provided, otherwise fall back to UTC date
-    const today = userDate || new Date().toISOString().split("T")[0];
+    // Use testDate if provided, otherwise fall back to today's date
+    const today = testDate || new Date().toISOString().split("T")[0];
+    console.log("Using date for brand score:", today);
 
     // === 3. Fetch store info ===
     const { data: store, error: storeError } = await supabase
@@ -80,7 +86,7 @@ serve(async (req) => {
     if (storeError || !store) throw new Error("Store not found or not owned by user");
     console.log(`✓ Store found: ${store.name} (${store.website})`);
 
-    // === 4. Generate 5 purchase-intent prompts ===
+    // === 4. Generate 10 purchase-intent prompts ===
     const promptGenPrompt = `
 You are an AI research assistant.
 
@@ -118,7 +124,7 @@ Rules:
     const generatedText = extractText(promptJson);
     if (!generatedText) throw new Error("No prompt text returned from OpenAI");
 
-    let prompts: string[] = [];
+    let prompts = [];
     try {
       const cleaned = generatedText
         .replace(/```json\n?/g, "")
@@ -150,8 +156,7 @@ Rules:
     console.log(`🧾 Stored ${insertedPrompts.length} prompts`);
 
     // === 5. Generate web-augmented responses and store each ===
-    const responses: Array<{ promptId: string; responseText: string }> = [];
-
+    const responses = [];
     for (const p of insertedPrompts) {
       console.log(`🌐 Generating response for promptId=${p.id}: "${p.content}"`);
 
@@ -163,7 +168,11 @@ Rules:
         },
         body: JSON.stringify({
           model: "gpt-4o-mini",
-          tools: [{ type: "web_search_preview" }],
+          tools: [
+            {
+              type: "web_search_preview",
+            },
+          ],
           input: `
 The current date is ${new Date().toISOString().split("T")[0]}.
 Search the web for the most recent, up-to-date information available (from 2024–2025) before answering.
@@ -208,7 +217,10 @@ Instructions:
       }
 
       console.log(`✓ Stored response row id=${insertedResponse?.[0]?.id ?? "unknown"}`);
-      responses.push({ promptId: p.id, responseText });
+      responses.push({
+        promptId: p.id,
+        responseText,
+      });
     }
 
     // === 6. Combine all responses and compute single visibility score ===
@@ -256,19 +268,26 @@ ${combinedText}
       throw new Error("Failed to compute visibility score");
     }
 
-    // === 7. Store today's brand score ===
+    // === 7. Store brand score with testDate support ===
+    const insertData = {
+      store_id: storeId,
+      store_name: store.name,
+      date: today,
+      visibility_score: avgVisibility,
+    };
+
+    // If testDate is provided, set created_at explicitly at noon UTC
+    if (testDate) {
+      insertData.created_at = `${testDate}T12:00:00.000Z`;
+      console.log("Using testDate for created_at (noon UTC):", insertData.created_at);
+    }
+
     const { data: brandScoreData, error: brandScoreError } = await supabase
       .from("brand_scores")
-      .upsert(
-        {
-          store_id: storeId,
-          store_name: store.name, // ✅ required by schema
-          date: today,
-          visibility_score: avgVisibility,
-        },
-        { onConflict: "store_id,date" }, // ✅ matches your table’s unique constraint
-      )
-      .select("id, visibility_score"); // optional: returns inserted/updated row for logging
+      .upsert(insertData, {
+        onConflict: "store_id,date",
+      })
+      .select("id, visibility_score, created_at");
 
     if (brandScoreError) {
       console.error("❌ Error storing brand score:", brandScoreError);
@@ -285,13 +304,26 @@ ${combinedText}
         responsesGenerated: responses.length,
         visibilityScore: avgVisibility,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
+      },
     );
   } catch (error) {
     console.error("❌ Error in brand-analytics function:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        error: error.message,
+      }),
+      {
+        status: 500,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
+      },
+    );
   }
 });
