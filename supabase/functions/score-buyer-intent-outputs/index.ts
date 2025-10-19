@@ -98,8 +98,8 @@ serve(async (req) => {
             continue;
           }
 
-          // Score this product
-          await scoreProduct(supabase, product.id, product.title, responses);
+          // Score this product (pass testDate)
+          await scoreProduct(supabase, product.id, product.title, responses, testDate);
           processedCount++;
           console.log(`Successfully scored product ${product.id}`);
         } catch (error) {
@@ -206,7 +206,7 @@ serve(async (req) => {
 });
 
 // Extracted scoring logic for reuse
-async function scoreProduct(supabase, productId, productTitle, responses) {
+async function scoreProduct(supabase, productId, productTitle, responses, testDate = null) {
   console.log(`Found ${responses.length} responses to analyze for ${productTitle}`);
 
   const allResponsesText = responses.map((r) => r.response_text).join("\n\n---\n\n");
@@ -304,16 +304,25 @@ ${allResponsesText}`,
     }
   }
 
+  // Prepare insert data with optional testDate
+  const insertData = {
+    product_id: productId,
+    visibility_score: visibilityScore,
+    position_score: positionScore,
+    sentiment_score: sentimentScore,
+    ai_mentions: aiMentions,
+  };
+
+  // If testDate is provided, set created_at explicitly
+  if (testDate) {
+    insertData.created_at = new Date(testDate).toISOString();
+    console.log("Using testDate for created_at:", insertData.created_at);
+  }
+
   // Save ai_mentions into product_scores
   const { data: insertedScore, error: scoreError } = await supabase
     .from("product_scores")
-    .insert({
-      product_id: productId,
-      visibility_score: visibilityScore,
-      position_score: positionScore,
-      sentiment_score: sentimentScore,
-      ai_mentions: aiMentions,
-    })
+    .insert(insertData)
     .select()
     .single();
 
