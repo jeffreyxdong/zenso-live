@@ -3,6 +3,7 @@ import { useParams, useNavigate, useOutletContext } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowLeft, Calendar, Target, Bot, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -690,24 +691,26 @@ const PromptDetail = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {responses.map((response) => (
-                <div key={response.id} className="border rounded-lg p-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Badge variant="secondary">{response.model_name}</Badge>
-                    <span className="text-xs text-muted-foreground">
-                      {format(new Date(response.created_at), 'PPp')}
-                    </span>
-                  </div>
-                  <p className="text-sm whitespace-pre-wrap">{response.response_text}</p>
-                  {response.sources && (
-                    <div className="text-xs text-muted-foreground">
-                      <span className="font-medium">Sources:</span> {JSON.stringify(response.sources).slice(0, 100)}...
+            <ScrollArea className="h-[500px]">
+              <div className="space-y-4 pr-4">
+                {responses.map((response) => (
+                  <div key={response.id} className="border rounded-lg p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Badge variant="secondary">{response.model_name}</Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(response.created_at), 'PP')}
+                      </span>
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
+                    <p className="text-sm whitespace-pre-wrap">{response.response_text}</p>
+                    {response.sources && (
+                      <div className="text-xs text-muted-foreground">
+                        <span className="font-medium">Sources:</span> {JSON.stringify(response.sources).slice(0, 100)}...
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
           </CardContent>
         </Card>
       )}
