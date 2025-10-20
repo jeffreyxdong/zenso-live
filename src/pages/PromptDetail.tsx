@@ -8,7 +8,7 @@ import { ArrowLeft, Calendar, Target, Bot, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { formatInTimeZone } from "date-fns-tz";
+import { formatInTimeZone, toZonedTime } from "date-fns-tz";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, CartesianGrid } from "recharts";
 
@@ -172,20 +172,18 @@ const PromptDetail = () => {
 
       if (responsesError) throw responsesError;
 
-      // Fetch daily scores for time series - rolling 7-day window
+      // Fetch daily scores for determining the rolling window
       const { data: dailyScoresData, error: dailyScoresError } = await supabase
         .from('user_generated_prompt_daily_scores' as any)
         .select('date, visibility_score, sentiment_score, created_at')
         .eq('prompt_id', promptId)
-        .order('date', { ascending: false })
-        .limit(7) as { data: DailyScore[] | null; error: any };
+        .order('date', { ascending: true }) as { data: DailyScore[] | null; error: any };
 
       if (dailyScoresError) {
         console.warn('Could not fetch daily scores:', dailyScoresError);
       } else {
-        // Reverse the array so oldest date appears first for chart rendering
-        const reversedData = (dailyScoresData || []).reverse();
-        setDailyScores(reversedData);
+        // Store all scores for the rolling window logic
+        setDailyScores(dailyScoresData || []);
         
         // Fetch the most recent score by created_at for the score cards
         const { data: mostRecentScoreData, error: recentScoreError } = await supabase
@@ -230,14 +228,28 @@ const PromptDetail = () => {
     },
   };
 
-  // Prepare chart data to always show 7 days on x-axis, filling gaps with null
+  // Prepare chart data following the same rolling window logic as product charts
   const prepareChartData = (
     scoreType: "visibility" | "sentiment"
   ): ChartDataPoint[] => {
     const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-    // Create a lookup map for existing scores
-    const scoreMap = new Map();
+    if (!prompt) return [];
+
+    // Convert prompt creation date to user's local timezone
+    const promptCreationDateUTC = new Date(prompt.created_at);
+    const promptCreationDate = toZonedTime(promptCreationDateUTC, userTimeZone);
+    promptCreationDate.setHours(0, 0, 0, 0);
+
+    // Calculate the end of the initial 7-day window (creation date + 6 days)
+    const initialWindowEnd = new Date(promptCreationDate);
+    initialWindowEnd.setDate(promptCreationDate.getDate() + 6);
+    const initialWindowEndStr = formatInTimeZone(initialWindowEnd, userTimeZone, "yyyy-MM-dd");
+
+    // Create a map of date -> score for quick lookup
+    const scoreMap = new Map<string, number>();
+    let latestDataDate = "";
+
     dailyScores.forEach((score) => {
       const scoreValue = scoreType === "visibility" 
         ? score.visibility_score 
@@ -245,36 +257,43 @@ const PromptDetail = () => {
       
       if (scoreValue !== null) {
         scoreMap.set(score.date, scoreValue);
+        if (score.date > latestDataDate) {
+          latestDataDate = score.date;
+        }
       }
     });
 
     const chartData: ChartDataPoint[] = [];
-    
-    // Always generate 7 days for x-axis
-    let startDate: Date;
-    if (dailyScores.length > 0) {
-      // Use the oldest date from our rolling window as the start
-      startDate = new Date(dailyScores[0].date + 'T00:00:00');
-    } else {
-      // If no data, start from today and go backwards
-      startDate = new Date();
-      startDate.setDate(startDate.getDate() - 6);
-    }
 
-    // Generate exactly 7 days
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(startDate);
-      date.setDate(startDate.getDate() + i);
-      const dateStr = formatInTimeZone(date, userTimeZone, "yyyy-MM-dd");
-      
-      // Check if we have data for this date
-      const existingScore = scoreMap.get(dateStr);
-      
-      chartData.push({
-        date: dateStr,
-        score: existingScore ?? null,
-        formattedDate: formatInTimeZone(date, userTimeZone, "MMM dd"),
-        isProjected: false,
+    // If we DON'T have data beyond the initial 7-day window, show fixed window (creation + 6 days)
+    // Otherwise, show rolling window of most recent 7 days
+    if (latestDataDate <= initialWindowEndStr || !latestDataDate) {
+      // Show from prompt creation date + 6 future days in user's timezone
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(promptCreationDate);
+        date.setDate(promptCreationDate.getDate() + i);
+        const dateStr = formatInTimeZone(date, userTimeZone, "yyyy-MM-dd");
+
+        chartData.push({
+          date: dateStr,
+          score: scoreMap.get(dateStr) ?? null,
+          formattedDate: formatInTimeZone(date, userTimeZone, "MMM dd"),
+          isProjected: false,
+        });
+      }
+    } else {
+      // Show most recent 7 days of actual data (rolling window)
+      const allDates = Array.from(scoreMap.keys()).sort();
+      const recentDates = allDates.slice(-7);
+
+      recentDates.forEach((dateStr) => {
+        const date = new Date(dateStr + 'T00:00:00');
+        chartData.push({
+          date: dateStr,
+          score: scoreMap.get(dateStr) ?? null,
+          formattedDate: formatInTimeZone(date, userTimeZone, "MMM dd"),
+          isProjected: false,
+        });
       });
     }
     
