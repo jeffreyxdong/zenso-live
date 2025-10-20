@@ -157,15 +157,15 @@ const Dashboard = () => {
       if (!forceRescore) {
         const { data: latestScore } = await supabase
           .from("brand_scores")
-          .select("visibility_score, updated_at")
+          .select("visibility_score, created_at")
           .eq("store_id", activeStore.id)
-          .order("updated_at", { ascending: false })
+          .order("created_at", { ascending: false })
           .limit(1)
           .single();
 
         if (latestScore?.visibility_score !== null && latestScore?.visibility_score !== undefined) {
           setBrandVisibility(latestScore.visibility_score);
-          setBrandVisibilityUpdatedAt(latestScore.updated_at);
+          setBrandVisibilityUpdatedAt(latestScore.created_at);
           setIsLoadingAnalytics(false);
           return;
         }
@@ -189,16 +189,16 @@ const Dashboard = () => {
 
       if (data?.visibilityScore !== undefined) {
         setBrandVisibility(data.visibilityScore);
-        // Fetch the updated_at from the newly created score
+        // Fetch the created_at from the newly created score
         const { data: newScore } = await supabase
           .from("brand_scores")
-          .select("updated_at")
+          .select("created_at")
           .eq("store_id", activeStore.id)
-          .order("updated_at", { ascending: false })
+          .order("created_at", { ascending: false })
           .limit(1)
           .single();
-        if (newScore?.updated_at) {
-          setBrandVisibilityUpdatedAt(newScore.updated_at);
+        if (newScore?.created_at) {
+          setBrandVisibilityUpdatedAt(newScore.created_at);
         }
       }
     } catch (error) {
