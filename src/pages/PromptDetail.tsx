@@ -542,7 +542,7 @@ const PromptDetail = () => {
                           }}
                         />
                         <Line 
-                          type="basis" 
+                          type="monotone" 
                           dataKey="score" 
                           stroke="hsl(var(--primary))"
                           strokeWidth={2}
@@ -651,7 +651,7 @@ const PromptDetail = () => {
                           }}
                         />
                         <Line 
-                          type="basis" 
+                          type="monotone" 
                           dataKey="score" 
                           stroke="hsl(var(--success))"
                           strokeWidth={2}
