@@ -54,7 +54,7 @@ const PromptDetail = () => {
   const navigate = useNavigate();
   const { activeStore } = useOutletContext<{ activeStore: { id: string; name: string; website: string; is_active: boolean } | null }>();
   const [prompt, setPrompt] = useState<PromptData | null>(null);
-  const [responses, setResponses] = useState<PromptResponse[]>([]);
+  const [latestResponse, setLatestResponse] = useState<PromptResponse | null>(null);
   const [promptScores, setPromptScores] = useState<PromptScores>({
     visibility_score: null,
     sentiment_score: null,
@@ -163,14 +163,16 @@ const PromptDetail = () => {
         brand_name: activeStore.name, // Use active store's name
       });
 
-      // Fetch responses
-      const { data: responsesData, error: responsesError } = await supabase
+      // Fetch only the most recent response
+      const { data: responseData, error: responseError } = await supabase
         .from('user_generated_prompt_responses')
         .select('id, model_name, response_text, sources, created_at')
         .eq('prompt_id', promptId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-      if (responsesError) throw responsesError;
+      if (responseError) throw responseError;
 
       // Fetch daily scores for determining the rolling window
       const { data: dailyScoresData, error: dailyScoresError } = await supabase
@@ -208,7 +210,7 @@ const PromptDetail = () => {
         }
       }
 
-      setResponses(responsesData || []);
+      setLatestResponse(responseData || null);
     } catch (error: any) {
       console.error('Error fetching prompt data:', error);
       toast({
@@ -707,36 +709,30 @@ const PromptDetail = () => {
           </Card>
         </div>
 
-      {/* AI Responses */}
-      {responses.length > 0 && (
+      {/* Latest AI Response */}
+      {latestResponse && (
         <Card>
           <CardHeader>
             <CardTitle className="text-sm flex items-center gap-2">
               <Bot className="w-4 h-4" />
-              AI Responses ({responses.length})
+              Latest AI Response
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ScrollArea className="h-[500px]">
-              <div className="space-y-4 pr-4">
-                {responses.map((response) => (
-                  <div key={response.id} className="border rounded-lg p-4 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Badge variant="secondary">{response.model_name}</Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(response.created_at), 'PP')}
-                      </span>
-                    </div>
-                    <p className="text-sm whitespace-pre-wrap">{response.response_text}</p>
-                    {response.sources && (
-                      <div className="text-xs text-muted-foreground">
-                        <span className="font-medium">Sources:</span> {JSON.stringify(response.sources).slice(0, 100)}...
-                      </div>
-                    )}
-                  </div>
-                ))}
+            <div className="border rounded-lg p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <Badge variant="secondary">{latestResponse.model_name}</Badge>
+                <span className="text-xs text-muted-foreground">
+                  {format(new Date(latestResponse.created_at), 'PP')}
+                </span>
               </div>
-            </ScrollArea>
+              <p className="text-sm whitespace-pre-wrap">{latestResponse.response_text}</p>
+              {latestResponse.sources && (
+                <div className="text-xs text-muted-foreground">
+                  <span className="font-medium">Sources:</span> {JSON.stringify(latestResponse.sources).slice(0, 100)}...
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
