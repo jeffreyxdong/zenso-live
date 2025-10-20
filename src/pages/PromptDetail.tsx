@@ -175,7 +175,7 @@ const PromptDetail = () => {
       // Fetch daily scores for time series - rolling 7-day window
       const { data: dailyScoresData, error: dailyScoresError } = await supabase
         .from('user_generated_prompt_daily_scores' as any)
-        .select('date, visibility_score, sentiment_score')
+        .select('date, visibility_score, sentiment_score, created_at')
         .eq('prompt_id', promptId)
         .order('date', { ascending: false })
         .limit(7) as { data: DailyScore[] | null; error: any };
@@ -187,12 +187,19 @@ const PromptDetail = () => {
         const reversedData = (dailyScoresData || []).reverse();
         setDailyScores(reversedData);
         
-        // Set prompt scores from the most recent daily score
-        const mostRecentScore = dailyScoresData?.[0]; // First item is most recent (ordered by date desc)
-        if (mostRecentScore) {
+        // Fetch the most recent score by created_at for the score cards
+        const { data: mostRecentScoreData, error: recentScoreError } = await supabase
+          .from('user_generated_prompt_daily_scores' as any)
+          .select('visibility_score, sentiment_score')
+          .eq('prompt_id', promptId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single() as { data: { visibility_score: number | null; sentiment_score: number | null } | null; error: any };
+        
+        if (!recentScoreError && mostRecentScoreData) {
           setPromptScores({
-            visibility_score: mostRecentScore.visibility_score ?? null,
-            sentiment_score: mostRecentScore.sentiment_score ?? null,
+            visibility_score: mostRecentScoreData.visibility_score ?? null,
+            sentiment_score: mostRecentScoreData.sentiment_score ?? null,
           });
         } else {
           // No daily scores yet
