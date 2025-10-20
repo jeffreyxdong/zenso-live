@@ -64,6 +64,43 @@ const Dashboard = () => {
     }
   }, [activeTab, activeStore?.id]);
 
+  // Set up realtime subscription for brand scores
+  useEffect(() => {
+    if (!activeStore?.id) return;
+
+    const scoresChannel = supabase
+      .channel("brand-scores-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "brand_scores",
+          filter: `store_id=eq.${activeStore.id}`,
+        },
+        (payload) => {
+          console.log("Brand score updated:", payload);
+          // Check if this is a new score (more recent than what we have)
+          if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+            const newScore = payload.new;
+            if (newScore?.visibility_score !== null && newScore?.visibility_score !== undefined) {
+              // Only update if this score is newer than what we currently have
+              if (!brandVisibilityUpdatedAt || new Date(newScore.created_at) > new Date(brandVisibilityUpdatedAt)) {
+                setBrandVisibility(newScore.visibility_score);
+                setBrandVisibilityUpdatedAt(newScore.created_at);
+                setIsLoadingAnalytics(false);
+              }
+            }
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(scoresChannel);
+    };
+  }, [activeStore?.id, brandVisibilityUpdatedAt]);
+
   // Set up realtime subscription and polling fallback for brand recommendations
   useEffect(() => {
     if (!activeStore?.id) return;
