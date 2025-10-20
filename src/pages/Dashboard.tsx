@@ -159,7 +159,7 @@ const Dashboard = () => {
           .from("brand_scores")
           .select("visibility_score, updated_at")
           .eq("store_id", activeStore.id)
-          .order("date", { ascending: false })
+          .order("updated_at", { ascending: false })
           .limit(1)
           .single();
 
@@ -194,7 +194,7 @@ const Dashboard = () => {
           .from("brand_scores")
           .select("updated_at")
           .eq("store_id", activeStore.id)
-          .order("date", { ascending: false })
+          .order("updated_at", { ascending: false })
           .limit(1)
           .single();
         if (newScore?.updated_at) {
@@ -344,7 +344,7 @@ const Dashboard = () => {
                         <p className="text-muted-foreground">Average visibility across brand prompts</p>
                         {brandVisibilityUpdatedAt && (
                           <p className="text-xs text-muted-foreground mt-2">
-                            Last updated: {new Date(brandVisibilityUpdatedAt).toLocaleString()}
+                            Last updated: {new Date(brandVisibilityUpdatedAt).toLocaleDateString()}
                           </p>
                         )}
                         {brandVisibility === null && !isLoadingAnalytics && (
