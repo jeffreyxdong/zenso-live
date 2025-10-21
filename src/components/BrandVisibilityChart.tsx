@@ -96,7 +96,6 @@ const BrandVisibilityChart = ({ storeId, testDate }: BrandVisibilityChartProps) 
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [storeCreatedAt, setStoreCreatedAt] = useState<string>("");
-  const [hasEverLoadedData, setHasEverLoadedData] = useState(false);
 
   useEffect(() => {
     if (storeId) {
@@ -152,16 +151,9 @@ const BrandVisibilityChart = ({ storeId, testDate }: BrandVisibilityChartProps) 
 
       if (error) throw error;
 
-      // Check if we have ANY data (even if scores are null or 0)
-      const hasAnyScores = brandScores && brandScores.length > 0;
-      
-      // Only set generating if we have no data AND haven't loaded data before
-      if (hasAnyScores) {
-        setHasEverLoadedData(true);
-        setIsGenerating(false);
-      } else if (!hasEverLoadedData) {
-        setIsGenerating(true);
-      }
+      // Check if we should be generating
+      const hasValidScores = brandScores && brandScores.some(s => s.visibility_score != null && s.visibility_score > 0);
+      setIsGenerating(!hasValidScores);
 
       // Generate chart data using the same logic as PDP
       const chartData = generateScoreHistoryFromData(brandScores || [], createdAt, testDate);
@@ -208,8 +200,7 @@ const BrandVisibilityChart = ({ storeId, testDate }: BrandVisibilityChartProps) 
     );
   }
 
-  // Only show generating state if we have no data at all and haven't loaded before
-  if (isGenerating && visibilityData.length === 0 && !hasEverLoadedData) {
+  if (isGenerating) {
     return (
       <Card className="min-h-[340px]">
         <CardHeader>
