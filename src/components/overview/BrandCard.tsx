@@ -94,6 +94,9 @@ export function BrandCard({ storeId }: BrandCardProps) {
         setCurrentScore(scores[0]);
         if (scores.length > 1) {
           setPreviousScore(scores[1].visibility_score);
+        } else {
+          // Impute 0 if no previous score available
+          setPreviousScore(0);
         }
       }
     } catch (error) {
@@ -186,12 +189,13 @@ export function BrandCard({ storeId }: BrandCardProps) {
     );
   }
 
-  // Mock sparkline data for visual context (will be replaced with real data later)
-  const mockSparklineData = [75, 78, 82, 80, 85, 84, currentScore.visibility_score];
+  // Calculate percentage change (previousScore is never null, imputed as 0 if no data)
+  const scoreChange = previousScore !== null
+    ? previousScore === 0
+      ? currentScore.visibility_score // If previous was 0, show absolute change as percentage won't work
+      : ((currentScore.visibility_score - previousScore) / previousScore) * 100
+    : 0;
   
-  const scoreChange = previousScore !== null 
-    ? ((currentScore.visibility_score - previousScore) / previousScore) * 100 
-    : 5.2; // Mock change if no previous data
   const isPositive = scoreChange > 0;
   const trendDirection = Math.abs(scoreChange) > 3 ? (isPositive ? "up" : "down") : "stable";
 
@@ -245,14 +249,18 @@ export function BrandCard({ storeId }: BrandCardProps) {
             </div>
             
             <div className="flex items-center justify-center gap-2 mb-2">
-              <div className={`flex items-center gap-1.5 ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+              <div className={`flex items-center gap-1.5 ${isPositive ? 'text-green-500' : scoreChange < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
                 {isPositive ? (
                   <TrendingUp className="w-5 h-5" />
-                ) : (
+                ) : scoreChange < 0 ? (
                   <TrendingDown className="w-5 h-5" />
-                )}
+                ) : null}
                 <span className="text-xl font-medium">
-                  {isPositive ? '+' : ''}{scoreChange.toFixed(1)}%
+                  {previousScore === 0 && isPositive ? (
+                    `+${currentScore.visibility_score} pts`
+                  ) : (
+                    `${isPositive ? '+' : ''}${scoreChange.toFixed(1)}%`
+                  )}
                 </span>
               </div>
               <span className="text-base text-muted-foreground font-normal">vs yesterday</span>
