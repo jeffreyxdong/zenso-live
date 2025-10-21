@@ -111,7 +111,7 @@ const TopSourcesFeed: React.FC<TopSourcesFeedProps> = ({ storeId }) => {
   }
 
   return (
-    <Card className="h-full flex flex-col flex-1">
+    <Card className="min-h-[380px] flex flex-col">
       <CardHeader>
         <CardTitle>Top Sources / Mentions Feed</CardTitle>
         <CardDescription>Most common sources that mention your brand across AI responses</CardDescription>
