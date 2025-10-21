@@ -197,7 +197,20 @@ export function BrandCard({ storeId }: BrandCardProps) {
     : 0;
   
   const isPositive = scoreChange > 0;
-  const trendDirection = Math.abs(scoreChange) > 3 ? (isPositive ? "up" : "down") : "stable";
+  const isNegative = scoreChange < 0;
+  
+  // Determine trend direction with appropriate thresholds
+  const isAbsoluteChange = previousScore === 0;
+  const threshold = isAbsoluteChange ? 5 : 3; // Use different threshold for absolute vs percentage
+  
+  let trendDirection: "up" | "down" | "stable";
+  if (Math.abs(scoreChange) <= threshold) {
+    trendDirection = "stable";
+  } else if (isPositive) {
+    trendDirection = "up";
+  } else {
+    trendDirection = "down";
+  }
 
   return (
     <TooltipProvider>
@@ -266,18 +279,18 @@ export function BrandCard({ storeId }: BrandCardProps) {
               <span className="text-base text-muted-foreground font-normal">vs yesterday</span>
             </div>
 
-            {trendDirection !== "stable" && (
-              <Badge 
-                variant="outline" 
-                className={`text-sm px-2.5 py-1 ${
-                  trendDirection === "up" 
-                    ? 'border-green-500/30 bg-green-500/10 text-green-500' 
-                    : 'border-red-500/30 bg-red-500/10 text-red-500'
-                }`}
-              >
-                {trendDirection === "up" ? '↑ Trending' : '↓ Declining'}
-              </Badge>
-            )}
+            <Badge 
+              variant="outline" 
+              className={`text-sm px-2.5 py-1 ${
+                trendDirection === "up" 
+                  ? 'border-green-500/30 bg-green-500/10 text-green-500' 
+                  : trendDirection === "down"
+                  ? 'border-red-500/30 bg-red-500/10 text-red-500'
+                  : 'border-muted-foreground/30 bg-muted/10 text-muted-foreground'
+              }`}
+            >
+              {trendDirection === "up" ? '↑ Trending' : trendDirection === "down" ? '↓ Declining' : '→ Stable'}
+            </Badge>
           </div>
 
           {/* Footer with timestamp */}
