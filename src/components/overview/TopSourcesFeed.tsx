@@ -102,7 +102,7 @@ const TopSourcesFeed: React.FC<TopSourcesFeedProps> = ({ storeId }) => {
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <Globe className="h-12 w-12 text-muted-foreground mb-3" />
             <p className="text-muted-foreground">
-              No mentions found yet — check back after your next score update.
+              No mentions found yet — please add a product to see sources.
             </p>
           </div>
         </CardContent>
@@ -113,7 +113,7 @@ const TopSourcesFeed: React.FC<TopSourcesFeedProps> = ({ storeId }) => {
   return (
     <Card className="min-h-[900px] flex flex-col">
       <CardHeader>
-        <CardTitle>Top Sources / Mentions Feed</CardTitle>
+        <CardTitle>Product Mentions by Source</CardTitle>
         <CardDescription>Most common sources that mention your brand across AI responses</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 overflow-auto">
