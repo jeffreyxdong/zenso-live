@@ -1,7 +1,8 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, TrendingUp, TrendingDown, MessageSquare } from "lucide-react";
+import { ExternalLink, TrendingUp, TrendingDown } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -20,7 +21,6 @@ interface BrandScoreData {
   visibility_score: number;
   date: string;
   updated_at: string;
-  mention_count?: number;
 }
 
 export function BrandCard({ storeId }: BrandCardProps) {
@@ -33,20 +33,20 @@ export function BrandCard({ storeId }: BrandCardProps) {
   useEffect(() => {
     if (storeId) {
       fetchStoreData();
-
+      
       const channel = supabase
-        .channel("brand-card-updates")
+        .channel('brand-card-updates')
         .on(
-          "postgres_changes",
+          'postgres_changes',
           {
-            event: "*",
-            schema: "public",
-            table: "brand_scores",
-            filter: `store_id=eq.${storeId}`,
+            event: '*',
+            schema: 'public',
+            table: 'brand_scores',
+            filter: `store_id=eq.${storeId}`
           },
           () => {
             fetchScoreData();
-          },
+          }
         )
         .subscribe();
 
@@ -58,29 +58,34 @@ export function BrandCard({ storeId }: BrandCardProps) {
 
   const fetchStoreData = async () => {
     try {
+      // Fetch store data first
       const { data: store, error: storeError } = await supabase
-        .from("stores")
-        .select("name, website")
-        .eq("id", storeId)
+        .from('stores')
+        .select('name, website')
+        .eq('id', storeId)
         .single();
 
       if (storeError) throw storeError;
       setStoreData(store);
 
-      await fetchScoreData();
+      // Then fetch scores
+      fetchScoreData();
     } catch (error) {
-      console.error("Error fetching brand card data:", error);
+      console.error('Error fetching brand card data:', error);
       setIsLoading(false);
     }
   };
 
   const fetchScoreData = async () => {
     try {
+      setIsLoading(true);
+
+      // Fetch latest 2 brand scores to calculate change
       const { data: scores, error: scoresError } = await supabase
-        .from("brand_scores")
-        .select("visibility_score, date, updated_at, mention_count")
-        .eq("store_id", storeId)
-        .order("date", { ascending: false })
+        .from('brand_scores')
+        .select('visibility_score, date, updated_at')
+        .eq('store_id', storeId)
+        .order('date', { ascending: false })
         .limit(2);
 
       if (scoresError) throw scoresError;
@@ -89,24 +94,23 @@ export function BrandCard({ storeId }: BrandCardProps) {
         setCurrentScore(scores[0]);
         if (scores.length > 1) {
           setPreviousScore(scores[1].visibility_score);
-        } else {
-          // If no previous score exists, impute 0
-          setPreviousScore(0);
         }
       }
     } catch (error) {
-      console.error("Error fetching brand score data:", error);
+      console.error('Error fetching brand score data:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Loading state - show header with spinning loader
   if (!storeData) {
     return (
       <TooltipProvider>
-        <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card via-card to-card/80 h-full min-h-[280px]">
+        <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card via-card to-card/80 h-full min-h-[340px]">
+          {/* Decorative gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none" />
-
+          
           <div className="relative p-6 h-full flex flex-col">
             <div className="h-[200px] flex items-center justify-center">
               <p className="text-muted-foreground">Loading...</p>
@@ -117,19 +121,24 @@ export function BrandCard({ storeId }: BrandCardProps) {
     );
   }
 
-  const displayUrl = storeData.website.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  // Clean website URL for display
+  const displayUrl = storeData.website.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
   if (isLoading || !currentScore) {
     return (
       <TooltipProvider>
-        <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card via-card to-card/80 h-full min-h-[280px]">
+        <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card via-card to-card/80 h-full min-h-[340px]">
+          {/* Decorative gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none" />
-
+          
           <div className="relative p-6 h-full flex flex-col">
-            <div className="flex items-start justify-between mb-6">
+            {/* Header with badge */}
+            <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
-                <h2 className="text-2xl font-bold text-foreground mb-1">{storeData.name}</h2>
-                <a
+                <h2 className="text-2xl font-bold text-foreground mb-1">
+                  {storeData.name}
+                </h2>
+                <a 
                   href={storeData.website}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -140,8 +149,23 @@ export function BrandCard({ storeId }: BrandCardProps) {
                   <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                 </a>
               </div>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge 
+                    variant="outline" 
+                    className="px-3 py-1.5 text-xs font-medium border-primary/30 bg-primary/10 text-primary rounded-full cursor-help"
+                  >
+                    Daily Score
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="max-w-xs">
+                  <p className="text-sm">Brand visibility change compared to the previous day, based on AI mentions.</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
 
+            {/* Loading spinner */}
             <div className="flex-1 flex flex-col items-center justify-center space-y-4">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
               <div className="text-center space-y-2">
@@ -150,8 +174,11 @@ export function BrandCard({ storeId }: BrandCardProps) {
               </div>
             </div>
 
+            {/* Footer */}
             <div className="pt-3 border-t border-border/30 mt-4">
-              <div className="text-xs text-muted-foreground/70 invisible">Placeholder</div>
+              <div className="text-xs text-muted-foreground/70 invisible">
+                Placeholder for alignment
+              </div>
             </div>
           </div>
         </Card>
@@ -159,54 +186,32 @@ export function BrandCard({ storeId }: BrandCardProps) {
     );
   }
 
-  const scoreChange = previousScore !== null ? currentScore.visibility_score - previousScore : null;
-  const isPositive = scoreChange !== null ? scoreChange > 0 : null;
-  const isFlat = scoreChange === 0;
-  const isNew = previousScore === 0;
-
-  let trendBadge = null;
-  if (isNew) {
-    trendBadge = {
-      icon: "✨",
-      text: "New",
-      color: "border-blue-500/30 bg-blue-500/10 text-blue-500",
-    };
-  } else if (scoreChange !== null) {
-    if (isFlat) {
-      trendBadge = {
-        icon: "—",
-        text: "Flat",
-        color: "border-gray-500/30 bg-gray-500/10 text-gray-500",
-      };
-    } else if (isPositive) {
-      trendBadge = {
-        icon: <TrendingUp className="w-3.5 h-3.5" />,
-        text: "Trending Up",
-        color: "border-green-500/30 bg-green-500/10 text-green-500",
-      };
-    } else {
-      trendBadge = {
-        icon: <TrendingDown className="w-3.5 h-3.5" />,
-        text: "Trending Down",
-        color: "border-red-500/30 bg-red-500/10 text-red-500",
-      };
-    }
-  }
+  // Mock sparkline data for visual context (will be replaced with real data later)
+  const mockSparklineData = [75, 78, 82, 80, 85, 84, currentScore.visibility_score];
+  
+  const scoreChange = previousScore !== null 
+    ? ((currentScore.visibility_score - previousScore) / previousScore) * 100 
+    : 5.2; // Mock change if no previous data
+  const isPositive = scoreChange > 0;
+  const trendDirection = Math.abs(scoreChange) > 3 ? (isPositive ? "up" : "down") : "stable";
 
   return (
     <TooltipProvider>
-      <Card
-        className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card via-card to-card/80 h-full min-h-[280px] cursor-pointer transition-all hover:shadow-lg hover:border-primary/30"
-        onClick={() => navigate("/dashboard?tab=overview")}
+      <Card 
+        className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card via-card to-card/80 h-full min-h-[340px] cursor-pointer transition-all hover:shadow-lg hover:border-primary/30"
+        onClick={() => navigate('/dashboard?tab=overview')}
       >
+        {/* Decorative gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none" />
-
+        
         <div className="relative p-6 h-full flex flex-col">
-          {/* Header */}
-          <div className="flex items-start justify-between mb-6">
+          {/* Header with badge */}
+          <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
-              <h2 className="text-2xl font-bold text-foreground mb-1">{storeData.name}</h2>
-              <a
+              <h2 className="text-2xl font-bold text-foreground mb-1">
+                {storeData.name}
+              </h2>
+              <a 
                 href={storeData.website}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -217,53 +222,57 @@ export function BrandCard({ storeId }: BrandCardProps) {
                 <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
               </a>
             </div>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge 
+                  variant="outline" 
+                  className="px-3 py-1.5 text-xs font-medium border-primary/30 bg-primary/10 text-primary rounded-full cursor-help"
+                >
+                  Daily Score
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent side="left" className="max-w-xs">
+                <p className="text-sm">Brand visibility change compared to the previous day, based on AI mentions.</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
 
-            {trendBadge && (
-              <Badge
-                variant="outline"
-                className={`px-2.5 py-1 text-xs font-medium rounded-full flex items-center gap-1.5 ${trendBadge.color}`}
+          {/* Score Section */}
+          <div className="flex-1 flex flex-col justify-center items-center">
+            <div className="text-7xl font-bold text-foreground tabular-nums leading-none mb-4">
+              {currentScore.visibility_score}
+            </div>
+            
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <div className={`flex items-center gap-1.5 ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+                {isPositive ? (
+                  <TrendingUp className="w-5 h-5" />
+                ) : (
+                  <TrendingDown className="w-5 h-5" />
+                )}
+                <span className="text-xl font-medium">
+                  {isPositive ? '+' : ''}{scoreChange.toFixed(1)}%
+                </span>
+              </div>
+              <span className="text-base text-muted-foreground font-normal">vs yesterday</span>
+            </div>
+
+            {trendDirection !== "stable" && (
+              <Badge 
+                variant="outline" 
+                className={`text-sm px-2.5 py-1 ${
+                  trendDirection === "up" 
+                    ? 'border-green-500/30 bg-green-500/10 text-green-500' 
+                    : 'border-red-500/30 bg-red-500/10 text-red-500'
+                }`}
               >
-                {trendBadge.icon}
-                {trendBadge.text}
+                {trendDirection === "up" ? '↑ Trending' : '↓ Declining'}
               </Badge>
             )}
           </div>
 
-          {/* Main Content */}
-          <div className="flex-1 flex flex-col justify-center space-y-4">
-            <div>
-              <div className="text-sm text-muted-foreground mb-2">Brand Visibility Score</div>
-              <div className="text-6xl font-bold text-foreground tabular-nums">{currentScore.visibility_score}</div>
-            </div>
-
-            {isNew ? (
-              <div className="text-base text-muted-foreground">First day tracking</div>
-            ) : scoreChange !== null ? (
-              <div className="flex items-center gap-2">
-                {isFlat ? (
-                  <span className="text-lg font-medium text-gray-500">— No change since yesterday</span>
-                ) : (
-                  <>
-                    <span className={`text-lg font-medium ${isPositive ? "text-green-500" : "text-red-500"}`}>
-                      {isPositive ? "↑" : "↓"} {isPositive ? "+" : ""}
-                      {scoreChange} since yesterday
-                    </span>
-                  </>
-                )}
-              </div>
-            ) : null}
-
-            {currentScore.mention_count !== undefined && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <MessageSquare className="w-4 h-4" />
-                <span className="text-base">
-                  Mentions: <span className="font-semibold text-foreground">{currentScore.mention_count}</span>
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Footer */}
+          {/* Footer with timestamp */}
           <div className="text-xs text-muted-foreground/70 pt-3 border-t border-border/30 mt-4">
             <div className="flex items-center gap-1.5">
               <span>Last updated:</span>
