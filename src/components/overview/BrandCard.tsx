@@ -1,4 +1,31 @@
-import { Card } from "@/components/ui/card";
+if (isLoading) {
+    return (
+      <TooltipProvider>
+        <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card via-card to-card/80 h-full min-h-[280px]">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none" />
+          
+          <div className="relative p-6 h-full flex flex-col">
+            {storeData ? (
+              <>
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-bold text-foreground mb-1">
+                      {storeData.name}
+                    </h2>
+                    <a 
+                      href={storeData.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors group"
+                    >
+                      <span>{displayUrl}</span>
+                      <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                    </a>
+                  </div>
+                </div>
+
+                <div className="flex-1 flex flex-col items-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, TrendingUp, TrendingDown, MessageSquare } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -67,7 +94,7 @@ export function BrandCard({ storeId }: BrandCardProps) {
       if (storeError) throw storeError;
       setStoreData(store);
 
-      fetchScoreData();
+      await fetchScoreData();
     } catch (error) {
       console.error('Error fetching brand card data:', error);
       setIsLoading(false);
@@ -76,8 +103,6 @@ export function BrandCard({ storeId }: BrandCardProps) {
 
   const fetchScoreData = async () => {
     try {
-      setIsLoading(true);
-
       const { data: scores, error: scoresError } = await supabase
         .from('brand_scores')
         .select('visibility_score, date, updated_at, mention_count')
@@ -92,6 +117,9 @@ export function BrandCard({ storeId }: BrandCardProps) {
         if (scores.length > 1) {
           setPreviousScore(scores[1].visibility_score);
         }
+      } else {
+        // No scores found, still set loading to false
+        setCurrentScore(null);
       }
     } catch (error) {
       console.error('Error fetching brand score data:', error);
@@ -167,9 +195,16 @@ export function BrandCard({ storeId }: BrandCardProps) {
     : null;
   const isPositive = scoreChange !== null ? scoreChange > 0 : null;
   const isFlat = scoreChange === 0;
+  const isNew = previousScore === 0;
   
   let trendBadge = null;
-  if (scoreChange !== null) {
+  if (isNew) {
+    trendBadge = {
+      icon: "✨",
+      text: "New",
+      color: "border-blue-500/30 bg-blue-500/10 text-blue-500"
+    };
+  } else if (scoreChange !== null) {
     if (isFlat) {
       trendBadge = {
         icon: "—",
@@ -218,13 +253,20 @@ export function BrandCard({ storeId }: BrandCardProps) {
               </a>
             </div>
             
-            {trendBadge && (
+            {trendBadge ? (
               <Badge 
                 variant="outline" 
                 className={`px-2.5 py-1 text-xs font-medium rounded-full flex items-center gap-1.5 ${trendBadge.color}`}
               >
                 {trendBadge.icon}
                 {trendBadge.text}
+              </Badge>
+            ) : (
+              <Badge 
+                variant="outline" 
+                className="px-2.5 py-1 text-xs font-medium rounded-full border-muted bg-muted/10 text-muted-foreground"
+              >
+                New
               </Badge>
             )}
           </div>
@@ -238,7 +280,7 @@ export function BrandCard({ storeId }: BrandCardProps) {
               </div>
             </div>
             
-            {scoreChange !== null && (
+            {scoreChange !== null ? (
               <div className="flex items-center gap-2">
                 {isFlat ? (
                   <span className="text-lg font-medium text-gray-500">
@@ -252,9 +294,13 @@ export function BrandCard({ storeId }: BrandCardProps) {
                   </>
                 )}
               </div>
+            ) : (
+              <div className="text-base text-muted-foreground italic">
+                Track changes starting tomorrow
+              </div>
             )}
 
-            {currentScore.mention_count !== undefined && (
+            {currentScore.mention_count !== undefined && currentScore.mention_count > 0 && (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <MessageSquare className="w-4 h-4" />
                 <span className="text-base">
