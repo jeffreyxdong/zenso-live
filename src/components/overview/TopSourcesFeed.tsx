@@ -72,7 +72,7 @@ const TopSourcesFeed: React.FC<TopSourcesFeedProps> = ({ storeId }) => {
 
   if (isLoading) {
     return (
-      <Card className="min-h-[633px]">
+      <Card className="min-h-[650px]">
         <CardHeader>
           <CardTitle>Top Mentions by Source</CardTitle>
           <CardDescription>Most common sources that mention your brand across AI responses</CardDescription>
@@ -93,7 +93,7 @@ const TopSourcesFeed: React.FC<TopSourcesFeedProps> = ({ storeId }) => {
 
   if (sourceCounts.length === 0) {
     return (
-      <Card className="min-h-[633px]">
+      <Card className="min-h-[650px]">
         <CardHeader>
           <CardTitle>Top Mentions by Source</CardTitle>
           <CardDescription>Most common sources that mention your brand across AI responses</CardDescription>
@@ -111,7 +111,7 @@ const TopSourcesFeed: React.FC<TopSourcesFeedProps> = ({ storeId }) => {
   }
 
   return (
-    <Card className="min-h-[633px] flex flex-col">
+    <Card className="min-h-[650px] flex flex-col">
       <CardHeader>
         <CardTitle>Top Mentions by Source</CardTitle>
         <CardDescription>Most common sources that mention your brand across AI responses</CardDescription>
