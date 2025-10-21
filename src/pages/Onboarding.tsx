@@ -126,6 +126,13 @@ const Onboarding: React.FC = () => {
         }).then(() => {
           console.log('Competitor analytics generation started');
         }).catch(err => console.error('Failed to start competitor analytics:', err));
+
+        // Trigger brand analytics to calculate initial visibility score
+        supabase.functions.invoke('brand-analytics', {
+          body: { storeId: createdStore.id }
+        }).then(() => {
+          console.log('Brand analytics generation started');
+        }).catch(err => console.error('Failed to start brand analytics:', err));
       }
 
       toast({ 

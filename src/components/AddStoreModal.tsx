@@ -83,7 +83,7 @@ const AddStoreModal = ({ open, onOpenChange, onStoreAdded }: AddStoreModalProps)
           body: { storeId: newStore.id }
         }),
         // Generate brand visibility score
-        supabase.functions.invoke('score-brand-visibility', {
+        supabase.functions.invoke('brand-analytics', {
           body: { storeId: newStore.id }
         })
       ];
