@@ -91,12 +91,15 @@ export function BrandCard({ storeId }: BrandCardProps) {
       if (scoresError) throw scoresError;
 
       if (scores && scores.length > 0) {
-        setCurrentScore(scores[0]);
-        if (scores.length > 1) {
-          setPreviousScore(scores[1].visibility_score);
-        } else {
-          // Impute 0 if no previous score available
-          setPreviousScore(0);
+        // Only set if visibility_score is not null
+        if (scores[0].visibility_score !== null) {
+          setCurrentScore(scores[0]);
+          if (scores.length > 1 && scores[1].visibility_score !== null) {
+            setPreviousScore(scores[1].visibility_score);
+          } else {
+            // Impute 0 if no previous score available
+            setPreviousScore(0);
+          }
         }
       }
     } catch (error) {
