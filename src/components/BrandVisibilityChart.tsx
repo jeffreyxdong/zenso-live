@@ -151,9 +151,9 @@ const BrandVisibilityChart = ({ storeId, testDate }: BrandVisibilityChartProps) 
 
       if (error) throw error;
 
-      // Check if we should be generating
-      const hasValidScores = brandScores && brandScores.some(s => s.visibility_score != null && s.visibility_score > 0);
-      setIsGenerating(!hasValidScores);
+      // Check if we have any brand score records (even with 0 scores)
+      const hasAnyScores = brandScores && brandScores.length > 0;
+      setIsGenerating(!hasAnyScores);
 
       // Generate chart data using the same logic as PDP
       const chartData = generateScoreHistoryFromData(brandScores || [], createdAt, testDate);
