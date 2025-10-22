@@ -914,7 +914,7 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      process_all_store_brand_analytics: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
