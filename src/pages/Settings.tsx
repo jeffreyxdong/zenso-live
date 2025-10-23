@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, User, Store, CreditCard } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { ArrowLeft, User, Store, CreditCard, Bell, Shield, Zap, Target, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { CompetitorAnalytics } from "@/components/CompetitorAnalytics";
 
 const Settings = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("account");
   const [loading, setLoading] = useState(false);
+  const [storeId, setStoreId] = useState<string>("");
   
   // Account data
   const [profile, setProfile] = useState({
@@ -34,6 +39,29 @@ const Settings = () => {
   const [activeStore, setActiveStore] = useState({
     name: "",
     website: ""
+  });
+
+  // Notification preferences
+  const [notifications, setNotifications] = useState({
+    emailAlerts: true,
+    weeklyReport: true,
+    monthlyReport: false,
+    scoreAlerts: true,
+    competitorAlerts: true,
+    promptCompletionAlerts: false
+  });
+
+  // Tracking preferences
+  const [trackingSettings, setTrackingSettings] = useState({
+    promptFrequency: "daily",
+    trackingEnabled: true,
+    autoScoring: true,
+    platforms: {
+      perplexity: true,
+      chatgpt: true,
+      gemini: true,
+      claude: true
+    }
   });
 
   useEffect(() => {
@@ -77,9 +105,59 @@ const Settings = () => {
           name: storeData.name || "",
           website: storeData.website || ""
         });
+        setStoreId(storeData.id);
       }
     } catch (error) {
       console.error("Error loading user data:", error);
+    }
+  };
+
+  const handleExportData = async () => {
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      // Fetch all user data
+      const [profileData, storesData, productsData, promptsData] = await Promise.all([
+        supabase.from("profiles").select("*").eq("user_id", session.user.id),
+        supabase.from("stores").select("*").eq("user_id", session.user.id),
+        supabase.from("products").select("*").eq("user_id", session.user.id),
+        supabase.from("prompts").select("*").eq("user_id", session.user.id)
+      ]);
+
+      const exportData = {
+        profile: profileData.data,
+        stores: storesData.data,
+        products: productsData.data,
+        prompts: promptsData.data,
+        exportedAt: new Date().toISOString()
+      };
+
+      // Create and download JSON file
+      const dataStr = JSON.stringify(exportData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `geo-dashboard-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Data exported",
+        description: "Your data has been downloaded successfully."
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to export data.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -328,6 +406,22 @@ const Settings = () => {
                   <Store className="w-4 h-4" />
                   My Store
                 </TabsTrigger>
+                <TabsTrigger value="notifications" className="w-full justify-start gap-3 px-4 py-3 text-left">
+                  <Bell className="w-4 h-4" />
+                  Notifications
+                </TabsTrigger>
+                <TabsTrigger value="tracking" className="w-full justify-start gap-3 px-4 py-3 text-left">
+                  <Target className="w-4 h-4" />
+                  Tracking
+                </TabsTrigger>
+                <TabsTrigger value="integrations" className="w-full justify-start gap-3 px-4 py-3 text-left">
+                  <Zap className="w-4 h-4" />
+                  Integrations
+                </TabsTrigger>
+                <TabsTrigger value="privacy" className="w-full justify-start gap-3 px-4 py-3 text-left">
+                  <Shield className="w-4 h-4" />
+                  Privacy & Data
+                </TabsTrigger>
                 <TabsTrigger value="billing" className="w-full justify-start gap-3 px-4 py-3 text-left">
                   <CreditCard className="w-4 h-4" />
                   Billing
@@ -470,6 +564,321 @@ const Settings = () => {
                     <Button onClick={handleSaveStore} disabled={loading}>
                       {loading ? "Saving..." : "Save Changes"}
                     </Button>
+                  </CardContent>
+                </Card>
+
+                {storeId && (
+                  <div className="h-[600px]">
+                    <CompetitorAnalytics storeId={storeId} />
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Notifications Tab */}
+              <TabsContent value="notifications" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Email Notifications</CardTitle>
+                    <CardDescription>Choose what updates you want to receive via email</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="emailAlerts">Email Alerts</Label>
+                        <p className="text-sm text-muted-foreground">Receive important alerts about your account</p>
+                      </div>
+                      <Switch
+                        id="emailAlerts"
+                        checked={notifications.emailAlerts}
+                        onCheckedChange={(checked) => setNotifications({ ...notifications, emailAlerts: checked })}
+                      />
+                    </div>
+                    <Separator />
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="weeklyReport">Weekly Reports</Label>
+                        <p className="text-sm text-muted-foreground">Get a summary of your visibility scores every week</p>
+                      </div>
+                      <Switch
+                        id="weeklyReport"
+                        checked={notifications.weeklyReport}
+                        onCheckedChange={(checked) => setNotifications({ ...notifications, weeklyReport: checked })}
+                      />
+                    </div>
+                    <Separator />
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="monthlyReport">Monthly Reports</Label>
+                        <p className="text-sm text-muted-foreground">Comprehensive monthly performance analysis</p>
+                      </div>
+                      <Switch
+                        id="monthlyReport"
+                        checked={notifications.monthlyReport}
+                        onCheckedChange={(checked) => setNotifications({ ...notifications, monthlyReport: checked })}
+                      />
+                    </div>
+                    <Separator />
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="scoreAlerts">Score Change Alerts</Label>
+                        <p className="text-sm text-muted-foreground">Get notified when your visibility scores change significantly</p>
+                      </div>
+                      <Switch
+                        id="scoreAlerts"
+                        checked={notifications.scoreAlerts}
+                        onCheckedChange={(checked) => setNotifications({ ...notifications, scoreAlerts: checked })}
+                      />
+                    </div>
+                    <Separator />
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="competitorAlerts">Competitor Activity Alerts</Label>
+                        <p className="text-sm text-muted-foreground">Be notified about competitor visibility changes</p>
+                      </div>
+                      <Switch
+                        id="competitorAlerts"
+                        checked={notifications.competitorAlerts}
+                        onCheckedChange={(checked) => setNotifications({ ...notifications, competitorAlerts: checked })}
+                      />
+                    </div>
+                    <Separator />
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="promptCompletionAlerts">Prompt Completion Alerts</Label>
+                        <p className="text-sm text-muted-foreground">Get notified when prompt runs complete</p>
+                      </div>
+                      <Switch
+                        id="promptCompletionAlerts"
+                        checked={notifications.promptCompletionAlerts}
+                        onCheckedChange={(checked) => setNotifications({ ...notifications, promptCompletionAlerts: checked })}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Tracking Tab */}
+              <TabsContent value="tracking" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Visibility Tracking Settings</CardTitle>
+                    <CardDescription>Configure how your brand visibility is tracked across AI platforms</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="trackingEnabled">Enable Tracking</Label>
+                        <p className="text-sm text-muted-foreground">Turn visibility tracking on or off</p>
+                      </div>
+                      <Switch
+                        id="trackingEnabled"
+                        checked={trackingSettings.trackingEnabled}
+                        onCheckedChange={(checked) => setTrackingSettings({ ...trackingSettings, trackingEnabled: checked })}
+                      />
+                    </div>
+                    <Separator />
+                    <div className="space-y-2">
+                      <Label htmlFor="promptFrequency">Prompt Run Frequency</Label>
+                      <Select
+                        value={trackingSettings.promptFrequency}
+                        onValueChange={(value) => setTrackingSettings({ ...trackingSettings, promptFrequency: value })}
+                      >
+                        <SelectTrigger id="promptFrequency">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="hourly">Every Hour</SelectItem>
+                          <SelectItem value="daily">Daily</SelectItem>
+                          <SelectItem value="weekly">Weekly</SelectItem>
+                          <SelectItem value="manual">Manual Only</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-sm text-muted-foreground">How often should prompts be automatically executed</p>
+                    </div>
+                    <Separator />
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="autoScoring">Auto-Scoring</Label>
+                        <p className="text-sm text-muted-foreground">Automatically calculate visibility scores after prompt runs</p>
+                      </div>
+                      <Switch
+                        id="autoScoring"
+                        checked={trackingSettings.autoScoring}
+                        onCheckedChange={(checked) => setTrackingSettings({ ...trackingSettings, autoScoring: checked })}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>AI Platforms to Monitor</CardTitle>
+                    <CardDescription>Select which AI platforms to track for brand visibility</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="perplexity">Perplexity AI</Label>
+                        <p className="text-sm text-muted-foreground">Track visibility on Perplexity</p>
+                      </div>
+                      <Switch
+                        id="perplexity"
+                        checked={trackingSettings.platforms.perplexity}
+                        onCheckedChange={(checked) => setTrackingSettings({
+                          ...trackingSettings,
+                          platforms: { ...trackingSettings.platforms, perplexity: checked }
+                        })}
+                      />
+                    </div>
+                    <Separator />
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="chatgpt">ChatGPT</Label>
+                        <p className="text-sm text-muted-foreground">Track visibility on ChatGPT</p>
+                      </div>
+                      <Switch
+                        id="chatgpt"
+                        checked={trackingSettings.platforms.chatgpt}
+                        onCheckedChange={(checked) => setTrackingSettings({
+                          ...trackingSettings,
+                          platforms: { ...trackingSettings.platforms, chatgpt: checked }
+                        })}
+                      />
+                    </div>
+                    <Separator />
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="gemini">Google Gemini</Label>
+                        <p className="text-sm text-muted-foreground">Track visibility on Gemini</p>
+                      </div>
+                      <Switch
+                        id="gemini"
+                        checked={trackingSettings.platforms.gemini}
+                        onCheckedChange={(checked) => setTrackingSettings({
+                          ...trackingSettings,
+                          platforms: { ...trackingSettings.platforms, gemini: checked }
+                        })}
+                      />
+                    </div>
+                    <Separator />
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="claude">Claude</Label>
+                        <p className="text-sm text-muted-foreground">Track visibility on Claude</p>
+                      </div>
+                      <Switch
+                        id="claude"
+                        checked={trackingSettings.platforms.claude}
+                        onCheckedChange={(checked) => setTrackingSettings({
+                          ...trackingSettings,
+                          platforms: { ...trackingSettings.platforms, claude: checked }
+                        })}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Integrations Tab */}
+              <TabsContent value="integrations" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Shopify Integration</CardTitle>
+                    <CardDescription>Connect your Shopify store to automatically import products</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="p-4 bg-muted/30 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-medium mb-1">Shopify Store</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {activeStore.website ? `Connected to ${activeStore.website}` : "Not connected"}
+                          </p>
+                        </div>
+                        <Button variant="outline">
+                          {activeStore.website ? "Reconnect" : "Connect Shopify"}
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>API Access</CardTitle>
+                    <CardDescription>Manage API keys for external integrations</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="p-4 bg-muted/30 rounded-lg">
+                      <h3 className="font-medium mb-2">API Key</h3>
+                      <p className="text-sm text-muted-foreground mb-4">Use this key to access the GEO Dashboard API</p>
+                      <div className="flex gap-2">
+                        <Input value="••••••••••••••••" disabled className="font-mono" />
+                        <Button variant="outline">Generate New</Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Privacy & Data Tab */}
+              <TabsContent value="privacy" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Data Management</CardTitle>
+                    <CardDescription>Export or delete your account data</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="space-y-4">
+                      <div className="p-4 bg-muted/30 rounded-lg">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h3 className="font-medium mb-1">Export Your Data</h3>
+                            <p className="text-sm text-muted-foreground">
+                              Download a copy of all your data including products, prompts, and analytics
+                            </p>
+                          </div>
+                          <Button variant="outline" onClick={handleExportData} disabled={loading} className="shrink-0 ml-4">
+                            <Download className="w-4 h-4 mr-2" />
+                            {loading ? "Exporting..." : "Export Data"}
+                          </Button>
+                        </div>
+                      </div>
+                      <Separator />
+                      <div className="p-4 border-destructive/50 border rounded-lg bg-destructive/5">
+                        <h3 className="font-medium mb-1 text-destructive">Delete Account</h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Permanently delete your account and all associated data. This action cannot be undone.
+                        </p>
+                        <Button variant="destructive" disabled>
+                          Delete Account
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Privacy Settings</CardTitle>
+                    <CardDescription>Control how your data is used</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Analytics Tracking</Label>
+                        <p className="text-sm text-muted-foreground">Help us improve by sharing anonymous usage data</p>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+                    <Separator />
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Marketing Communications</Label>
+                        <p className="text-sm text-muted-foreground">Receive product updates and tips</p>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
