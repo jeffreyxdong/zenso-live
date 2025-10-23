@@ -85,6 +85,10 @@ const AddStoreModal = ({ open, onOpenChange, onStoreAdded }: AddStoreModalProps)
         // Generate brand visibility score
         supabase.functions.invoke('brand-analytics', {
           body: { storeId: newStore.id }
+        }),
+        // Score competitor visibility
+        supabase.functions.invoke('score-competitor-visibility', {
+          body: { storeId: newStore.id }
         })
       ];
 
