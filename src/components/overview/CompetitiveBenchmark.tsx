@@ -203,17 +203,13 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col items-center justify-center h-[250px] text-center px-4 space-y-3">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <div className="text-center">
-              <p className="text-sm font-bold text-muted-foreground">
-                Waiting for competitor analysis to complete...
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                This data will appear once competitors are identified
-              </p>
+          <div className="flex-1 flex flex-col items-center justify-center space-y-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              <div className="text-center space-y-2">
+                <p className="font-medium">Calculating competitor scores</p>
+                <p className="text-sm text-muted-foreground">This may take a moment</p>
+              </div>
             </div>
-          </div>
         </CardContent>
       </Card>
     );
