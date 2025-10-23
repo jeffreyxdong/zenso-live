@@ -914,6 +914,7 @@ export type Database = {
       }
     }
     Functions: {
+      delete_user_account: { Args: never; Returns: undefined }
       process_all_store_brand_analytics: { Args: never; Returns: undefined }
     }
     Enums: {

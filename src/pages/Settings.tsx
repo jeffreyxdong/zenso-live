@@ -145,16 +145,8 @@ const Settings = () => {
   const handleDeleteAccount = async () => {
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      // Delete user data
-      const userId = session.user.id;
-      
-      const { error: deleteError } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("user_id", userId);
+      // Call the database function to delete the account and all associated data
+      const { error: deleteError } = await supabase.rpc('delete_user_account');
 
       if (deleteError) throw deleteError;
 
@@ -163,7 +155,7 @@ const Settings = () => {
         description: "Your account and all data has been permanently deleted."
       });
 
-      // Sign out and redirect
+      // Sign out (user is already deleted from auth)
       await supabase.auth.signOut();
       navigate("/", { replace: true });
     } catch (error: any) {
