@@ -221,15 +221,6 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
       // Add product to loading scores
       setLoadingScores(prev => new Set(prev).add(productData.id));
 
-      // Set timeout to clear loading state after 2 minutes (fallback)
-      setTimeout(() => {
-        setLoadingScores(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(productData.id);
-          return newSet;
-        });
-      }, 2 * 60 * 1000);
-
       // Redirect to product overview page
       if (onProductClick) {
         onProductClick(productData.id);
@@ -486,15 +477,6 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
                 productsToAnalyze.forEach(p => newSet.add(p.id));
                 return newSet;
               });
-
-              // Set timeout to clear loading state after 5 minutes (fallback)
-              setTimeout(() => {
-                setLoadingScores(prev => {
-                  const newSet = new Set(prev);
-                  productsToAnalyze.forEach(p => newSet.delete(p.id));
-                  return newSet;
-                });
-              }, 5 * 60 * 1000);
               
               (async () => {
                 try {
@@ -771,19 +753,14 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
   };
 
   const getScoreBadge = (score: number | undefined, productId: string, isLoading: boolean) => {
-    // Show loading spinner if explicitly loading
-    if (isLoading) {
+    // Show loading spinner if explicitly loading OR if score is undefined (product being analyzed)
+    if (isLoading || score == null) {
       return (
         <div className="flex items-center justify-center gap-2 text-sm font-semibold px-3 py-1.5 rounded-md border text-muted-foreground bg-muted/50 border-muted">
           <Loader2 className="w-3 h-3 animate-spin" />
           <span>Analyzing...</span>
         </div>
       );
-    }
-    
-    // Show "No Data" only if score is actually null/undefined
-    if (score == null) {
-      return <span className="text-xs text-muted-foreground px-2 py-1 rounded bg-muted/50">No Data</span>;
     }
     
     if (score >= 80) {
