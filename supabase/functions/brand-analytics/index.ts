@@ -81,7 +81,7 @@ serve(async (req) => {
     const promptGenPrompt = `
 You are an AI research assistant.
 
-Generate exactly 10 realistic search queries that a customer would type when shopping for products from ${store.website}.
+Generate exactly 3 realistic search queries that a customer would type when shopping for products from ${store.website}.
 Rules:
 - Do NOT mention the brand "${store.name}" explicitly.
 - Visit ${store.website} to discern the products sold by the brand, and the product type.
