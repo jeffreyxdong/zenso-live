@@ -218,7 +218,7 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
                 <YAxis
                   type="category"
                   dataKey="name"
-                  fontSize={16}
+                  fontSize={14}
                   tickLine={false}
                   axisLine={false}
                   tick={{ fill: "hsl(var(--muted-foreground))" }}
