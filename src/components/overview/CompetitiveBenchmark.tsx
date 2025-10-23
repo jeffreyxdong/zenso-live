@@ -206,7 +206,7 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
           <div className="flex flex-col items-center justify-center h-[250px] text-center px-4 space-y-3">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             <div className="text-center">
-              <p className="text-sm font-medium text-muted-foreground">
+              <p className="text-sm font-bold text-muted-foreground">
                 Waiting for competitor analysis to complete...
               </p>
               <p className="text-xs text-muted-foreground mt-1">
