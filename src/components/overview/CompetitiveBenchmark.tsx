@@ -34,18 +34,18 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
       setIsScoring(true);
       toast.info("Starting competitor scoring...");
 
-      const { data, error } = await supabase.functions.invoke('score-competitor-visibility', {
-        body: { storeId }
+      const { data, error } = await supabase.functions.invoke("score-competitor-visibility", {
+        body: { storeId },
       });
 
       if (error) throw error;
 
       toast.success(`Scored ${data?.scoresCalculated || 0} competitors successfully`);
-      
+
       await fetchBenchmarkData();
     } catch (error) {
-      console.error('Error scoring competitors:', error);
-      toast.error('Failed to score competitors');
+      console.error("Error scoring competitors:", error);
+      toast.error("Failed to score competitors");
     } finally {
       setIsScoring(false);
     }
@@ -54,12 +54,12 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
   const fetchBenchmarkData = async () => {
     try {
       setIsLoading(true);
-      
+
       const { data: brandScores, error: brandError } = await supabase
-        .from('brand_scores')
-        .select('visibility_score')
-        .eq('store_id', storeId)
-        .order('date', { ascending: false })
+        .from("brand_scores")
+        .select("visibility_score")
+        .eq("store_id", storeId)
+        .order("date", { ascending: false })
         .limit(1);
 
       if (brandError) throw brandError;
@@ -69,51 +69,53 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
       const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const today = formatInTimeZone(new Date(), userTimeZone, "yyyy-MM-dd");
       const { data: competitors, error: competitorsError } = await supabase
-        .from('competitor_analytics')
-        .select(`
+        .from("competitor_analytics")
+        .select(
+          `
           id,
           name,
           competitor_scores!inner(
             visibility_score,
             date
           )
-        `)
-        .eq('store_id', storeId)
-        .eq('competitor_scores.date', today);
+        `,
+        )
+        .eq("store_id", storeId)
+        .eq("competitor_scores.date", today);
 
       if (competitorsError) {
-        console.error('Error fetching competitors:', competitorsError);
+        console.error("Error fetching competitors:", competitorsError);
       }
 
       if (!competitors || competitors.length === 0) {
-        console.log('No competitor scores found for today, triggering scoring...');
-        
-        const { error: scoringError } = await supabase.functions.invoke('score-competitor-visibility', {
-          body: { storeId }
+        console.log("No competitor scores found for today, triggering scoring...");
+
+        const { error: scoringError } = await supabase.functions.invoke("score-competitor-visibility", {
+          body: { storeId },
         });
 
         if (scoringError) {
-          console.error('Error triggering competitor scoring:', scoringError);
+          console.error("Error triggering competitor scoring:", scoringError);
         }
 
         const { data: competitorsNoScores } = await supabase
-          .from('competitor_analytics')
-          .select('id, name')
-          .eq('store_id', storeId);
+          .from("competitor_analytics")
+          .select("id, name")
+          .eq("store_id", storeId);
 
         const competitorBenchmarks: BenchmarkData[] = (competitorsNoScores || []).map((comp) => ({
           name: comp.name,
           score: 0,
-          isYourBrand: false
+          isYourBrand: false,
         }));
 
         const allBenchmarks = [
           {
-            name: brandName || 'Your Brand',
+            name: brandName || "Your Brand",
             score: yourScore,
-            isYourBrand: true
+            isYourBrand: true,
           },
-          ...competitorBenchmarks
+          ...competitorBenchmarks,
         ].sort((a, b) => b.score - a.score);
 
         setBenchmarkData(allBenchmarks);
@@ -121,22 +123,22 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
         const competitorBenchmarks: BenchmarkData[] = competitors.map((comp: any) => ({
           name: comp.name,
           score: comp.competitor_scores[0]?.visibility_score || 0,
-          isYourBrand: false
+          isYourBrand: false,
         }));
 
         const allBenchmarks = [
           {
-            name: brandName || 'Your Brand',
+            name: brandName || "Your Brand",
             score: yourScore,
-            isYourBrand: true
+            isYourBrand: true,
           },
-          ...competitorBenchmarks
+          ...competitorBenchmarks,
         ].sort((a, b) => b.score - a.score);
 
         setBenchmarkData(allBenchmarks);
       }
     } catch (error) {
-      console.error('Error fetching benchmark data:', error);
+      console.error("Error fetching benchmark data:", error);
     } finally {
       setIsLoading(false);
     }
@@ -149,17 +151,19 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               <CardTitle className="truncate">Competitive Benchmark</CardTitle>
-              <CardDescription className="break-words">Compare your brand visibility against key competitors</CardDescription>
+              <CardDescription className="break-words">
+                Compare your brand visibility against key competitors
+              </CardDescription>
             </div>
-            <Button 
-              onClick={handleManualRescore} 
+            <Button
+              onClick={handleManualRescore}
               disabled={isScoring || isLoading}
               variant="outline"
               size="sm"
               className="gap-2 shrink-0"
             >
-              <RefreshCw className={`h-4 w-4 ${isScoring ? 'animate-spin' : ''}`} />
-              {isScoring ? 'Scoring...' : 'Rescore'}
+              <RefreshCw className={`h-4 w-4 ${isScoring ? "animate-spin" : ""}`} />
+              {isScoring ? "Scoring..." : "Rescore"}
             </Button>
           </div>
         </CardHeader>
@@ -178,65 +182,61 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <CardTitle className="truncate">Competitive Benchmark</CardTitle>
-            <CardDescription className="break-words">Compare your brand visibility against key competitors</CardDescription>
+            <CardDescription className="break-words">
+              Compare your brand visibility against key competitors
+            </CardDescription>
           </div>
-          <Button 
-            onClick={handleManualRescore} 
+          <Button
+            onClick={handleManualRescore}
             disabled={isScoring || isLoading}
             variant="outline"
             size="sm"
             className="gap-2 shrink-0"
           >
-            <RefreshCw className={`h-4 w-4 ${isScoring ? 'animate-spin' : ''}`} />
-            {isScoring ? 'Scoring...' : 'Rescore'}
+            <RefreshCw className={`h-4 w-4 ${isScoring ? "animate-spin" : ""}`} />
+            {isScoring ? "Scoring..." : "Rescore"}
           </Button>
         </div>
       </CardHeader>
       <CardContent>
         {benchmarkData.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No competitor data available
-          </div>
+          <div className="text-center py-8 text-muted-foreground">No competitor data available</div>
         ) : (
-          <div className="h-[250px] -ml-4">
+          <div className="h-[250px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart 
-                data={benchmarkData} 
-                layout="vertical"
-                margin={{ top: 5, right: 20, left: 20, bottom: 5 }}
-              >
+              <BarChart data={benchmarkData} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis 
-                  type="number" 
+                <XAxis
+                  type="number"
                   domain={[0, 100]}
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  tick={{ fill: "hsl(var(--muted-foreground))" }}
                   tickFormatter={(value) => `${value}%`}
                 />
-                <YAxis 
-                  type="category" 
+                <YAxis
+                  type="category"
                   dataKey="name"
-                  fontSize={12}
+                  fontSize={11}
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                  width={150}
+                  tick={{ fill: "hsl(var(--muted-foreground))" }}
+                  width={180}
                 />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px'
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "6px",
                   }}
-                  formatter={(value) => [`${value}%`, 'Visibility Score']}
+                  formatter={(value) => [`${value}%`, "Visibility Score"]}
                 />
                 <Bar dataKey="score" radius={[0, 4, 4, 0]}>
                   {benchmarkData.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={entry.isYourBrand ? 'hsl(var(--primary))' : 'hsl(var(--muted))'} 
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={entry.isYourBrand ? "hsl(var(--primary))" : "hsl(var(--muted))"}
                     />
                   ))}
                 </Bar>
