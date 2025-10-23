@@ -22,12 +22,61 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
   const [benchmarkData, setBenchmarkData] = useState<BenchmarkData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isScoring, setIsScoring] = useState(false);
+  const [hasCompetitors, setHasCompetitors] = useState(false);
 
   useEffect(() => {
     if (storeId) {
-      fetchBenchmarkData();
+      checkCompetitorsAndFetch();
     }
   }, [storeId]);
+
+  useEffect(() => {
+    if (!storeId) return;
+
+    const channel = supabase
+      .channel('competitor-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'competitor_analytics',
+          filter: `store_id=eq.${storeId}`
+        },
+        () => {
+          checkCompetitorsAndFetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [storeId]);
+
+  const checkCompetitorsAndFetch = async () => {
+    try {
+      const { data: competitors, error } = await supabase
+        .from('competitor_analytics')
+        .select('id')
+        .eq('store_id', storeId)
+        .limit(1);
+
+      if (error) throw error;
+
+      if (!competitors || competitors.length === 0) {
+        setHasCompetitors(false);
+        setIsLoading(false);
+        return;
+      }
+
+      setHasCompetitors(true);
+      await fetchBenchmarkData();
+    } catch (error) {
+      console.error('Error checking competitors:', error);
+      setIsLoading(false);
+    }
+  };
 
   const handleManualRescore = async () => {
     try {
@@ -142,6 +191,32 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
     }
   };
 
+  if (!hasCompetitors && !isLoading) {
+    return (
+      <Card className="h-full flex flex-col flex-1">
+        <CardHeader>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="truncate">Competitive Benchmark</CardTitle>
+              <CardDescription className="break-words">Compare your brand visibility against key competitors</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center h-[250px] text-center px-4">
+            <RefreshCw className="h-8 w-8 text-muted-foreground mb-3 animate-spin" />
+            <p className="text-muted-foreground text-sm">
+              Waiting for competitor analysis to complete...
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              This data will appear once competitors are identified
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (isLoading) {
     return (
       <Card className="h-full flex flex-col flex-1">
@@ -165,7 +240,7 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-[250px]">
-            <p className="text-muted-foreground">Loading...</p>
+            <p className="text-muted-foreground">Loading benchmark data...</p>
           </div>
         </CardContent>
       </Card>
