@@ -80,17 +80,9 @@ const Dashboard = () => {
         },
         (payload) => {
           console.log("Brand score updated:", payload);
-          // Check if this is a new score (more recent than what we have)
+          // Reload analytics whenever a score changes
           if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
-            const newScore = payload.new;
-            if (newScore?.visibility_score !== null && newScore?.visibility_score !== undefined) {
-              // Only update if this score is newer than what we currently have
-              if (!brandVisibilityUpdatedAt || new Date(newScore.created_at) > new Date(brandVisibilityUpdatedAt)) {
-                setBrandVisibility(newScore.visibility_score);
-                setBrandVisibilityUpdatedAt(newScore.created_at);
-                setIsLoadingAnalytics(false);
-              }
-            }
+            loadBrandAnalytics();
           }
         },
       )
@@ -99,7 +91,7 @@ const Dashboard = () => {
     return () => {
       supabase.removeChannel(scoresChannel);
     };
-  }, [activeStore?.id, brandVisibilityUpdatedAt]);
+  }, [activeStore?.id]);
 
   // Set up realtime subscription and polling fallback for brand recommendations
   useEffect(() => {
@@ -229,6 +221,7 @@ const Dashboard = () => {
       // If isNewStore is true, keep loading state (realtime subscription will catch the score)
     } catch (error) {
       console.error("Error loading brand analytics:", error);
+      // Only stop loading if there's an error
       setIsLoadingAnalytics(false);
     }
   };
