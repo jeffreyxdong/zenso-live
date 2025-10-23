@@ -154,17 +154,17 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
   return (
     <Card className="h-full flex flex-col flex-1">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Competitive Benchmark</CardTitle>
-            <CardDescription>Compare your brand visibility against key competitors</CardDescription>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <CardTitle className="truncate">Competitive Benchmark</CardTitle>
+            <CardDescription className="break-words">Compare your brand visibility against key competitors</CardDescription>
           </div>
           <Button 
             onClick={handleManualRescore} 
             disabled={isScoring || isLoading}
             variant="outline"
             size="sm"
-            className="gap-2"
+            className="gap-2 shrink-0"
           >
             <RefreshCw className={`h-4 w-4 ${isScoring ? 'animate-spin' : ''}`} />
             {isScoring ? 'Scoring...' : 'Rescore'}
@@ -183,17 +183,17 @@ const CompetitiveBenchmark = ({ storeId, brandName }: CompetitiveBenchmarkProps)
   return (
     <Card className="h-full flex flex-col flex-1">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Competitive Benchmark</CardTitle>
-            <CardDescription>Compare your brand visibility against key competitors</CardDescription>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <CardTitle className="truncate">Competitive Benchmark</CardTitle>
+            <CardDescription className="break-words">Compare your brand visibility against key competitors</CardDescription>
           </div>
           <Button 
             onClick={handleManualRescore} 
             disabled={isScoring || isLoading}
             variant="outline"
             size="sm"
-            className="gap-2"
+            className="gap-2 shrink-0"
           >
             <RefreshCw className={`h-4 w-4 ${isScoring ? 'animate-spin' : ''}`} />
             {isScoring ? 'Scoring...' : 'Rescore'}
