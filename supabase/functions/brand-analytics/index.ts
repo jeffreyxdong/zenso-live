@@ -6,6 +6,7 @@
  * 3. Stores responses in brand_prompt_responses
  * 4. Combines all responses → single brand visibility score
  * 5. Saves score in brand_scores table
+ * 6. Triggers competitor scoring after completion
  */
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -287,6 +288,24 @@ ${combinedText}
     }
 
     console.log(`✅ Brand analytics completed successfully for store: ${store.name}`);
+
+    // === Trigger competitor scoring now that responses exist ===
+    console.log("\n🎯 Triggering competitor visibility scoring...");
+    try {
+      const { data: competitorData, error: competitorError } = await supabase.functions.invoke(
+        "score-competitor-visibility",
+        { body: { storeId } },
+      );
+
+      if (competitorError) {
+        console.error("❌ Error triggering competitor scoring:", competitorError);
+      } else {
+        console.log("✅ Competitor scoring completed:", competitorData);
+      }
+    } catch (err) {
+      console.error("❌ Failed to trigger competitor scoring:", err);
+      // Don't throw - competitor scoring failure shouldn't fail the whole function
+    }
 
     return new Response(
       JSON.stringify({
