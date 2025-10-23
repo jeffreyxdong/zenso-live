@@ -445,44 +445,6 @@ const Settings = () => {
               <TabsContent value="account" className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Account Information</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        value={userEmail}
-                        disabled
-                        className="bg-muted/30"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="companyName">Company Name</Label>
-                      <Input
-                        id="companyName"
-                        value={profile.company_name}
-                        onChange={(e) => setProfile({ ...profile, company_name: e.target.value })}
-                        placeholder="Enter your company name"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="companyWebsite">Company Website</Label>
-                      <Input
-                        id="companyWebsite"
-                        value={profile.company_website}
-                        onChange={(e) => setProfile({ ...profile, company_website: e.target.value })}
-                        placeholder="Enter your company website"
-                      />
-                    </div>
-                    <Button onClick={handleSaveAccount} disabled={loading}>
-                      {loading ? "Saving..." : "Save Changes"}
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
                     <CardTitle>Change Email</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
