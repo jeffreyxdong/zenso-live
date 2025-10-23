@@ -347,11 +347,11 @@ const Dashboard = () => {
                 <div className="flex items-center justify-center py-8">
                   <div className="text-center">
                     {isLoadingAnalytics ? (
-                      <div className="flex flex-col items-center space-y-4">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                        <div className="space-y-2">
-                          <p className="font-medium">Calculating AI visibility score...</p>
-                          <p className="text-sm text-muted-foreground">This may take a moment</p>
+                      <div className="flex flex-col items-center justify-center space-y-3">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        <div className="text-center">
+                          <p className="text-sm font-medium">Calculating AI visibility score...</p>
+                          <p className="text-xs text-muted-foreground mt-1">This may take a moment</p>
                         </div>
                       </div>
                     ) : (
@@ -416,11 +416,11 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent className="flex-1 overflow-y-auto">
                 {isLoadingRecommendations ? (
-                  <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                    <div className="text-center space-y-2">
-                      <p className="font-medium">Generating AI optimization suggestions...</p>
-                      <p className="text-sm text-muted-foreground">This may take a moment</p>
+                  <div className="flex flex-col items-center justify-center py-12 space-y-3">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <div className="text-center">
+                      <p className="text-sm font-medium">Generating AI optimization suggestions...</p>
+                      <p className="text-xs text-muted-foreground mt-1">This may take a moment</p>
                     </div>
                   </div>
                 ) : brandRecommendations.length > 0 ? (
