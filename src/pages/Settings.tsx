@@ -11,13 +11,11 @@ import { ArrowLeft, User, Store, CreditCard, Bell, Shield, Zap, Target, Download
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { CompetitorAnalytics } from "@/components/CompetitorAnalytics";
 
 const Settings = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("account");
   const [loading, setLoading] = useState(false);
-  const [storeId, setStoreId] = useState<string>("");
   
   // Account data
   const [profile, setProfile] = useState({
@@ -43,12 +41,7 @@ const Settings = () => {
 
   // Notification preferences
   const [notifications, setNotifications] = useState({
-    emailAlerts: true,
-    weeklyReport: true,
-    monthlyReport: false,
-    scoreAlerts: true,
-    competitorAlerts: true,
-    promptCompletionAlerts: false
+    emailAlerts: true
   });
 
   // Tracking preferences
@@ -105,7 +98,6 @@ const Settings = () => {
           name: storeData.name || "",
           website: storeData.website || ""
         });
-        setStoreId(storeData.id);
       }
     } catch (error) {
       console.error("Error loading user data:", error);
@@ -566,12 +558,6 @@ const Settings = () => {
                     </Button>
                   </CardContent>
                 </Card>
-
-                {storeId && (
-                  <div className="h-[600px]">
-                    <CompetitorAnalytics storeId={storeId} />
-                  </div>
-                )}
               </TabsContent>
 
               {/* Notifications Tab */}
@@ -581,7 +567,7 @@ const Settings = () => {
                     <CardTitle>Email Notifications</CardTitle>
                     <CardDescription>Choose what updates you want to receive via email</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-6">
+                  <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
                         <Label htmlFor="emailAlerts">Email Alerts</Label>
@@ -590,67 +576,7 @@ const Settings = () => {
                       <Switch
                         id="emailAlerts"
                         checked={notifications.emailAlerts}
-                        onCheckedChange={(checked) => setNotifications({ ...notifications, emailAlerts: checked })}
-                      />
-                    </div>
-                    <Separator />
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="weeklyReport">Weekly Reports</Label>
-                        <p className="text-sm text-muted-foreground">Get a summary of your visibility scores every week</p>
-                      </div>
-                      <Switch
-                        id="weeklyReport"
-                        checked={notifications.weeklyReport}
-                        onCheckedChange={(checked) => setNotifications({ ...notifications, weeklyReport: checked })}
-                      />
-                    </div>
-                    <Separator />
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="monthlyReport">Monthly Reports</Label>
-                        <p className="text-sm text-muted-foreground">Comprehensive monthly performance analysis</p>
-                      </div>
-                      <Switch
-                        id="monthlyReport"
-                        checked={notifications.monthlyReport}
-                        onCheckedChange={(checked) => setNotifications({ ...notifications, monthlyReport: checked })}
-                      />
-                    </div>
-                    <Separator />
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="scoreAlerts">Score Change Alerts</Label>
-                        <p className="text-sm text-muted-foreground">Get notified when your visibility scores change significantly</p>
-                      </div>
-                      <Switch
-                        id="scoreAlerts"
-                        checked={notifications.scoreAlerts}
-                        onCheckedChange={(checked) => setNotifications({ ...notifications, scoreAlerts: checked })}
-                      />
-                    </div>
-                    <Separator />
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="competitorAlerts">Competitor Activity Alerts</Label>
-                        <p className="text-sm text-muted-foreground">Be notified about competitor visibility changes</p>
-                      </div>
-                      <Switch
-                        id="competitorAlerts"
-                        checked={notifications.competitorAlerts}
-                        onCheckedChange={(checked) => setNotifications({ ...notifications, competitorAlerts: checked })}
-                      />
-                    </div>
-                    <Separator />
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="promptCompletionAlerts">Prompt Completion Alerts</Label>
-                        <p className="text-sm text-muted-foreground">Get notified when prompt runs complete</p>
-                      </div>
-                      <Switch
-                        id="promptCompletionAlerts"
-                        checked={notifications.promptCompletionAlerts}
-                        onCheckedChange={(checked) => setNotifications({ ...notifications, promptCompletionAlerts: checked })}
+                        onCheckedChange={(checked) => setNotifications({ emailAlerts: checked })}
                       />
                     </div>
                   </CardContent>
