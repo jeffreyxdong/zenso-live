@@ -388,16 +388,16 @@ const MyProducts = ({ activeStore, onProductClick }: MyProductsProps) => {
           try {
             const rows = results.data as any[];
 
-            // Find title/product column (case-insensitive)
+            // Find title/product/product name column (case-insensitive)
             const titleColumn = rows.length > 0 
               ? Object.keys(rows[0]).find(key => {
                   const lowerKey = key.toLowerCase();
-                  return lowerKey === "title" || lowerKey === "product";
+                  return lowerKey === "title" || lowerKey === "product" || lowerKey === "product name";
                 })
               : null;
 
             if (!titleColumn) {
-              throw new Error('CSV must contain a "Title" or "Product" column');
+              throw new Error('CSV must contain a "Title", "Product", or "Product Name" column');
             }
 
             console.log(`Parsed ${rows.length} rows from CSV using column "${titleColumn}"`);
