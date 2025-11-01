@@ -180,20 +180,11 @@ const AppLayout = () => {
         collapsible="icon"
       >
         <SidebarContent>
-          {/* Quick Actions */}
-          <SidebarGroup>
-            <SidebarGroupLabel>Quick Actions</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={() => setShowAddStoreModal(true)}>
-                    <Plus className="w-4 h-4" />
-                    {state !== "collapsed" && <span>Add Store</span>}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+          {/* Logo */}
+          <div className="p-4 flex items-center gap-2">
+            <img src={zensoLogo} alt="Zenso" className="h-8" />
+            {state !== "collapsed" && <span className="text-xl font-semibold">zenso</span>}
+          </div>
 
           {/* Pages */}
           <SidebarGroup>
