@@ -391,12 +391,9 @@ const AppLayout = () => {
             <div className="px-6 py-4 flex justify-between items-center gap-4">
               <div className="flex items-center gap-4 min-w-0 flex-1">
                 <SidebarTrigger className="lg:hidden" />
-                <div className="flex items-center gap-3">
-                  <img src={zensoLogo} alt="Zenso" className="h-10" />
-                  <h1 className="text-2xl font-bold truncate">
-                    {activeStore?.name || companyName}'s Dashboard
-                  </h1>
-                </div>
+                <h1 className="text-2xl font-bold truncate">
+                  {activeStore?.name || companyName}'s Dashboard
+                </h1>
                 <Badge variant="secondary" className="text-xs">
                   eCommerce Pro
                 </Badge>
