@@ -33,6 +33,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import StoreSelector from "@/components/StoreSelector";
 import AddStoreModal from "@/components/AddStoreModal";
+import zensoLogo from "@/assets/zenso-logo.png";
 
 const AppLayout = () => {
   const navigate = useNavigate();
@@ -396,9 +397,12 @@ const AppLayout = () => {
             <div className="px-6 py-4 flex justify-between items-center gap-4">
               <div className="flex items-center gap-4 min-w-0 flex-1">
                 <SidebarTrigger className="lg:hidden" />
-                <h1 className="text-2xl font-bold truncate">
-                  {activeStore?.name || companyName}'s Dashboard
-                </h1>
+                <div className="flex items-center gap-3">
+                  <img src={zensoLogo} alt="Zenso" className="h-8" />
+                  <h1 className="text-2xl font-bold truncate">
+                    {activeStore?.name || companyName}'s Dashboard
+                  </h1>
+                </div>
                 <Badge variant="secondary" className="text-xs">
                   eCommerce Pro
                 </Badge>

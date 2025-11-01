@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import SignupForm from "@/components/SignupForm";
 import PlatformShowcase from "@/components/PlatformShowcase";
 import { Button } from "@/components/ui/button";
+import zensoLogo from "@/assets/zenso-logo.png";
 
 const Index = () => {
   return (
@@ -11,7 +12,7 @@ const Index = () => {
       <header className="border-b border-border bg-card/50 backdrop-blur-sm">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-foreground">BrandRefs</h1>
+            <img src={zensoLogo} alt="Zenso" className="h-8" />
             <div className="flex items-center gap-4">
               <Link to="/welcome-back">
                 <Button variant="outline">Sign In</Button>
