@@ -185,7 +185,7 @@ const AppLayout = () => {
             <img 
               src={zensoLogo} 
               alt="Zenso" 
-              className={state === "collapsed" ? "h-8 w-8" : "w-full max-w-[120px] h-auto object-contain"}
+              className={state === "collapsed" ? "h-8 w-8" : "w-full max-w-[40px] h-auto object-contain"}
             />
           </div>
 
