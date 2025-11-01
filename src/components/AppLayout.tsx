@@ -181,8 +181,12 @@ const AppLayout = () => {
       >
         <SidebarContent>
           {/* Logo */}
-          <div className="p-4">
-            <img src={zensoLogo} alt="Zenso" className={state === "collapsed" ? "h-6 w-6" : "h-8 w-full object-contain"} />
+          <div className="px-4 py-6">
+            <img 
+              src={zensoLogo} 
+              alt="Zenso" 
+              className={state === "collapsed" ? "h-8 w-8" : "w-full h-auto object-contain"}
+            />
           </div>
 
           {/* Pages */}
