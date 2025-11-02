@@ -181,7 +181,7 @@ const AppLayout = () => {
       >
         <SidebarContent>
           {/* Logo */}
-          <div className="px-4 py-2">
+          <div className="px-4 py-4 flex items-center justify-center h-[72px]">
             <img 
               src={zensoLogo} 
               alt="Zenso" 
