@@ -190,7 +190,7 @@ const AppLayout = () => {
           </div>
 
           {/* Pages */}
-          <SidebarGroup>
+          <SidebarGroup className="mt-0 pt-0">
             <SidebarGroupLabel>Pages</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
