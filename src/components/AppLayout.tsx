@@ -392,7 +392,7 @@ const AppLayout = () => {
         <ResizablePanelGroup direction="horizontal" className="h-screen">
           <ResizablePanel
             defaultSize={sidebarWidth}
-            minSize={15}
+            minSize={10}
             maxSize={32}
             onResize={handleSidebarResize}
             className="transition-all duration-150 ease-out"
