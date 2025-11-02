@@ -181,7 +181,7 @@ const AppLayout = () => {
 
     return (
       <Sidebar
-        className={state === "collapsed" ? "w-14" : "w-[264px]"}
+        className="w-full h-full"
         collapsible="icon"
       >
         <SidebarContent>
