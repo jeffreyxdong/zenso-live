@@ -181,7 +181,7 @@ const AppLayout = () => {
       >
         <SidebarContent>
           {/* Logo */}
-          <div className="px-4 py-6">
+          <div className="px-4 py-2">
             <img 
               src={zensoLogo} 
               alt="Zenso" 
