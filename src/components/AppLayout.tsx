@@ -29,6 +29,11 @@ import {
   Collapsible,
   CollapsibleContent,
 } from "@/components/ui/collapsible";
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from "@/components/ui/resizable";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import StoreSelector from "@/components/StoreSelector";
@@ -162,7 +167,6 @@ const AppLayout = () => {
   }, [activeStore]);
 
   const AppSidebar = () => {
-    const { state } = useSidebar();
     const handleTabChange = (tab: string) => {
       setActiveTab(tab);
       navigate(tab === "settings" ? "/settings" : `/dashboard?tab=${tab}`);
@@ -175,10 +179,7 @@ const AppLayout = () => {
     const activePromptId = promptMatch ? promptMatch[1] : null;
 
     return (
-      <Sidebar
-        className={state === "collapsed" ? "w-14" : "w-[264px]"}
-        collapsible="icon"
-      >
+      <Sidebar className="w-full h-full border-r-0" collapsible="none">
         <SidebarContent>
           {/* Logo */}
           <div className="px-4 py-4 flex items-center h-[72px]">
@@ -195,17 +196,17 @@ const AppLayout = () => {
               <SidebarMenu>
                 {/* Overview */}
                 <SidebarMenuItem>
-                  <SidebarMenuButton
-                    onClick={() => handleTabChange("overview")}
-                    className={
-                      activeTab === "overview"
-                        ? "bg-muted text-primary font-medium"
-                        : "hover:bg-muted/50"
-                    }
-                  >
-                    <BarChart3 className="w-4 h-4" />
-                    {state !== "collapsed" && <span>Overview</span>}
-                  </SidebarMenuButton>
+                    <SidebarMenuButton
+                      onClick={() => handleTabChange("overview")}
+                      className={
+                        activeTab === "overview"
+                          ? "bg-muted text-primary font-medium"
+                          : "hover:bg-muted/50"
+                      }
+                    >
+                      <BarChart3 className="w-4 h-4" />
+                      <span>Overview</span>
+                    </SidebarMenuButton>
                 </SidebarMenuItem>
 
                 {/* Products */}
@@ -225,23 +226,19 @@ const AppLayout = () => {
                       }
                     >
                       <Package className="w-4 h-4" />
-                      {state !== "collapsed" && (
-                        <>
-                          <span>Products</span>
-                          <ChevronDown
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setProductsExpanded(!productsExpanded);
-                            }}
-                            className={`ml-auto h-4 w-4 cursor-pointer transition-transform ${
-                              productsExpanded ? "rotate-180" : ""
-                            }`}
-                          />
-                        </>
-                      )}
+                      <span>Products</span>
+                      <ChevronDown
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setProductsExpanded(!productsExpanded);
+                        }}
+                        className={`ml-auto h-4 w-4 cursor-pointer transition-transform ${
+                          productsExpanded ? "rotate-180" : ""
+                        }`}
+                      />
                     </SidebarMenuButton>
                     <CollapsibleContent>
-                      {state !== "collapsed" && products.length > 0 && (
+                      {products.length > 0 && (
                         <div className="ml-8 mt-1 space-y-1 pl-2 border-l border-border/50">
                           {products.map((product) => {
                             const productMatch =
@@ -274,17 +271,17 @@ const AppLayout = () => {
 
                 {/* Brand */}
                 <SidebarMenuItem>
-                  <SidebarMenuButton
-                    onClick={() => handleTabChange("brand-overview")}
-                    className={
-                      activeTab === "brand-overview"
-                        ? "bg-muted text-primary font-medium"
-                        : "hover:bg-muted/50"
-                    }
-                  >
-                    <Target className="w-4 h-4" />
-                    {state !== "collapsed" && <span>Brand</span>}
-                  </SidebarMenuButton>
+                    <SidebarMenuButton
+                      onClick={() => handleTabChange("brand-overview")}
+                      className={
+                        activeTab === "brand-overview"
+                          ? "bg-muted text-primary font-medium"
+                          : "hover:bg-muted/50"
+                      }
+                    >
+                      <Target className="w-4 h-4" />
+                      <span>Brand</span>
+                    </SidebarMenuButton>
                 </SidebarMenuItem>
 
                 {/* Prompts */}
@@ -304,23 +301,19 @@ const AppLayout = () => {
                       }`}
                     >
                       <MessageCircle className="w-4 h-4" />
-                      {state !== "collapsed" && (
-                        <>
-                          <span>Prompts</span>
-                          <ChevronDown
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPromptsExpanded(!promptsExpanded);
-                            }}
-                            className={`ml-auto h-4 w-4 cursor-pointer transition-transform ${
-                              promptsExpanded ? "rotate-180" : ""
-                            }`}
-                          />
-                        </>
-                      )}
+                      <span>Prompts</span>
+                      <ChevronDown
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPromptsExpanded(!promptsExpanded);
+                        }}
+                        className={`ml-auto h-4 w-4 cursor-pointer transition-transform ${
+                          promptsExpanded ? "rotate-180" : ""
+                        }`}
+                      />
                     </SidebarMenuButton>
                     <CollapsibleContent>
-                      {state !== "collapsed" && prompts.length > 0 && (
+                      {prompts.length > 0 && (
                         <div className="ml-8 mt-1 space-y-1 pl-2 border-l border-border/50">
                           {prompts.map((prompt) => {
                             const isActive = activePromptId === prompt.id;
@@ -351,17 +344,17 @@ const AppLayout = () => {
 
                 {/* Settings */}
                 <SidebarMenuItem>
-                  <SidebarMenuButton
-                    onClick={() => handleTabChange("settings")}
-                    className={
-                      activeTab === "settings"
-                        ? "bg-muted text-primary font-medium"
-                        : "hover:bg-muted/50"
-                    }
-                  >
-                    <Settings className="w-4 h-4" />
-                    {state !== "collapsed" && <span>Settings</span>}
-                  </SidebarMenuButton>
+                    <SidebarMenuButton
+                      onClick={() => handleTabChange("settings")}
+                      className={
+                        activeTab === "settings"
+                          ? "bg-muted text-primary font-medium"
+                          : "hover:bg-muted/50"
+                      }
+                    >
+                      <Settings className="w-4 h-4" />
+                      <span>Settings</span>
+                    </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
@@ -381,38 +374,66 @@ const AppLayout = () => {
     }
   };
 
+  // Load saved sidebar width from localStorage
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    const saved = localStorage.getItem("sidebar-width");
+    return saved ? parseFloat(saved) : 20; // Default 20% (approx 280px on 1400px screen)
+  });
+
+  // Save sidebar width to localStorage
+  const handleSidebarResize = (size: number) => {
+    setSidebarWidth(size);
+    localStorage.setItem("sidebar-width", size.toString());
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen bg-background flex w-full">
-        <AppSidebar />
-        <div className="flex-1 min-w-0 flex flex-col">
-          <header className="border-b border-border bg-card">
-            <div className="px-6 py-4 flex justify-between items-center gap-4">
-              <div className="flex items-center gap-4 min-w-0 flex-1">
-                <SidebarTrigger className="lg:hidden" />
-                <h1 className="text-2xl font-bold truncate">
-                  {activeStore?.name || companyName}'s Dashboard
-                </h1>
-                <Badge variant="secondary" className="text-xs">
-                  eCommerce Pro
-                </Badge>
-              </div>
-              <div className="flex items-center gap-3 flex-shrink-0">
-                <StoreSelector
-                  onStoreChange={setActiveStore}
-                  onAddStore={() => setShowAddStoreModal(true)}
-                />
-                <Button variant="outline" size="sm" onClick={handleLogout}>
-                  Logout
-                </Button>
-              </div>
-            </div>
-          </header>
+        <ResizablePanelGroup direction="horizontal" className="h-screen">
+          <ResizablePanel
+            defaultSize={sidebarWidth}
+            minSize={15}
+            maxSize={32}
+            onResize={handleSidebarResize}
+            className="transition-all duration-150 ease-out"
+          >
+            <AppSidebar />
+          </ResizablePanel>
+          
+          <ResizableHandle className="w-px bg-border hover:bg-primary hover:w-1 active:bg-primary active:w-1 transition-all duration-150 cursor-col-resize group relative">
+            <div className="absolute inset-0 w-1 -translate-x-1/2 group-hover:bg-primary/20 group-active:bg-primary/20" />
+          </ResizableHandle>
+          
+          <ResizablePanel defaultSize={80 - sidebarWidth} minSize={50}>
+            <div className="flex-1 min-w-0 flex flex-col h-full">
+              <header className="border-b border-border bg-card">
+                <div className="px-6 py-4 flex justify-between items-center gap-4">
+                  <div className="flex items-center gap-4 min-w-0 flex-1">
+                    <h1 className="text-2xl font-bold truncate">
+                      {activeStore?.name || companyName}'s Dashboard
+                    </h1>
+                    <Badge variant="secondary" className="text-xs">
+                      eCommerce Pro
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <StoreSelector
+                      onStoreChange={setActiveStore}
+                      onAddStore={() => setShowAddStoreModal(true)}
+                    />
+                    <Button variant="outline" size="sm" onClick={handleLogout}>
+                      Logout
+                    </Button>
+                  </div>
+                </div>
+              </header>
 
-          <main className="flex-1 px-6 py-8">
-            <Outlet context={{ activeStore, setActiveStore }} />
-          </main>
-        </div>
+              <main className="flex-1 px-6 py-8 overflow-auto">
+                <Outlet context={{ activeStore, setActiveStore }} />
+              </main>
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
 
       <AddStoreModal
