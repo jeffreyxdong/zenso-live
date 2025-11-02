@@ -191,7 +191,6 @@ const AppLayout = () => {
 
           {/* Pages */}
           <SidebarGroup className="-mt-2 pt-0">
-            <SidebarGroupLabel>Pages</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {/* Overview */}
