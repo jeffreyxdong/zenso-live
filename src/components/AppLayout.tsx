@@ -11,6 +11,7 @@ import {
   Plus,
   ChevronDown,
   FileText,
+  GripVertical,
 } from "lucide-react";
 import {
   Sidebar,
@@ -182,11 +183,11 @@ const AppLayout = () => {
       <Sidebar className="w-full h-full border-r-0" collapsible="none">
         <SidebarContent>
           {/* Logo */}
-          <div className="px-4 py-4 flex items-center h-[72px]">
+          <div className="px-4 py-4 flex items-center h-[72px] min-w-0">
             <img 
               src={zensoLogo} 
               alt="Zenso" 
-              className="h-10 w-auto"
+              className="h-10 w-auto max-w-full object-contain"
             />
           </div>
 
@@ -198,13 +199,13 @@ const AppLayout = () => {
                 <SidebarMenuItem>
                     <SidebarMenuButton
                       onClick={() => handleTabChange("overview")}
-                      className={
+                      className={`text-[115%] ${
                         activeTab === "overview"
                           ? "bg-muted text-primary font-medium"
                           : "hover:bg-muted/50"
-                      }
+                      }`}
                     >
-                      <BarChart3 className="w-4 h-4" />
+                      <BarChart3 className="w-[1.15rem] h-[1.15rem]" />
                       <span>Overview</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -219,20 +220,20 @@ const AppLayout = () => {
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       onClick={() => handleTabChange("products-overview")}
-                      className={
+                      className={`text-[115%] ${
                         activeTab === "products-overview"
                           ? "bg-muted text-primary font-medium"
                           : "hover:bg-muted/50"
-                      }
+                      }`}
                     >
-                      <Package className="w-4 h-4" />
+                      <Package className="w-[1.15rem] h-[1.15rem]" />
                       <span>Products</span>
                       <ChevronDown
                         onClick={(e) => {
                           e.stopPropagation();
                           setProductsExpanded(!productsExpanded);
                         }}
-                        className={`ml-auto h-4 w-4 cursor-pointer transition-transform ${
+                        className={`ml-auto h-[1.15rem] w-[1.15rem] cursor-pointer transition-transform ${
                           productsExpanded ? "rotate-180" : ""
                         }`}
                       />
@@ -251,7 +252,7 @@ const AppLayout = () => {
                               <SidebarMenuButton
                                 key={product.id}
                                 onClick={() => handleProductClick(product.id)}
-                                 className={`w-full justify-start text-sm ${
+                                 className={`w-full justify-start text-[115%] ${
                                   isActive
                                     ? "bg-muted text-primary font-medium"
                                     : "hover:bg-muted/50"
@@ -273,13 +274,13 @@ const AppLayout = () => {
                 <SidebarMenuItem>
                     <SidebarMenuButton
                       onClick={() => handleTabChange("brand-overview")}
-                      className={
+                      className={`text-[115%] ${
                         activeTab === "brand-overview"
                           ? "bg-muted text-primary font-medium"
                           : "hover:bg-muted/50"
-                      }
+                      }`}
                     >
-                      <Target className="w-4 h-4" />
+                      <Target className="w-[1.15rem] h-[1.15rem]" />
                       <span>Brand</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -294,20 +295,20 @@ const AppLayout = () => {
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       onClick={() => handleTabChange("prompts")}
-                      className={`${
+                      className={`text-[115%] ${
                         activeTab === "prompts"
                           ? "bg-muted text-primary font-medium"
                           : "hover:bg-muted/50"
                       }`}
                     >
-                      <MessageCircle className="w-4 h-4" />
+                      <MessageCircle className="w-[1.15rem] h-[1.15rem]" />
                       <span>Prompts</span>
                       <ChevronDown
                         onClick={(e) => {
                           e.stopPropagation();
                           setPromptsExpanded(!promptsExpanded);
                         }}
-                        className={`ml-auto h-4 w-4 cursor-pointer transition-transform ${
+                        className={`ml-auto h-[1.15rem] w-[1.15rem] cursor-pointer transition-transform ${
                           promptsExpanded ? "rotate-180" : ""
                         }`}
                       />
@@ -321,7 +322,7 @@ const AppLayout = () => {
                               <SidebarMenuButton
                                 key={prompt.id}
                                 onClick={() => handlePromptClick(prompt.id)}
-                                 className={`w-full justify-start text-sm ${
+                                 className={`w-full justify-start text-[115%] ${
                                   isActive
                                     ? "bg-muted text-primary font-medium"
                                     : "hover:bg-muted/50"
@@ -346,13 +347,13 @@ const AppLayout = () => {
                 <SidebarMenuItem>
                     <SidebarMenuButton
                       onClick={() => handleTabChange("settings")}
-                      className={
+                      className={`text-[115%] ${
                         activeTab === "settings"
                           ? "bg-muted text-primary font-medium"
                           : "hover:bg-muted/50"
-                      }
+                      }`}
                     >
-                      <Settings className="w-4 h-4" />
+                      <Settings className="w-[1.15rem] h-[1.15rem]" />
                       <span>Settings</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -400,9 +401,10 @@ const AppLayout = () => {
             <AppSidebar />
           </ResizablePanel>
           
-          <ResizableHandle className="w-px bg-border hover:bg-primary hover:w-1 active:bg-primary active:w-1 transition-all duration-150 cursor-col-resize group relative">
-            <div className="absolute inset-0 w-1 -translate-x-1/2 group-hover:bg-primary/20 group-active:bg-primary/20" />
-          </ResizableHandle>
+          <ResizableHandle 
+            withHandle
+            className="w-px bg-border hover:bg-primary hover:w-1 active:bg-primary active:w-1 transition-all duration-150 cursor-col-resize group relative"
+          />
           
           <ResizablePanel defaultSize={80 - sidebarWidth} minSize={50}>
             <div className="flex-1 min-w-0 flex flex-col h-full">
