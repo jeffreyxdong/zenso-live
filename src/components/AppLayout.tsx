@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, memo } from "react";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -167,18 +167,18 @@ const AppLayout = () => {
     return () => subs.forEach((ch) => supabase.removeChannel(ch));
   }, [activeStore]);
 
-  const AppSidebar = () => {
-    const handleTabChange = (tab: string) => {
-      setActiveTab(tab);
-      navigate(tab === "settings" ? "/settings" : `/dashboard?tab=${tab}`);
-    };
-    const handleProductClick = (id: string) => navigate(`/product/${id}`);
-    const handlePromptClick = (id: string) => navigate(`/prompt/${id}`);
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    navigate(tab === "settings" ? "/settings" : `/dashboard?tab=${tab}`);
+  };
+  const handleProductClick = (id: string) => navigate(`/product/${id}`);
+  const handlePromptClick = (id: string) => navigate(`/prompt/${id}`);
 
-    // Detect active prompt
-    const promptMatch = location.pathname.match(/^\/prompt\/(.+)$/);
-    const activePromptId = promptMatch ? promptMatch[1] : null;
+  // Detect active prompt
+  const promptMatch = location.pathname.match(/^\/prompt\/(.+)$/);
+  const activePromptId = promptMatch ? promptMatch[1] : null;
 
+  const AppSidebar = memo(() => {
     return (
       <Sidebar className="w-full h-full border-r-0" collapsible="none">
         <SidebarContent>
@@ -363,7 +363,7 @@ const AppLayout = () => {
         </SidebarContent>
       </Sidebar>
     );
-  };
+  });
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
