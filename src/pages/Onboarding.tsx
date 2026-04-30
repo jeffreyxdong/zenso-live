@@ -52,7 +52,7 @@ const Onboarding: React.FC = () => {
         .eq("user_id", session.user.id)
         .limit(1);
       if (data && data.length > 0) {
-        navigate("/dashboard", { replace: true });
+        navigate("/pricing", { replace: true });
       } else {
         setInitializing(false);
       }
@@ -135,11 +135,11 @@ const Onboarding: React.FC = () => {
         }).catch(err => console.error('Failed to start brand analytics:', err));
       }
 
-      toast({ 
-        title: "Setup complete", 
-        description: "Your profile has been saved. AI recommendations are being generated..." 
+      toast({
+        title: "Setup complete!",
+        description: "Now pick a plan to activate your account."
       });
-      navigate("/dashboard", { replace: true });
+      navigate("/pricing", { replace: true });
     } catch (error: any) {
       toast({ title: "Could not save company details", description: error.message });
     } finally {
@@ -189,7 +189,7 @@ const Onboarding: React.FC = () => {
               </div>
 
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Saving..." : "Continue to Dashboard"}
+                {loading ? "Saving..." : "Continue to Pricing"}
               </Button>
             </form>
           </CardContent>
