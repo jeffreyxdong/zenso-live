@@ -38,7 +38,7 @@ const WelcomeBack = () => {
             } else {
               toast({
                 title: "Welcome!",
-                description: "Redirecting you to onboarding...",
+                description: "Let's get your store set up...",
               });
               navigate("/onboarding");
             }
