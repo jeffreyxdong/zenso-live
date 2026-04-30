@@ -137,6 +137,23 @@ const Hero = () => {
               Schedule Demo
               <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
             </a>
+            <a
+              href="mailto:onboarding@zenso.io"
+              className="flex items-center justify-center group w-full sm:w-auto text-center"
+              style={{
+                backgroundColor: "transparent",
+                borderRadius: "1440px",
+                boxSizing: "border-box",
+                color: "#1a1a1a",
+                cursor: "pointer",
+                fontSize: "14px",
+                lineHeight: "20px",
+                padding: "16px 24px",
+                border: "2px solid #1a1a1a",
+              }}
+            >
+              Request Custom Quote
+            </a>
         </div>
         </div>
       </div>
