@@ -5,11 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
 const PricingPage = () => {
-  const navigate = useNavigate();
   const { toast } = useToast();
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -19,10 +17,8 @@ const PricingPage = () => {
     const fetchUserPlan = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        
         if (!session?.user) {
-          // Redirect to login if not authenticated
-          navigate("/welcome-back");
+          setIsLoading(false);
           return;
         }
 
@@ -31,7 +27,7 @@ const PricingPage = () => {
           .select("subscription_plan")
           .eq("user_id", session.user.id)
           .single();
-        
+
         if (profile) {
           setCurrentPlan(profile.subscription_plan);
         }
@@ -43,7 +39,7 @@ const PricingPage = () => {
     };
 
     fetchUserPlan();
-  }, [navigate]);
+  }, []);
 
   // Payment links with free trial (for new users)
   const trialPaymentLinks: Record<string, string> = {
@@ -63,11 +59,6 @@ const PricingPage = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
-      if (!session?.user) {
-        navigate("/welcome-back");
-        return;
-      }
-
       // Use switch links if user already has a plan, otherwise use trial links
       const hasExistingPlan = currentPlan && currentPlan.trim() !== '';
       const paymentLink = hasExistingPlan 
