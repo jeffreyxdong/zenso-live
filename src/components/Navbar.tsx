@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Menu, X } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -37,18 +38,18 @@ const Navbar = () => {
         </nav>
 
         <div className="hidden md:flex items-center space-x-4">
-          <a
-            href="/welcome-back"
+          <Link
+            to="/welcome-back"
             className="px-4 py-2 text-gray-700 hover:text-pulse-600 transition-colors font-medium"
           >
             Sign In
-          </a>
-          <a
-            href="/pricing"
+          </Link>
+          <Link
+            to="/pricing"
             className="px-6 py-2.5 bg-pulse-500 text-white rounded-full hover:bg-pulse-600 transition-colors font-semibold"
           >
             Start Free Trial
-          </a>
+          </Link>
         </div>
 
         <button 
@@ -65,14 +66,14 @@ const Navbar = () => {
           <a href="#features" className="block py-2 text-gray-700 hover:text-pulse-600 transition-colors" onClick={() => setIsMenuOpen(false)}>Features</a>
           <a href="#testimonials" className="block py-2 text-gray-700 hover:text-pulse-600 transition-colors" onClick={() => setIsMenuOpen(false)}>Customers</a>
           <a href="#pricing" className="block py-2 text-gray-700 hover:text-pulse-600 transition-colors" onClick={() => setIsMenuOpen(false)}>Pricing</a>
-          <a href="/welcome-back" className="block py-2 text-gray-700 hover:text-pulse-600 transition-colors" onClick={() => setIsMenuOpen(false)}>Sign In</a>
-          <a
-            href="/signup"
+          <Link to="/welcome-back" className="block py-2 text-gray-700 hover:text-pulse-600 transition-colors" onClick={() => setIsMenuOpen(false)}>Sign In</Link>
+          <Link
+            to="/pricing"
             className="block mt-4 px-6 py-2.5 bg-pulse-500 text-white rounded-full hover:bg-pulse-600 transition-colors text-center font-semibold"
             onClick={() => setIsMenuOpen(false)}
           >
             Start Free Trial
-          </a>
+          </Link>
         </div>
       )}
     </header>
