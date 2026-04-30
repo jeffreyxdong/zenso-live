@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
 import DashboardIndex from "./pages/DashboardIndex";
 import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
@@ -14,6 +15,7 @@ import WelcomeBack from "./pages/WelcomeBack";
 import ProductOverview from "./pages/ProductOverview";
 import PromptDetail from "./pages/PromptDetail";
 import OverviewDraft from "./pages/OverviewDraft";
+import PricingPage from "./pages/PricingPage";
 import AppLayout from "./components/AppLayout";
 
 const queryClient = new QueryClient();
@@ -25,10 +27,12 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<DashboardIndex />} />
+          <Route path="/" element={<Index />} />
+          <Route path="/signup" element={<DashboardIndex />} />
           <Route path="/welcome-back" element={<WelcomeBack />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/pricing" element={<PricingPage />} />
           <Route path="/auth/shopify/callback" element={<ShopifyCallback />} />
           
           {/* Routes with persistent sidebar */}

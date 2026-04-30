@@ -627,7 +627,7 @@ const Settings = () => {
                     <div className="p-4 bg-muted/30 rounded-lg">
                       <h3 className="font-medium mb-2">Current Plan</h3>
                       <p className="text-muted-foreground mb-4">eCommerce Pro - Active</p>
-                      <Button variant="outline">Manage Subscription</Button>
+                      <Button variant="outline" onClick={() => window.location.href = "/pricing"}>Manage Subscription</Button>
                     </div>
                   </CardContent>
                 </Card>
