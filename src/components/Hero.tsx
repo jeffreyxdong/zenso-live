@@ -118,7 +118,9 @@ const Hero = () => {
             style={{ animationDelay: "0.7s" }}
           >
             <a
-              href="/signup"
+              href="https://calendly.com/onboarding-zenso/30min"
+              target="_blank"
+              rel="noopener noreferrer"
               className="flex items-center justify-center group w-full sm:w-auto text-center"
               style={{
                 backgroundColor: "#1F3271",
@@ -132,7 +134,7 @@ const Hero = () => {
                 border: "1px solid white",
               }}
             >
-              Start Free Trial
+              Schedule Demo
               <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
             </a>
           <a

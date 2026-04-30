@@ -44,12 +44,14 @@ const Navbar = () => {
           >
             Sign In
           </Link>
-          <Link
-            to="/signup"
+          <a
+            href="https://calendly.com/onboarding-zenso/30min"
+            target="_blank"
+            rel="noopener noreferrer"
             className="px-6 py-2.5 bg-pulse-500 text-white rounded-full hover:bg-pulse-600 transition-colors font-semibold"
           >
-            Start Free Trial
-          </Link>
+            Schedule Demo
+          </a>
         </div>
 
         <button 
@@ -67,13 +69,15 @@ const Navbar = () => {
           <a href="#testimonials" className="block py-2 text-gray-700 hover:text-pulse-600 transition-colors" onClick={() => setIsMenuOpen(false)}>Customers</a>
           <a href="#pricing" className="block py-2 text-gray-700 hover:text-pulse-600 transition-colors" onClick={() => setIsMenuOpen(false)}>Pricing</a>
           <Link to="/welcome-back" className="block py-2 text-gray-700 hover:text-pulse-600 transition-colors" onClick={() => setIsMenuOpen(false)}>Sign In</Link>
-          <Link
-            to="/signup"
+          <a
+            href="https://calendly.com/onboarding-zenso/30min"
+            target="_blank"
+            rel="noopener noreferrer"
             className="block mt-4 px-6 py-2.5 bg-pulse-500 text-white rounded-full hover:bg-pulse-600 transition-colors text-center font-semibold"
             onClick={() => setIsMenuOpen(false)}
           >
-            Start Free Trial
-          </Link>
+            Schedule Demo
+          </a>
         </div>
       )}
     </header>
