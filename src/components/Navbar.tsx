@@ -34,7 +34,6 @@ const Navbar = () => {
           <a href="#hero" className="text-gray-700 hover:text-pulse-600 transition-colors font-medium">Home</a>
           <a href="#features" className="text-gray-700 hover:text-pulse-600 transition-colors font-medium">Features</a>
           <a href="#testimonials" className="text-gray-700 hover:text-pulse-600 transition-colors font-medium">Customers</a>
-          <a href="#pricing" className="text-gray-700 hover:text-pulse-600 transition-colors font-medium">Pricing</a>
         </nav>
 
         <div className="hidden md:flex items-center space-x-4">
@@ -67,7 +66,6 @@ const Navbar = () => {
           <a href="#hero" className="block py-2 text-gray-700 hover:text-pulse-600 transition-colors" onClick={() => setIsMenuOpen(false)}>Home</a>
           <a href="#features" className="block py-2 text-gray-700 hover:text-pulse-600 transition-colors" onClick={() => setIsMenuOpen(false)}>Features</a>
           <a href="#testimonials" className="block py-2 text-gray-700 hover:text-pulse-600 transition-colors" onClick={() => setIsMenuOpen(false)}>Customers</a>
-          <a href="#pricing" className="block py-2 text-gray-700 hover:text-pulse-600 transition-colors" onClick={() => setIsMenuOpen(false)}>Pricing</a>
           <Link to="/welcome-back" className="block py-2 text-gray-700 hover:text-pulse-600 transition-colors" onClick={() => setIsMenuOpen(false)}>Sign In</Link>
           <a
             href="https://calendly.com/onboarding-zenso/30min"
