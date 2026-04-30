@@ -52,10 +52,10 @@ const Auth = () => {
             navigate("/dashboard");
           } else {
             toast({
-              title: "Welcome!",
-              description: "Let's set up your store profile...",
+              title: "Account created!",
+              description: "Pick a plan to get started...",
             });
-            navigate("/onboarding");
+            navigate("/pricing");
           }
         } else {
           // No session found

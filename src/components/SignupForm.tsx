@@ -37,10 +37,10 @@ const SignupForm = () => {
               navigate("/dashboard");
             } else {
               toast({
-                title: "Welcome!",
-                description: "Redirecting you to onboarding...",
+                title: "Account created!",
+                description: "Pick a plan to get started...",
               });
-              navigate("/onboarding");
+              navigate("/pricing");
             }
           }, 0);
         }
@@ -96,7 +96,7 @@ const SignupForm = () => {
       console.log('Signup success:', data);
       toast({
         title: "Account created!",
-        description: "Redirecting to onboarding...",
+        description: "Pick a plan to get started...",
       });
     } catch (err: any) {
       toast({

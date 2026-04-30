@@ -16,7 +16,7 @@ const Onboarding: React.FC = () => {
 
   // SEO basics
   useEffect(() => {
-    const title = "Company Details - BrandRefs";
+    const title = "Company Details - Zenso";
     document.title = title;
 
     const metaDesc = document.querySelector('meta[name="description"]');
