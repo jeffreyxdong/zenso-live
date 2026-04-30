@@ -52,7 +52,7 @@ const Onboarding: React.FC = () => {
         .eq("user_id", session.user.id)
         .limit(1);
       if (data && data.length > 0) {
-        navigate("/pricing", { replace: true });
+        navigate("/dashboard", { replace: true });
       } else {
         setInitializing(false);
       }
