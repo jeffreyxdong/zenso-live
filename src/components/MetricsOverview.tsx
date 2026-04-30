@@ -24,7 +24,9 @@ const MetricsOverview = () => {
               </p>
 
               <a
-                href="#get-access"
+                href="https://calendly.com/onboarding-zenso/30min"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center text-black hover:text-purple-600 transition-colors group"
               >
                 <span className="font-medium">Get started</span>
@@ -122,7 +124,9 @@ const MetricsOverview = () => {
               </p>
 
               <a
-                href="#get-access"
+                href="https://calendly.com/onboarding-zenso/30min"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center text-black hover:text-purple-600 transition-colors group"
               >
                 <span className="font-medium">Get started</span>
@@ -152,7 +156,9 @@ const MetricsOverview = () => {
               </p>
 
               <a
-                href="#get-access"
+                href="https://calendly.com/onboarding-zenso/30min"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center text-black hover:text-purple-600 transition-colors group"
               >
                 <span className="font-medium">Get started</span>
