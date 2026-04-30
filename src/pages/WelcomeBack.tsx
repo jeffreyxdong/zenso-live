@@ -230,12 +230,14 @@ const WelcomeBack = () => {
 
               <div className="text-center text-sm text-muted-foreground">
                 Don't have an account?{" "}
-                <Link 
-                  to="/"
+                <a
+                  href="https://calendly.com/onboarding-zenso/30min"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-primary hover:underline font-medium"
                 >
-                  Sign up instead
-                </Link>
+                  We'll get you set up.
+                </a>
               </div>
             </CardContent>
           </Card>
