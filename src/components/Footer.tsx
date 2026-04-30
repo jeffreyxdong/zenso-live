@@ -7,7 +7,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           <div>
             <div className="flex items-center mb-4">
-              <img src="/zenso-logo.png" alt="Zenso Logo" className="h-10 w-auto" />
+              <img src="/zenso-logo.png" alt="Zenso Logo" className="h-[34px] w-auto" />
             </div>
             <p className="text-gray-400">
               Optimize your brand for AI search engines. Track, analyze, and improve visibility across ChatGPT, Gemini, Claude, and more.

@@ -26,7 +26,7 @@ const Navbar = () => {
     >
       <div className="container flex items-center justify-between px-4 sm:px-6 lg:px-8">
         <a href="/" className="flex items-center">
-          <img src="/zenso-logo.png" alt="Zenso Logo" className="h-10 w-auto" />
+          <img src="/zenso-logo.png" alt="Zenso Logo" className="h-[34px] w-auto" />
         </a>
 
         <nav className="hidden md:flex items-center space-x-8">

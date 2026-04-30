@@ -12,7 +12,7 @@ const Index = () => {
       <header className="border-b border-border bg-card/50 backdrop-blur-sm">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <img src={zensoLogo} alt="Zenso" className="h-10 w-auto" />
+            <img src={zensoLogo} alt="Zenso" className="h-[34px] w-auto" />
             <div className="flex items-center gap-4">
               <Link to="/welcome-back">
                 <Button variant="outline">Sign In</Button>

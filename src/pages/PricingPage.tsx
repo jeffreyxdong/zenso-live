@@ -22,7 +22,7 @@ const PricingPage = () => {
               <ArrowLeft className="w-4 h-4" />
               Back
             </Button>
-            <img src={zensoLogo} alt="Zenso" className="h-10 w-auto" />
+            <img src={zensoLogo} alt="Zenso" className="h-[34px] w-auto" />
           </div>
           <div className="flex items-center gap-4">
             <Button variant="ghost" onClick={() => navigate("/welcome-back")}>

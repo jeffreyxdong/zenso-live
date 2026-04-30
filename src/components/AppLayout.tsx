@@ -187,7 +187,7 @@ const AppLayout = () => {
             <img 
               src={zensoLogo} 
               alt="Zenso" 
-              className="h-10 w-auto max-w-full object-contain"
+              className="h-[34px] w-auto max-w-full object-contain"
             />
           </div>
 

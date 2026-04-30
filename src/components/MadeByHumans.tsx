@@ -10,7 +10,7 @@ const MadeByHumans = () => {
           backgroundImage: "url('/background-section3.png')"
         }}>
             <div className="flex items-center text-white">
-              <img src="/zenso-logo.png" alt="Zenso Logo" className="h-6 sm:h-7 w-auto brightness-0 invert" />
+              <img src="/zenso-logo.png" alt="Zenso Logo" className="h-5 sm:h-6 w-auto brightness-0 invert" />
             </div>
             
             <div style={{
