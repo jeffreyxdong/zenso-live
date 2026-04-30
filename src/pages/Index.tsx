@@ -6,7 +6,6 @@ import DashboardShowcase from "@/components/DashboardShowcase";
 import MetricsOverview from "@/components/MetricsOverview";
 import Features from "@/components/Features";
 import Testimonials from "@/components/Testimonials";
-import Pricing from "@/components/Pricing";
 import FAQ from "@/components/FAQ";
 import Footer from "@/components/Footer";
 import { Separator } from "@/components/ui/separator";
@@ -88,10 +87,6 @@ const Index = () => {
           <Separator className="my-0" />
         </div>
         <Testimonials />
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-          <Separator className="my-0" />
-        </div>
-        <Pricing />
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
           <Separator className="my-0" />
         </div>
