@@ -44,19 +44,11 @@ const Auth = () => {
             return;
           }
 
-          if (store) {
-            toast({
-              title: "Welcome back!",
-              description: "Redirecting to dashboard...",
-            });
-            navigate("/dashboard");
-          } else {
-            toast({
-              title: "Welcome!",
-              description: "Let's get your store set up...",
-            });
-            navigate("/onboarding");
-          }
+          toast({
+            title: "Welcome back!",
+            description: "Redirecting to dashboard...",
+          });
+          navigate("/dashboard");
         } else {
           // No session found
           toast({
