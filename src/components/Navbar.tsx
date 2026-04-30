@@ -45,7 +45,7 @@ const Navbar = () => {
             Sign In
           </Link>
           <Link
-            to="/pricing"
+            to="/signup"
             className="px-6 py-2.5 bg-pulse-500 text-white rounded-full hover:bg-pulse-600 transition-colors font-semibold"
           >
             Start Free Trial
@@ -68,7 +68,7 @@ const Navbar = () => {
           <a href="#pricing" className="block py-2 text-gray-700 hover:text-pulse-600 transition-colors" onClick={() => setIsMenuOpen(false)}>Pricing</a>
           <Link to="/welcome-back" className="block py-2 text-gray-700 hover:text-pulse-600 transition-colors" onClick={() => setIsMenuOpen(false)}>Sign In</Link>
           <Link
-            to="/pricing"
+            to="/signup"
             className="block mt-4 px-6 py-2.5 bg-pulse-500 text-white rounded-full hover:bg-pulse-600 transition-colors text-center font-semibold"
             onClick={() => setIsMenuOpen(false)}
           >

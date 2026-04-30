@@ -118,7 +118,7 @@ const Hero = () => {
             style={{ animationDelay: "0.7s" }}
           >
             <a
-              href="/pricing"
+              href="/signup"
               className="flex items-center justify-center group w-full sm:w-auto text-center"
               style={{
                 backgroundColor: "#1F3271",
