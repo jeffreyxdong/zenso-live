@@ -137,25 +137,6 @@ const Hero = () => {
               Schedule Demo
               <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
             </a>
-          <a
-            href="https://calendly.com/onboarding-zenso/30min"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center group w-full sm:w-auto text-center"
-            style={{
-              backgroundColor: "transparent",
-              borderRadius: "1440px",
-              boxSizing: "border-box",
-              color: "#1a1a1a",
-              cursor: "pointer",
-              fontSize: "14px",
-              lineHeight: "20px",
-              padding: "16px 24px",
-              border: "2px solid #1a1a1a",
-            }}
-          >
-            Book a Demo
-          </a>
         </div>
         </div>
       </div>
