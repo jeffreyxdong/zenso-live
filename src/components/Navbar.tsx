@@ -25,18 +25,18 @@ const Navbar = () => {
           : "bg-white/80 backdrop-blur-sm"
       )}
     >
-      <div className="container flex items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto grid grid-cols-3 items-center px-4 sm:px-6 lg:px-8">
         <a href="/" className="flex items-center">
           <img src="/zenso-logo.png" alt="Zenso Logo" className="h-[34px] w-auto" />
         </a>
 
-        <nav className="hidden md:flex items-center space-x-8">
+        <nav className="hidden md:flex items-center justify-center space-x-8">
           <a href="#hero" className="text-gray-700 hover:text-pulse-600 transition-colors font-medium">Home</a>
           <a href="#features" className="text-gray-700 hover:text-pulse-600 transition-colors font-medium">Features</a>
           <a href="#testimonials" className="text-gray-700 hover:text-pulse-600 transition-colors font-medium">Customers</a>
         </nav>
 
-        <div className="hidden md:flex items-center space-x-4">
+        <div className="hidden md:flex items-center justify-end space-x-4">
           <Link
             to="/welcome-back"
             className="px-4 py-2 text-gray-700 hover:text-pulse-600 transition-colors font-medium"
@@ -53,8 +53,8 @@ const Navbar = () => {
           </a>
         </div>
 
-        <button 
-          className="md:hidden text-gray-700 p-3"
+        <button
+          className="md:hidden text-gray-700 p-3 col-start-3 justify-self-end"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
         >
           {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
