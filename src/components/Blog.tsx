@@ -57,13 +57,8 @@ const Blog = () => {
           {posts.map((post, i) => (
             <article
               key={i}
-              className="bg-card border rounded-xl overflow-hidden flex flex-col hover:-translate-y-1 hover:shadow-md transition-all duration-200"
+              className="bg-card border rounded-xl flex flex-col hover:-translate-y-1 hover:shadow-md transition-all duration-200"
             >
-              {/* Thumbnail */}
-              <div className={`${post.emojiBg} flex items-center justify-center text-4xl py-10 border-b`}>
-                {post.emoji}
-              </div>
-
               {/* Body */}
               <div className="p-6 flex flex-col flex-1">
                 <span className="inline-block px-3 py-1 bg-pulse-100 text-pulse-700 text-xs font-semibold rounded-full mb-4 w-fit">

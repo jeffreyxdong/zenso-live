@@ -8,8 +8,6 @@ const AITrafficConversion = () => {
       title="AI-referred traffic converts at 9.84% — here's what that means for DTC"
       date="Apr 22, 2026"
       readTime="6 min"
-      heroImage="/blog-ai-traffic-conversion.jpg"
-      heroAlt="Upward-trending conversion rate chart showing AI-referred traffic performance"
       tags={["Data & Trends", "Conversion Rate", "AI Traffic", "DTC", "GEO"]}
     >
       <p className="text-lg text-muted-foreground leading-relaxed mb-8">

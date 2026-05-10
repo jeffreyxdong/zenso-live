@@ -9,8 +9,6 @@ interface BlogPostLayoutProps {
   title: string;
   date: string;
   readTime: string;
-  heroImage: string; // path relative to /public e.g. "/blog-chatgpt-invisible-products.jpg"
-  heroAlt: string;
   tags: string[];
   children: React.ReactNode;
 }
@@ -20,8 +18,6 @@ const BlogPostLayout = ({
   title,
   date,
   readTime,
-  heroImage,
-  heroAlt,
   tags,
   children,
 }: BlogPostLayoutProps) => {
@@ -64,19 +60,6 @@ const BlogPostLayout = ({
           >
             {title}
           </h1>
-        </div>
-      </div>
-
-      {/* ── Hero image ────────────────────────────────────────────── */}
-      {/* Slightly wider than the text column to create editorial feel */}
-      <div className="px-4 sm:px-6 mb-12">
-        <div className="max-w-3xl mx-auto">
-          <img
-            src={heroImage}
-            alt={heroAlt}
-            className="w-full rounded-2xl object-cover"
-            style={{ height: "340px" }}
-          />
         </div>
       </div>
 

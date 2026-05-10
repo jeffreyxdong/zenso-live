@@ -8,8 +8,6 @@ const ChatGPTvsGeminivsPerplexity = () => {
       title="ChatGPT vs. Gemini vs. Perplexity: which AI engine matters most for your category?"
       date="Apr 10, 2026"
       readTime="9 min"
-      heroImage="/blog-platform-comparison.jpg"
-      heroAlt="Three AI chat interfaces side by side comparing ChatGPT, Gemini, and Perplexity product results"
       tags={["Platform Deep-Dive", "ChatGPT", "Gemini", "Perplexity", "AI Search", "DTC"]}
     >
       <p className="text-lg text-muted-foreground leading-relaxed mb-8">

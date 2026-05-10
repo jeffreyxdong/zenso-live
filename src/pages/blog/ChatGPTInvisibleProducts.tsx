@@ -8,8 +8,6 @@ const ChatGPTInvisibleProducts = () => {
       title="Why your bestseller is invisible to ChatGPT — and how to fix it"
       date="May 6, 2026"
       readTime="8 min"
-      heroImage="/blog-chatgpt-invisible-products.jpg"
-      heroAlt="E-commerce analytics dashboard showing product visibility gaps in AI search"
       tags={["GEO Strategy", "AI Search", "DTC", "ChatGPT", "Structured Data"]}
     >
       <p className="text-lg text-muted-foreground leading-relaxed mb-8">
