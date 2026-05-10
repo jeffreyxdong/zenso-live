@@ -1,5 +1,6 @@
 import React from "react";
 import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const posts = [
   {
@@ -10,7 +11,7 @@ const posts = [
     excerpt:
       "AI engines don't crawl product pages the same way Google does. We break down the exact structural and content gaps that cause high-performing DTC SKUs to go unmentioned in AI recommendations.",
     date: "May 6, 2026",
-    href: "#",
+    href: "/blog/chatgpt-invisible-products",
   },
   {
     tag: "Data & Trends",
@@ -20,7 +21,7 @@ const posts = [
     excerpt:
       "A shopper arriving via a ChatGPT recommendation is already pre-sold. We dig into the conversion data, compare it to paid and organic channels, and explain why AI share is becoming the most valuable metric in e-commerce.",
     date: "Apr 22, 2026",
-    href: "#",
+    href: "/blog/ai-traffic-conversion",
   },
   {
     tag: "Platform Deep-Dive",
@@ -30,7 +31,7 @@ const posts = [
     excerpt:
       "Not all AI engines weight the same signals or serve the same audiences. We analyzed 10,000+ product queries across platforms to show DTC brands where to focus their GEO effort first.",
     date: "Apr 10, 2026",
-    href: "#",
+    href: "/blog/chatgpt-vs-gemini-vs-perplexity",
   },
 ];
 
@@ -68,20 +69,22 @@ const Blog = () => {
                 <span className="inline-block px-3 py-1 bg-pulse-100 text-pulse-700 text-xs font-semibold rounded-full mb-4 w-fit">
                   {post.tag}
                 </span>
-                <h3 className="font-semibold text-foreground text-lg leading-snug mb-3">
-                  {post.title}
-                </h3>
+                <Link to={post.href}>
+                  <h3 className="font-semibold text-foreground text-lg leading-snug mb-3 hover:text-pulse-600 transition-colors">
+                    {post.title}
+                  </h3>
+                </Link>
                 <p className="text-muted-foreground text-sm leading-relaxed flex-1 mb-6">
                   {post.excerpt}
                 </p>
                 <div className="flex items-center justify-between pt-4 border-t">
                   <span className="text-xs text-muted-foreground">{post.date}</span>
-                  <a
-                    href={post.href}
+                  <Link
+                    to={post.href}
                     className="inline-flex items-center gap-1 text-sm font-medium text-pulse-600 hover:text-pulse-700 transition-colors"
                   >
                     Read more <ArrowRight size={14} />
-                  </a>
+                  </Link>
                 </div>
               </div>
             </article>

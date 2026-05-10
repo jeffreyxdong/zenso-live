@@ -17,6 +17,9 @@ import PromptDetail from "./pages/PromptDetail";
 import OverviewDraft from "./pages/OverviewDraft";
 import PricingPage from "./pages/PricingPage";
 import AppLayout from "./components/AppLayout";
+import ChatGPTInvisibleProducts from "./pages/blog/ChatGPTInvisibleProducts";
+import AITrafficConversion from "./pages/blog/AITrafficConversion";
+import ChatGPTvsGeminivsPerplexity from "./pages/blog/ChatGPTvsGeminivsPerplexity";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +36,9 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/blog/chatgpt-invisible-products" element={<ChatGPTInvisibleProducts />} />
+          <Route path="/blog/ai-traffic-conversion" element={<AITrafficConversion />} />
+          <Route path="/blog/chatgpt-vs-gemini-vs-perplexity" element={<ChatGPTvsGeminivsPerplexity />} />
           <Route path="/auth/shopify/callback" element={<ShopifyCallback />} />
           
           {/* Routes with persistent sidebar */}
