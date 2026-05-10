@@ -11,119 +11,74 @@ const ChatGPTvsGeminivsPerplexity = () => {
       tags={["Platform Deep-Dive", "ChatGPT", "Gemini", "Perplexity", "AI Search", "DTC"]}
     >
       <p className="text-lg text-muted-foreground leading-relaxed mb-8">
-        Not all AI engines are the same. They were trained on different data, weight different signals, serve different audiences, and handle product queries in meaningfully distinct ways. If you're trying to optimize your brand's AI visibility, treating ChatGPT, Gemini, and Perplexity as interchangeable is a strategic mistake.
+        Not all AI engines are created equal. They were trained on different data, care about different signals, and handle shopping questions in very different ways. If you are trying to get your brand noticed, treating ChatGPT, Gemini, and Perplexity as if they are the same thing is a big mistake.
       </p>
 
       <p className="mb-6">
-        We analyzed over 10,000 product queries across platforms — spanning supplements, apparel, home goods, skincare, and consumer electronics — to understand which engine dominates which category and what that means for where DTC brands should focus their GEO effort.
+        We looked at over 10,000 product queries across everything from supplements to electronics to see which engine wins in which category. Here is how it breaks down for your brand.
       </p>
 
       <h2 className="text-2xl font-bold text-foreground mt-12 mb-4">
-        How each platform handles product queries
+        How each platform handles shopping questions
       </h2>
 
       <h3 className="text-xl font-semibold text-foreground mt-8 mb-3">ChatGPT (OpenAI)</h3>
-
       <p className="mb-6">
-        ChatGPT is the highest-volume AI engine for product recommendation queries. Its training data cuts off periodically, but OpenAI has integrated real-time web browsing and shopping capabilities that allow it to surface current product information when the feature is enabled.
+        ChatGPT is the heavy hitter for volume. While it used to rely on older data, it now uses real-time browsing to find current products. It really loves brands with a strong editorial presence. If you are frequently mentioned in places like Wirecutter or category-specific blogs, you will do well here.
       </p>
 
-      <p className="mb-6">
-        ChatGPT's product recommendations tend to favor brands with strong editorial presence — mentions in publications like Healthline, Wirecutter, The Strategist, and category-specific media that were heavily represented in its training corpus. Brands with robust third-party citation profiles in tier-1 publications perform disproportionately well here.
-      </p>
-
-      <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 my-6">
-        <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">ChatGPT recommendation signals (ranked)</p>
-        <ol className="space-y-2 text-sm text-muted-foreground list-none">
-          {[
-            "Third-party editorial citations in trusted publications",
-            "Amazon reviews and ratings (heavily weighted)",
-            "Reddit community sentiment in relevant subreddits",
-            "Brand content authority and publishing depth",
-            "Structured data completeness on product pages",
-          ].map((item, i) => (
-            <li key={i} className="flex gap-3">
-              <span className="text-pulse-600 font-bold w-4 flex-shrink-0">{i + 1}.</span>
-              <span>{item}</span>
-            </li>
-          ))}
-        </ol>
-      </div>
-
-      <p className="mb-6">
-        <strong>Best for:</strong> Supplements, wellness, personal care, apparel, kitchen appliances. ChatGPT sees the highest query volume in these categories and is where the strongest brands have already established citation authority.
+      <p className="mb-3 font-semibold text-foreground">What ChatGPT looks for:</p>
+      <ul className="list-disc pl-6 mb-6 space-y-2 text-muted-foreground">
+        <li>Mentions in trusted editorial sites.</li>
+        <li>Strong Amazon reviews and ratings.</li>
+        <li>Positive vibes on Reddit.</li>
+        <li>Deep, authoritative content on your own site.</li>
+        <li>Solid technical schema on your product pages.</li>
+      </ul>
+      <p className="mb-8 text-muted-foreground">
+        <span className="font-semibold text-foreground">Best for:</span> Supplements, wellness, apparel, and kitchen gear. This is where the most shoppers are asking questions.
       </p>
 
       <h3 className="text-xl font-semibold text-foreground mt-8 mb-3">Google Gemini</h3>
-
       <p className="mb-6">
-        Gemini's primary advantage is deep integration with Google's existing data infrastructure. It surfaces product results from Google Shopping, reads structured data from Google's index with high fidelity, and references Google Reviews and Google-indexed content heavily.
+        Gemini's "superpower" is its connection to Google's massive data. It pulls directly from Google Shopping and leans heavily on Google Reviews. Because it is built into Android and Google Search, it reaches the widest group of people. Gemini tends to be more price-conscious, often highlighting the "best value" rather than just the most expensive option.
       </p>
 
-      <p className="mb-6">
-        Because Gemini is embedded in Google Search (as AI Overviews) and in Google's mobile ecosystem (Pixel, Android), it sees the broadest demographic reach of any AI engine. Its product recommendations also tend to be more price-sensitive and comparison-focused than ChatGPT — it's more likely to surface a "best value" recommendation than a premium flagship.
-      </p>
-
-      <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 my-6">
-        <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Gemini recommendation signals (ranked)</p>
-        <ol className="space-y-2 text-sm text-muted-foreground list-none">
-          {[
-            "Google Shopping feed quality and completeness",
-            "Google-indexed structured data and product schema",
-            "Google Reviews and Maps ratings",
-            "Traditional SEO authority (DA, page-level signals)",
-            "YouTube reviews and unboxing content",
-          ].map((item, i) => (
-            <li key={i} className="flex gap-3">
-              <span className="text-pulse-600 font-bold w-4 flex-shrink-0">{i + 1}.</span>
-              <span>{item}</span>
-            </li>
-          ))}
-        </ol>
-      </div>
-
-      <p className="mb-6">
-        <strong>Best for:</strong> Home goods, consumer electronics, appliances, and any category where YouTube review culture is strong. If your brand has invested heavily in traditional SEO and Google Shopping, you have a head start on Gemini visibility.
+      <p className="mb-3 font-semibold text-foreground">What Gemini looks for:</p>
+      <ul className="list-disc pl-6 mb-6 space-y-2 text-muted-foreground">
+        <li>A high-quality Google Shopping feed.</li>
+        <li>Perfect product schema that Google can easily read.</li>
+        <li>High ratings on Google Reviews and Maps.</li>
+        <li>Strong traditional SEO authority.</li>
+        <li>YouTube reviews and unboxing videos.</li>
+      </ul>
+      <p className="mb-8 text-muted-foreground">
+        <span className="font-semibold text-foreground">Best for:</span> Electronics, home goods, and appliances. If your brand already does well in traditional SEO, you have a major head start here.
       </p>
 
       <h3 className="text-xl font-semibold text-foreground mt-8 mb-3">Perplexity</h3>
-
       <p className="mb-6">
-        Perplexity is a real-time web retrieval engine, not a generative model trained on a static corpus. Every Perplexity response is built by fetching and synthesizing live web sources, then citing them explicitly. This makes it the most transparent of the three platforms — you can see exactly which sources are driving recommendations.
+        Perplexity isn't just a model; it is a real-time search engine. Every answer it gives is built by fetching live web sources and citing them. Its users are usually high-income researchers who want to see the "why" behind a recommendation. Because it links directly to its sources, it has the highest click-through rate for products.
       </p>
 
-      <p className="mb-6">
-        Perplexity's user base skews toward high-income, research-oriented shoppers — early adopters, professionals, and frequent online buyers who distrust traditional search results. These are often exactly the shoppers DTC premium brands want to reach. Perplexity also has the highest product recommendation click-through rate of any AI engine, because its interface is designed around source-linked answers.
-      </p>
-
-      <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 my-6">
-        <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Perplexity recommendation signals (ranked)</p>
-        <ol className="space-y-2 text-sm text-muted-foreground list-none">
-          {[
-            "Real-time editorial content (current articles, reviews)",
-            "Specialist and niche publication coverage",
-            "Reddit threads (r/SkincareAddiction, r/Supplements, etc.)",
-            "Brand blog content (indexed and freshly updated)",
-            "Press coverage and brand mentions in news",
-          ].map((item, i) => (
-            <li key={i} className="flex gap-3">
-              <span className="text-pulse-600 font-bold w-4 flex-shrink-0">{i + 1}.</span>
-              <span>{item}</span>
-            </li>
-          ))}
-        </ol>
-      </div>
-
-      <p className="mb-6">
-        <strong>Best for:</strong> Premium skincare, functional supplements, performance apparel, tech accessories. Any category where detailed, research-oriented shoppers are your core buyers. Perplexity rewards brands with a rich, up-to-date editorial presence — including their own blog.
+      <p className="mb-3 font-semibold text-foreground">What Perplexity looks for:</p>
+      <ul className="list-disc pl-6 mb-6 space-y-2 text-muted-foreground">
+        <li>Brand new editorial content and reviews.</li>
+        <li>Coverage in niche or specialist publications.</li>
+        <li>Active discussions in specific subreddits.</li>
+        <li>Fresh, updated blog posts on your own site.</li>
+        <li>Recent news mentions and press coverage.</li>
+      </ul>
+      <p className="mb-8 text-muted-foreground">
+        <span className="font-semibold text-foreground">Best for:</span> Premium skincare, performance gear, and tech accessories. It rewards brands that stay active and relevant in the news.
       </p>
 
       <h2 className="text-2xl font-bold text-foreground mt-12 mb-4">
-        Category breakdown: where to focus first
+        Where should you focus first?
       </h2>
 
       <p className="mb-6">
-        Based on our query analysis, here's how dominant each engine is across major DTC categories:
+        Based on our analysis, here is how the engines stack up across DTC categories:
       </p>
 
       <div className="overflow-x-auto my-8">
@@ -139,12 +94,12 @@ const ChatGPTvsGeminivsPerplexity = () => {
           <tbody>
             {[
               { cat: "Supplements & Wellness", gpt: "★★★★★", gem: "★★★", perp: "★★★★" },
-              { cat: "Skincare & Beauty", gpt: "★★★★", gem: "★★★", perp: "★★★★★" },
-              { cat: "Apparel & Fashion", gpt: "★★★★", gem: "★★★★", perp: "★★★" },
-              { cat: "Consumer Electronics", gpt: "★★★", gem: "★★★★★", perp: "★★★★" },
-              { cat: "Home & Kitchen", gpt: "★★★★", gem: "★★★★★", perp: "★★★" },
-              { cat: "Sports & Fitness", gpt: "★★★★★", gem: "★★★", perp: "★★★★" },
-              { cat: "Pet Products", gpt: "★★★★", gem: "★★★★", perp: "★★★" },
+              { cat: "Skincare & Beauty",      gpt: "★★★★",  gem: "★★★", perp: "★★★★★" },
+              { cat: "Apparel & Fashion",      gpt: "★★★★",  gem: "★★★★", perp: "★★★" },
+              { cat: "Consumer Electronics",   gpt: "★★★",   gem: "★★★★★", perp: "★★★★" },
+              { cat: "Home & Kitchen",         gpt: "★★★★",  gem: "★★★★★", perp: "★★★" },
+              { cat: "Sports & Fitness",       gpt: "★★★★★", gem: "★★★", perp: "★★★★" },
+              { cat: "Pet Products",           gpt: "★★★★",  gem: "★★★★", perp: "★★★" },
             ].map((row, i) => (
               <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                 <td className="p-3 border border-gray-200 text-muted-foreground">{row.cat}</td>
@@ -155,50 +110,53 @@ const ChatGPTvsGeminivsPerplexity = () => {
             ))}
           </tbody>
         </table>
-        <p className="text-xs text-muted-foreground mt-2">★ ratings reflect query volume share, not recommendation quality</p>
       </div>
 
       <h2 className="text-2xl font-bold text-foreground mt-12 mb-4">
-        A practical prioritization framework
+        A simple plan for your brand
       </h2>
 
       <p className="mb-6">
-        Rather than trying to optimize for all three platforms simultaneously, use this framework to decide where to focus first:
+        Instead of trying to win everywhere at once, follow these steps:
       </p>
 
-      <div className="space-y-6 mb-8">
-        <div className="border border-gray-200 rounded-xl p-6">
-          <h3 className="font-semibold text-foreground mb-2">Step 1: Run a baseline audit across all three</h3>
-          <p className="text-muted-foreground text-sm">Ask the 10 most common purchase-decision queries in your category on each platform. Record whether your brand appears, at what position, and how you're described. This takes 30 minutes and immediately shows you where your gaps are largest.</p>
-        </div>
-        <div className="border border-gray-200 rounded-xl p-6">
-          <h3 className="font-semibold text-foreground mb-2">Step 2: Match your category to the dominant engine</h3>
-          <p className="text-muted-foreground text-sm">Use the table above as a starting point. If you're a supplement brand, ChatGPT volume is highest — that's your primary target. If you're a consumer electronics brand, Gemini's Google Shopping integration makes it the priority.</p>
-        </div>
-        <div className="border border-gray-200 rounded-xl p-6">
-          <h3 className="font-semibold text-foreground mb-2">Step 3: Match your optimization levers to that engine's signals</h3>
-          <p className="text-muted-foreground text-sm">For ChatGPT: focus on third-party editorial citations. For Gemini: audit your Google Shopping feed and schema. For Perplexity: invest in fresh, citeable editorial content on your own blog and outreach to niche publications.</p>
-        </div>
-        <div className="border border-gray-200 rounded-xl p-6">
-          <h3 className="font-semibold text-foreground mb-2">Step 4: Track weekly and expand</h3>
-          <p className="text-muted-foreground text-sm">Once you've improved visibility on your primary engine, repeat the process for the next. The optimizations compound — strong editorial content helps all three platforms simultaneously.</p>
-        </div>
+      <div className="space-y-4 mb-8">
+        {[
+          {
+            n: "1",
+            title: "Run a quick audit",
+            body: "Ask all three platforms the top 10 questions your customers usually ask. See if you show up and how they describe you.",
+          },
+          {
+            n: "2",
+            title: "Pick your primary target",
+            body: "Use the table above to find the engine that dominates your category. If you sell vitamins, focus on ChatGPT first.",
+          },
+          {
+            n: "3",
+            title: "Optimize for those specific signals",
+            body: "If you are targeting Gemini, clean up your Google Shopping feed. If you want to win on Perplexity, get some fresh PR and blog posts live.",
+          },
+          {
+            n: "4",
+            title: "Track and expand",
+            body: "Once you've moved the needle on one platform, move to the next. Good content usually helps you across all three eventually.",
+          },
+        ].map((step) => (
+          <div key={step.n} className="flex gap-4">
+            <div className="w-10 h-10 rounded-full bg-pulse-100 text-pulse-700 font-bold flex items-center justify-center flex-shrink-0 mt-1">
+              {step.n}
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground mb-1">{step.title}</h3>
+              <p className="text-muted-foreground">{step.body}</p>
+            </div>
+          </div>
+        ))}
       </div>
 
-      <h2 className="text-2xl font-bold text-foreground mt-12 mb-4">
-        The platform landscape is still shifting
-      </h2>
-
       <p className="mb-6">
-        It's worth noting that this analysis reflects the landscape in early 2026, and the rankings will shift. OpenAI's commerce integrations are deepening. Google is aggressively expanding Gemini's product recommendation capabilities. Perplexity has announced direct merchant partnerships that will affect how it weights brand content.
-      </p>
-
-      <p className="mb-6">
-        This is precisely why measurement matters as much as optimization. A strategy built purely on "what works now" without a tracking layer to detect when the landscape shifts will be caught off guard. The brands best positioned for the next two years are building both: a systematic content and citation program, and a continuous measurement system to tell them when something changes.
-      </p>
-
-      <p className="mb-6">
-        Start with the platform your category shoppers use most. Win there first. Then build the infrastructure to hold that position as the landscape evolves.
+        The AI landscape is moving fast. Google is beefing up Gemini, and Perplexity is adding new merchant features. The brands that win over the next two years will be the ones that don't just "set and forget" their content, but actually measure where they stand every week.
       </p>
     </BlogPostLayout>
   );
