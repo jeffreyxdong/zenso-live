@@ -8,6 +8,9 @@ const AITrafficConversion = () => {
       title="AI-referred traffic converts at 9.84% — here's what that means for DTC"
       date="Apr 22, 2026"
       readTime="6 min"
+      heroEmoji="📊"
+      heroColor="bg-amber-50"
+      tags={["Data & Trends", "Conversion Rate", "AI Traffic", "DTC", "GEO"]}
     >
       <p className="text-lg text-muted-foreground leading-relaxed mb-8">
         A shopper who finds your product through an AI recommendation has already done most of their research. The AI told them you were the answer to their question. By the time they land on your page, they're not browsing — they're deciding.

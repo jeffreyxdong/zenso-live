@@ -8,6 +8,9 @@ const ChatGPTInvisibleProducts = () => {
       title="Why your bestseller is invisible to ChatGPT — and how to fix it"
       date="May 6, 2026"
       readTime="8 min"
+      heroEmoji="🔍"
+      heroColor="bg-emerald-50"
+      tags={["GEO Strategy", "AI Search", "DTC", "ChatGPT", "Structured Data"]}
     >
       <p className="text-lg text-muted-foreground leading-relaxed mb-8">
         You've built a strong product. It has hundreds of positive reviews, ranks well on Google, and converts at a healthy rate when people find it. Yet when you ask ChatGPT to recommend the best option in your category, your brand isn't mentioned. Your competitor — with an arguably weaker product — gets named every time.

@@ -8,6 +8,9 @@ const ChatGPTvsGeminivsPerplexity = () => {
       title="ChatGPT vs. Gemini vs. Perplexity: which AI engine matters most for your category?"
       date="Apr 10, 2026"
       readTime="9 min"
+      heroEmoji="🤖"
+      heroColor="bg-blue-50"
+      tags={["Platform Deep-Dive", "ChatGPT", "Gemini", "Perplexity", "AI Search", "DTC"]}
     >
       <p className="text-lg text-muted-foreground leading-relaxed mb-8">
         Not all AI engines are the same. They were trained on different data, weight different signals, serve different audiences, and handle product queries in meaningfully distinct ways. If you're trying to optimize your brand's AI visibility, treating ChatGPT, Gemini, and Perplexity as interchangeable is a strategic mistake.
