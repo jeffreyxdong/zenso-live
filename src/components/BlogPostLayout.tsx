@@ -9,8 +9,8 @@ interface BlogPostLayoutProps {
   title: string;
   date: string;
   readTime: string;
-  heroEmoji: string;
-  heroColor: string; // Tailwind bg class e.g. "bg-emerald-50"
+  heroImage: string; // path relative to /public e.g. "/blog-chatgpt-invisible-products.jpg"
+  heroAlt: string;
   tags: string[];
   children: React.ReactNode;
 }
@@ -20,8 +20,8 @@ const BlogPostLayout = ({
   title,
   date,
   readTime,
-  heroEmoji,
-  heroColor,
+  heroImage,
+  heroAlt,
   tags,
   children,
 }: BlogPostLayoutProps) => {
@@ -71,12 +71,12 @@ const BlogPostLayout = ({
       {/* Slightly wider than the text column to create editorial feel */}
       <div className="px-4 sm:px-6 mb-12">
         <div className="max-w-3xl mx-auto">
-          <div
-            className={`${heroColor} rounded-2xl flex items-center justify-center`}
-            style={{ height: "340px", fontSize: "6rem" }}
-          >
-            {heroEmoji}
-          </div>
+          <img
+            src={heroImage}
+            alt={heroAlt}
+            className="w-full rounded-2xl object-cover"
+            style={{ height: "340px" }}
+          />
         </div>
       </div>
 
